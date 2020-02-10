@@ -1,2 +1,2 @@
-# Simulation
-Simulation of RS time series 
+# Benchmarking recovery indicators derived from remote sensing time series
+
