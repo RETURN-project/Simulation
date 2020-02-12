@@ -376,7 +376,8 @@ summary {
 <h2>1. Import libraries and source functions</h2>
 <pre class="r"><code>library(bfast)
 library(forecast)
-source_rmd(&#39;fun_general.Rmd&#39;)</code></pre>
+source_rmd(&#39;fun_general.Rmd&#39;)
+source_rmd(&#39;fun_simulate.Rmd&#39;)</code></pre>
 </div>
 <div id="inputs" class="section level2">
 <h2>2. Inputs</h2>
@@ -396,14 +397,93 @@ nobsYr &lt;- 365 # number of observations per year</code></pre>
 </div>
 <div id="import-data" class="section level2">
 <h2>3. Import data</h2>
-<p><font color="gray">Import the dataframe with time series that need to be characterized. The dataframe needs to be structured as follows:</p>
+<p>Import the dataframe with time series that need to be characterized. The dataframe needs to be structured as follows:</p>
 <ul>
 <li>Each row represents a pixel</li>
 <li>The first two columns contain the coordinates of the pixel</li>
-<li>The remaining columns equal observations at a particular date. The dates must have regular intervals.</font></li>
+<li>The remaining columns equal observations at a particular date. The dates must have regular intervals.</li>
 </ul>
 <pre class="r"><code>ifileVI &lt;- paste0(basename, &#39;.rda&#39;)
 dfVi &lt;- loadRData(file = file.path(ifolder, ifileVI))</code></pre>
+</div>
+<div id="decompose-time-series-using-bfast01" class="section level2">
+<h2>4. Decompose time series using BFAST01</h2>
+<p>Decomposition of time series into seasonality, trend and remainder</p>
+<ul>
+<li>Seasonality: modeled as a harmonic function</li>
+<li>Trend: linear trend without break</li>
+<li>Remainder: residuals, calculated as time series - trend * seasonality</li>
+</ul>
+<pre class="r"><code>tmp &lt;- decompTSbfast(dfVi, nyr, nobsYr)
+#print(tmp)
+# sesonality (fitted harmonic function)
+dataVISeasbf &lt;-  tmp[[1]]
+# remainder
+dataVIRembf &lt;- tmp[[2]]
+# trend (linear trend without break)
+dataVITrbf &lt;- tmp[[3]]
+# coefficients of fitted harmonic functions 
+dataVISeasCoef &lt;- tmp[[4]]</code></pre>
+</div>
+<div id="characterize-each-of-the-components" class="section level2">
+<h2>5. Characterize each of the components</h2>
+<p>The following characteristics are derived from the decomposed time series:</p>
+<ul>
+<li>fraction of missing values</li>
+<li>half of the seasonal amplitude (one value for input each time series)</li>
+<li>average seasonal pattern</li>
+<li>offset</li>
+<li>standard deviation of the remainder component (one value per input time series)</li>
+<li>fitted ARMA model in the remainder component (one model per input time series)</li>
+</ul>
+<pre class="r"><code># ------------------------------------------------
+# general
+
+# fraction missing values
+tsVIMissVal &lt;- rowSums(is.na(dfVi))/dim(dfVi)[2]
+
+# ------------------------------------------------
+# seasonality
+
+# half of the seasonal amplitude for each pixel
+seasVImax &lt;- apply(dataVISeasbf[,-c(1,2)], 1, max) 
+#average seasonal pattern
+seasS &lt;- dataVISeasbf[dataVISeasbf[,1]&lt;0,]# only southern hemisphere to avoid interference of seasonal cycles
+seasVImean &lt;- colMeans(as.matrix(seasS[,-c(1,2)]))
+
+# ------------------------------------------------
+# offset 
+TrVImean &lt;- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T)
+
+# ------------------------------------------------
+# remainder
+
+# SD of remainder per pixel
+Rem_VIsd &lt;- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T)
+# ARMA model - characterization of the remainder dynamics per pixel
+Rem_VIcoef &lt;- list()
+for(i in 1:dim(dataVIRembf)[1]){
+  Rem_VIcoef[[i]] &lt;- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
+}</code></pre>
+</div>
+<div id="export" class="section level2">
+<h2>6. Export</h2>
+<pre class="r"><code># Components
+save(dataVISeasbf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Seasbf.rda&#39;)))
+save(dataVIRembf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Rembf.rda&#39;)))
+save(dataVITrbf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Trbf.rda&#39;)))
+save(dataVISeasCoef, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_SeasCoefbf.rda&#39;)))
+
+# characteristics components
+save(seasVImax, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_seasVImax.rda&#39;)))
+save(seasVImean, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_seasVImean.rda&#39;)))
+
+save(TrVImean, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_TrVImean.rda&#39;)))
+
+save(Rem_VIsd, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Rem_VIsd.rda&#39;)))
+
+save(Rem_VIcoef, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Rem_VIcoef.rda&#39;)))
+save(tsVIMissVal, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_ts_VIMissVal.rda&#39;)))</code></pre>
 </div>
 </div>
 

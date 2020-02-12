@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#eval = FALSE prevents code chunks to be run
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 
@@ -87,6 +88,14 @@ dataVITrbf <- tmp[[3]]
 dataVISeasCoef <- tmp[[4]]
 ```
 ## 5. Characterize each of the components
+The following characteristics are derived from the decomposed time series:
+
+* fraction of missing values
+* half of the seasonal amplitude (one value for input each time series)
+* average seasonal pattern
+* offset 
+* standard deviation of the remainder component (one value per input time series)
+* fitted ARMA model in the remainder component (one model per input time series)
 ```{r}
 # ------------------------------------------------
 # general
