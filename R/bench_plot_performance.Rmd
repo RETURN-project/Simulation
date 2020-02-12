@@ -1,0 +1,181 @@
+---
+title: "Evaluate & plot the performance of the recovery indicators"
+author: "Wanda De Keersmaecker"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+# function to source Rmarkdown files
+source_rmd <- function(file, local = FALSE, ...){
+  options(knitr.duplicate.label = 'allow')
+  
+  tempR <- tempfile(tmpdir = ".", fileext = ".R")
+  on.exit(unlink(tempR))
+  knitr::purl(file, output=tempR, quiet = TRUE)
+  
+  envir <- globalenv()
+  source(tempR, local = envir, ...)
+}
+```
+
+## Import libararies and source functions
+```{r}
+library(ggplot2)
+library(reshape)
+library(GGally)
+library(plyr)
+
+source_rmd('fun_general.Rmd')
+source_rmd('fun_eval_performance.Rmd')
+```
+
+## Inputs
+*xxx*
+
+__User inputs:__
+- __ifolder__: 
+- __setfolder__:
+- __figfolder__:
+- __nfolder__: 
+- __basename__:
+- __pol__: 
+```{r}
+#-------------------------------------------------
+# inputs
+ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\RecInd\\' # folder with data characteristics
+setfolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\SimTS\\' # folder with data characteristics
+figfolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Test_TSrequired\\Figures\\' # folder where the simulated time series will be saved
+
+basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
+
+#simcase <- 'nDr'# dr'distRec distMag distT len seasAmp remSd
+
+```
+
+## Load data
+```{r}
+m_R80p <- loadRData(file=file.path(ifolder, paste0(basename, '_m_R80P.rda')))
+m_RRI <- loadRData(file=file.path(ifolder, paste0(basename,  '_m_RRI.rda')))
+m_YrYr <- loadRData(file=file.path(ifolder, paste0(basename,  '_m_YrYr.rda')))
+m_SL <- loadRData(file=file.path(ifolder, paste0(basename,  '_m_SL.rda')))
+
+s_R80p <- loadRData(file=file.path(ifolder, paste0(basename, '_s_R80P.rda')))
+s_RRI <- loadRData(file=file.path(ifolder, paste0(basename,  '_s_RRI.rda')))
+s_YrYr <- loadRData(file=file.path(ifolder, paste0(basename,  '_s_YrYr.rda')))
+s_SL <- loadRData(file=file.path(ifolder, paste0(basename,  '_s_SL.rda')))
+
+sttngs <- loadRData(file=file.path(setfolder, paste0(basename,  '_simTS_settings_var.rda')))
+recSttngs <- loadRData(file=file.path(ifolder, paste0(basename, '_recSettings.rda')))
+
+sttngs$VdistRec$distRec <- sttngs$VdistRec$distRec/365
+```
+
+## calculate performance
+
+```{r}
+# R2
+R80p_rsq <- calcPerf(s_R80p,m_R80p, sttngs, recSttngs, 'R80p', 'R2')
+RRI_rsq <- calcPerf(s_RRI,m_RRI, sttngs, recSttngs, 'RRI', 'R2')
+YrYr_rsq <- calcPerf(s_YrYr,m_YrYr, sttngs, recSttngs, 'YrYr', 'R2')
+SL_rsq <- calcPerf(s_SL,m_SL, sttngs, recSttngs, 'SL', 'R2')
+tot_rsq <- Map(rbind, R80p_rsq, RRI_rsq,YrYr_rsq,SL_rsq)#
+
+#RMSE
+R80p_rmse <- calcPerf(s_R80p,m_R80p, sttngs, recSttngs, 'R80p', 'RMSE')
+RRI_rmse <- calcPerf(s_RRI,m_RRI, sttngs, recSttngs, 'RRI', 'RMSE')
+YrYr_rmse <- calcPerf(s_YrYr,m_YrYr, sttngs, recSttngs, 'YrYr', 'RMSE')
+SL_rmse <- calcPerf(s_SL,m_SL, sttngs, recSttngs, 'SL', 'RMSE')
+tot_rmse <- Map(rbind, R80p_rmse, RRI_rmse,YrYr_rmse,SL_rmse)
+
+# MAPE
+R80p_mape <- calcPerf(s_R80p,m_R80p, sttngs, recSttngs, 'R80p', 'MAPE')
+RRI_mape <- calcPerf(s_RRI,m_RRI, sttngs, recSttngs, 'RRI', 'MAPE')
+YrYr_mape <- calcPerf(s_YrYr,m_YrYr, sttngs, recSttngs, 'YrYr', 'MAPE')
+SL_mape <- calcPerf(s_SL,m_SL, sttngs, recSttngs, 'SL', 'MAPE')
+tot_mape <- Map(rbind, R80p_mape, RRI_mape,YrYr_mape,SL_mape)
+
+```
+
+```{r}
+#sname <- 'distMag'
+simFullName  <- list('Disturbance magnitude',
+                     'Number of droughts',
+                     'Time series length',
+                     'Seasonal amplitude',
+                     'SD remainder',
+                     'Disturbance timing',
+                     'Recovery period [years]',
+                     'Missing values')
+names(simFullName) <- c('distMag',
+                        'nDr', 
+                        'len',
+                        'seasAmp',
+                        'remSd',
+                        'distT',
+                        'distRec',
+                        'missVal')
+simcases <- names(m_R80p)
+#print(tot_rsq)
+
+for (si in 1:length(simcases)){
+  sname <- simcases[[si]]
+  # plot R2
+  print(ggplot(tot_rsq[[sname]], aes(variable,value,color=interaction(Smooth,Dense), group = Metric)) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period))+ 
+          xlab(simFullName[[sname]]) +
+          ylab('R²')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  # plot RMSE
+  print(ggplot(tot_rmse[[sname]], aes(variable,value,color=interaction(Smooth,Dense), group = Metric)) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period), scales = "free_y")+ 
+          xlab(simFullName[[sname]]) +
+          ylab('RMSE')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  # plot MAPE
+  print(ggplot(tot_mape[[sname]], aes(variable,value,color=interaction(Smooth,Dense), group = Metric)) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period))+ 
+          xlab(simFullName[[sname]]) +
+          ylab('MAPE')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+}
+
+
+```
+
+
+

@@ -1,0 +1,238 @@
+---
+title: "Calculate recovery indicators"
+author: "Wanda De Keersmaecker"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+
+```{r, include=FALSE}
+source_rmd <- function(file, local = FALSE, ...){
+  options(knitr.duplicate.label = 'allow')
+  
+  tempR <- tempfile(tmpdir = ".", fileext = ".R")
+  on.exit(unlink(tempR))
+  knitr::purl(file, output=tempR, quiet = TRUE)
+  
+  envir <- globalenv()
+  source(tempR, local = envir, ...)
+}
+```
+
+*This script calculates a set of recovery indicators from simulated time series, including the RRI, R80P and YrYr recovery indicators, defined by Frazier et al. (2018), and the post-disturbance slope. These indicators can be derived from dense (having more than one observation per year) time series or the dense time series can be converted to annual time series. In addition, the indicators can be calculated using the raw time series, smoothed time series or after trend segmentation.*
+
+*The RRI, R80p and YrYr recovery indicators are originally developped for annual long-term time series of optical vegetation indices. Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested. Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators. To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years. Moreover, given the potentially high noise levels of dense time series, the mean value instead of the maximum value was used in the formulas.*
+
+*In addition to the recovery indicators defined by Frazier et al. (2018), the slope of the post-disturbance trend segment can be derived as recovery indicator. The latter indicator is only available for trend segmented time series: a segmented trend is fitted in the time series, and the detected break showing the largest change (in absolute values) is assumed to represent the disturbance. The slope of the trend segment after the disturbance is then used as recovery indicator.*
+
+## Import libraries
+```{r}
+#install.packages('signal')
+library(signal)
+#install.packages('imputeTS')
+library(imputeTS)
+```
+## Inputs
+
+*The following inputs are needed to run the script:*
+
+
+* __ifolder__: input folder, directory of the simulated time series files
+* __ofolder__: output folder, directory where the processed files will be stored
+* __basename__: base name of the simulated time series files
+* __caseList__: list of parameters. The recovery indicators will be calculated for the simulated time series of these parameters.  
+* __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters. 
++ *freq*:  'dense' or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual', the time series are converted to annual frequency.
++ *input*: 'smooth', 'raw', 'BFAST'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
++ *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
++ *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
++ *nDist*: in case *shortDenseTS* is TRUE: the number of months after the disturbance used to derive the value during the disturbance 
++ *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance</font>
+
+```{r}
+ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
+ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
+nfolder <- 'C:\\Users\\keers001\\Dropbox\\output\\Jupyter_notebook\\Functions\\'
+
+basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
+caseList <- c('distMag','missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#)# simulation cases to be evaluated
+funSet <- list('freq' = c( 'dense','dense'),
+               'input' = c('raw','smooth'),# settings for the recovery indicators
+               'shortDenseTS' = c(TRUE,TRUE),
+               'nPre' = c(2,2),
+               'nDist' = c(1,1),
+               'nPostMin' = c(0,0),
+               'nPostMax' = c(1,1),
+               'h' = c(0.15,0.15))
+
+#list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
+#              'input' = c('raw','raw', 'smooth', 'BFAST', 'raw', 'smooth', 'BFAST'),# settings for the recovery indicators
+#              'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+#              'nPre' = c(2,2,2,2,2,2,2),
+#              'nDist' = c(1,1,1,1,12,12,12),
+#              'nPostMin' = c(0,0,0,0,4,4,4),
+#              'nPostMax' = c(1,1,1,1,6,6,6),
+#              'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
+
+```
+## Extract recovery indicators
+
+```{r}
+system(paste0('jupyter-nbconvert.exe ', nfolder, 'rec_Functions.ipynb  --to script'))#, intern=FALSE
+source('fun_recovery.r')
+source('fun_general.r')
+
+# Start the clock
+ptm <- proc.time()
+
+# Initiate 
+m_RRI <- list()# measured RRI 
+m_R80p <- list()# measured R80p 
+m_YrYr <- list()# measured YrYR 
+m_SL <- list()# measured SL  
+
+s_RRI <- list()#simulated (true) RRI 
+s_R80p <- list()#simulated (true) R80p
+s_YrYr <- list()#simulated (true) YrYr
+s_SL <- list()# simulated (true) SL
+
+
+for(si in 1:length(caseList)){# # iterate over simulation cases
+  simcase <- caseList[si]
+  #print(simcase)
+  
+  # simulated time series
+  simTS <- loadRData(file = file.path(ifolder, paste0(basename, '_simTS_', simcase, '.rda')))
+  # trend component of simulated time series
+  simTSTr <- loadRData(file = file.path(ifolder, paste0(basename, '_simTSTr_', simcase, '.rda')))
+  # seasonal component of simulated time series
+  simTSSeas <- loadRData(file = file.path(ifolder, paste0(basename, '_simTSSeas_', simcase, '.rda')))
+  # Disturbance component
+  #simTSDist <- loadRData(file = file.path(ifolder, paste0(basename, '_simTSDist_', simcase, '.rda')))
+  # Remainder component
+  simTSRem <- loadRData(file = file.path(ifolder, paste0(basename, '_simTSRem_', simcase, '.rda')))
+  # Settings used to simulate the time series
+  simTSParam <- loadRData(file = file.path(ifolder, paste0(basename, '_simTSParam_', simcase, '.rda')))
+  
+  for(rset in 1:length(funSet[[1]])){# iterate over recovery indicator settings
+    m_RRIi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))# measured RRI 
+    m_R80pi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))# measured R80p 
+    m_YrYri <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))# measured YrYR
+    m_SLi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))# measured YrYR   
+    s_RRIi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))#simulated (true) RRI 
+    s_R80pi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))#simulated (true) R80p
+    s_YrYri <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))#simulated (true) YrYr
+    s_SLi <- matrix(NA, nrow = length(simTS[[1]]), ncol = length(simTS))#simulated (true) Slope
+    
+    # calculate recovery
+    for (i in 1:length(simTS)){# iterate over simulation parameter settings
+      for (ii in 1:length(simTS[[1]])){# iterate over time series
+        tsi <- TSdecompress(simTS[[i]][[ii]])
+        tsseas <- TSdecompress(simTSSeas[[i]][[ii]])
+        nobs <- (simTSParam[[i]][[ii]][['number_yrs']]*simTSParam[[i]][[ii]][['obs_per_year']])
+        tsref <-  rep(simTSTr[[i]][[ii]],nobs) +  simulDist(simTSParam[[i]][[ii]][['dist_time']], 
+                                                            simTSParam[[i]][[ii]][['dist_rec']], 
+                                                            simTSParam[[i]][[ii]][['dist_magn']], 
+                                                            nobs)
+        tdist <- simTSParam[[i]][[ii]][['dist_time']]# timing disturbance
+        obspyr <- simTSParam[[i]][[ii]][['obs_per_year']]
+        inp <- funSet$input[rset]
+        frq <- funSet[['freq']][rset]
+        shortDenseTS <- funSet[['shortDenseTS']][rset]
+        nPre <- funSet[['nPre']][rset]
+        nDist <- funSet[['nDist']][rset]
+        nPostMin <- funSet[['nPostMin']][rset]
+        nPostMax <- funSet[['nPostMax']][rset]
+        h <- funSet[['h']][rset]
+        
+        if (frq == 'annual'){
+          #convert time series to annual values by selecting date closest to seasonal max
+          tsi <- toAnnualTS(tsseas, tsi, obspyr) 
+          tsref <- toAnnualTS(tsseas, tsref, obspyr) 
+          tdist <- ceiling(tdist/obspyr)
+          obspyr <- 1
+        }
+        if (inp == 'smooth'){
+          #tmp <- sgolayfilt(na_interpolation(tsi, 'linear'), p=2, n=11)# smooth time series using golay filter
+          #tsi[is.na(tsi)==F] <- tmp[is.na(tsi)==F]
+          df <- data.frame(dat = tsi,tm = 1:length(tsi))
+          ls <- loess(dat  ~ tm, df, span = 0.5)
+          tmps <- predict(ls, data.frame(tm = 1:length(tsi)), se = TRUE)
+          tsi <- tmps$fit    
+        }
+        
+        if((inp == 'smooth') | (inp == 'raw')){ 
+          outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+          m_RRIi[ii,i] <- outp$RRI# measured RRI 
+          m_R80pi[ii,i] <- outp$R80P# measured R80p 
+          m_YrYri[ii,i] <- outp$YrYr# measured YrYR
+          rm(outp)
+        }
+        if(funSet$input[rset] == 'BFAST'){ 
+          outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+          m_RRIi[ii,i] <- outp$RRI# measured RRI 
+          m_R80pi[ii,i] <- outp$R80P# measured R80p 
+          m_YrYri[ii,i] <- outp$YrYr# measured YrYR
+          m_SLi[ii,i] <- outp$Sl# measured YrYR
+          #print(outp)
+          rm(outp)
+        }
+        
+        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+        s_RRIi[ii,i] <- outp$RRI#simulated (true) RRI 
+        s_R80pi[ii,i] <- outp$R80P#simulated (true) R80p
+        s_YrYri[ii,i] <- outp$YrYr 
+        s_SLi[ii,i] <- tsref[tdist+3] - tsref[tdist+2]
+        #print(outp)
+        rm(outp)
+        
+      }
+    }
+    
+    
+    m_RRI[[simcase]][[rset]] <-m_RRIi
+    m_R80p[[simcase]][[rset]] <-m_R80pi
+    m_YrYr[[simcase]][[rset]] <-m_YrYri
+    m_SL[[simcase]][[rset]] <-m_SLi
+    s_RRI[[simcase]][[rset]] <-s_RRIi
+    s_R80p[[simcase]][[rset]] <-s_R80pi
+    s_YrYr[[simcase]][[rset]] <-s_YrYri
+    s_SL[[simcase]][[rset]] <-s_SLi
+    rm(m_RRIi, m_R80pi, m_YrYri, m_SLi, s_RRIi, s_R80pi, s_YrYri, s_SLi)
+  }
+}
+
+
+# Stop the clock
+proc.time() - ptm
+```
+
+## Export results
+Saves the recovery indicators and used recovery settings as RDate file. The following structure of the RData files is being used:
+
+m_RRI, m_R80P, m_YrYr, and m_SL contain the RRI, R80P, YrYr, and post-disturbance slope recovery indicators derived from the simulated time series, respectively. s_RRI, s_R80P, s_YrYr, and s_SL contain the same recovery indicators, but derived from the introduced disturbance signal. The latter are thus consided to be the reference/truth.
+
+Each indicator file contains a named list with *nd* items, each corresponding to a simulation case. Each of the *nd* simulation case items contains *nr* matrices, each corresponding to the settings used to compute the recovery indicator. The matrices have *nc* x *nt* dimensions, and correspond to the number of parameter values for the evaluated parameter and simulated time series, respectively.
+
+
+```{r}
+
+#-------------------------------------------------
+# export: save the recovery indicaters as an Rdata file
+save(m_RRI, file=file.path(ofolder, paste0(basename, '_m_RRI.rda')))
+save(m_R80p, file=file.path(ofolder, paste0(basename, '_m_R80P.rda')))
+save(m_YrYr, file=file.path(ofolder, paste0(basename, '_m_YrYr.rda')))
+save(m_SL, file=file.path(ofolder, paste0(basename, '_m_SL.rda')))
+
+save(s_RRI, file=file.path(ofolder, paste0(basename, '_s_RRI.rda')))
+save(s_R80p, file=file.path(ofolder, paste0(basename, '_s_R80P.rda')))
+save(s_YrYr, file=file.path(ofolder, paste0(basename, '_s_YrYr.rda')))
+save(s_SL, file=file.path(ofolder, paste0(basename, '_s_SL.rda')))
+
+save(funSet, file=file.path(ofolder, paste0(basename, '_recSettings.rda')))
+
+```

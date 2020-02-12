@@ -1,0 +1,125 @@
+---
+title: "Simulate time series"
+author: "Wanda De Keersmaecker"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+```{r, include=FALSE}
+source_rmd <- function(file, local = FALSE, ...){
+  options(knitr.duplicate.label = 'allow')
+  
+  tempR <- tempfile(tmpdir = ".", fileext = ".R")
+  on.exit(unlink(tempR))
+  knitr::purl(file, output=tempR, quiet = TRUE)
+  
+  envir <- globalenv()
+  source(tempR, local = envir, ...)
+}
+```
+
+## Inputs
+* ifolder: directory to folder where the data characteristics are stored
+* ofolder: directory to folder where the simulated time series will be stored
+* basename: base name of the data files
+
+```{r}
+ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder with data characteristics
+ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
+
+basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
+```
+
+## Import data and source functions
+
+```{r}
+# source functions
+source_rmd( 'fun_general.Rmd')
+source_rmd( 'fun_simulate.Rmd')
+# import settings file
+sttngs <- loadRData(file = file.path(ifolder, paste0(basename, '_VI_simTS_settings_var.rda')))
+
+```
+
+## Simulate time series
+
+```{r}
+# iterate over parameters that are evaluated
+for(vr in c(4,7)){#length(sttngs$variables) 5,7
+  # initiale lists to store the simulated time series 
+  simTS <- list()
+  simTSTr <- list()
+  simTSSeas <- list()
+  simTSRem <- list()
+  simTSDist <- list()
+  simTSParam <- list()
+  
+  #setvr <- sttngs[[vr]]# settings of simulation
+  evr <- sttngs$variables[vr]# name of parameter that will be evaluated in the simulation
+  
+  # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
+  for (i in 1:length(sttngs[[evr]])){     
+    print(i)
+    # define all possible combination of the values of the parameters (except the one to be evaluated)
+    vrit <- sttngs$variables[-vr] # parameters that should be combined
+    comb <- expand.grid(sttngs[vrit]) # combine all parameters, except the evaluated one
+    comb[[evr]] <- sttngs[[evr]][i] # add value of parameter to be evaluated
+    
+    # initiate a list to store the simulated time series for this particular parameter
+    simTSi <- list()
+    simTSTri <- list()
+    simTSSeasi <- list()
+    simTSRemi <- list()
+    #simTSDist <- list()
+    simTSParami <- list()
+    
+    # iterate over the parameter combinations and simulate each time nrep time series per parameter combination
+    cnt <- 0
+    for (pari in 1: dim(comb)[1]){
+      # simulate nrep time series for a parameter combination
+      sc <- simulCase(sttngs$nrep, comb$nyr[pari], sttngs$nobsYr, sttngs$nDr, sttngs$seasAv, comb$seasAmp[pari],
+                      sttngs$trAv, comb$remSd[pari], c(comb$distMag[pari],comb$distMag[pari]), 
+                      comb$distT[pari], c(comb$distRec[pari],comb$distRec[pari]), sttngs$remcoef, 
+                      comb$missVal[pari], sttngs$DistMissVal)
+      # compress each of the simulated time series and store the time series in a list 
+      for (parii in 1:sttngs$nrep){
+        cnt <- cnt+1
+        simTSi[[cnt]] <- TScompress(sc[[1]][parii,])
+        simTSTri[[cnt]] <- sc[[2]][parii,1]
+        tmp <-sc[[3]][parii,]
+        tmp[is.na(sc[[1]])] <- NA
+        simTSSeasi[[cnt]] <- TScompress(tmp)
+        tmp <-sc[[4]][parii,]
+        tmp[is.na(sc[[1]])] <- NA
+        simTSRemi[[cnt]] <- TScompress(tmp)
+        #simTSDist[[cnt]] <- TScompress(sc[[5]])
+        simTSParami[[cnt]] <- sc[[6]] [parii,]
+      }            
+      rm(sc)
+    } 
+    
+    simTS[[i]] <- simTSi
+    simTSTr[[i]] <- simTSTri
+    simTSSeas[[i]] <- simTSSeasi
+    simTSRem[[i]] <- simTSRemi
+    #simTSDist[[i]] <- simTSDisti
+    simTSParam[[i]] <- simTSParami
+    rm(comb, simTSi, simTSTri, simTSSeasi, simTSRemi, simTSParami)#, simTSDisti
+    gc()
+  }   
+  save(simTS, file = file.path(ofolder, paste0(basename, '_VI_simTS_' , evr, '.rda')))# '_', i,
+  save(simTSTr, file = file.path(ofolder, paste0(basename, '_VI_simTSTr_', evr, '.rda')))
+  save(simTSSeas, file = file.path(ofolder, paste0(basename, '_VI_simTSSeas_', evr, '.rda')))
+  save(simTSRem, file = file.path(ofolder, paste0(basename, '_VI_simTSRem_', evr, '.rda')))
+  #save(simTSDist, file = file.path(ofolder, paste0(basename, '_VI_simTSDist_', evr, '_', i,'.rda')))
+  save(simTSParam, file = file.path(ofolder, paste0(basename, '_VI_simTSParam_', evr, '.rda')))
+  rm(simTS,simTSTr,simTSSeas, simTSRem, simTSParam) #simTSDist
+  # gc()
+}
+```
+
+
