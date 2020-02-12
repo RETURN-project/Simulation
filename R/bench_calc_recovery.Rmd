@@ -56,7 +56,6 @@ library(imputeTS)
 ```{r}
 ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
 ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
-nfolder <- 'C:\\Users\\keers001\\Dropbox\\output\\Jupyter_notebook\\Functions\\'
 
 basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
 caseList <- c('distMag','missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#)# simulation cases to be evaluated
@@ -82,9 +81,8 @@ funSet <- list('freq' = c( 'dense','dense'),
 ## Extract recovery indicators
 
 ```{r}
-system(paste0('jupyter-nbconvert.exe ', nfolder, 'rec_Functions.ipynb  --to script'))#, intern=FALSE
-source('fun_recovery.r')
-source('fun_general.r')
+source_rmd('fun_recovery.Rmd')
+source_rmd('fun_general.Rmd')
 
 # Start the clock
 ptm <- proc.time()

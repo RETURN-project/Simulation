@@ -371,7 +371,7 @@ summary {
 
 <div id="characterize-dynamics-of-landsat-time-series-components" class="section level1">
 <h1>Characterize dynamics of Landsat time series components</h1>
-<p><font color="gray">This script decomposes time series into a set of components (trend, remainder, and seasonality) and characterizes each of these components</font></p>
+<p>This script decomposes time series into a set of components (trend, remainder, and seasonality) and characterizes each of these components</p>
 <div id="import-libraries-and-source-functions" class="section level2">
 <h2>1. Import libraries and source functions</h2>
 <pre class="r"><code>library(bfast)
@@ -389,8 +389,8 @@ source_rmd(&#39;fun_simulate.Rmd&#39;)</code></pre>
 <li><em>nyr</em>: number of years of the input time series</li>
 <li><em>nobsYr</em>: number of observations per year of the input time series</li>
 </ul>
-<pre class="r"><code>ifolder &lt;-&#39;C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\&#39;
-ofolder &lt;-&#39;C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\&#39;
+<pre class="r"><code>ifolder &lt;- &#39;../Data/SampledData&#39;#&#39;C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\&#39;
+ofolder &lt;-&#39;../Data/char&#39;#&#39;C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\&#39;
 basename &lt;- &#39;LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI&#39;
 nyr &lt;- 18 # number of years in observation period
 nobsYr &lt;- 365 # number of observations per year</code></pre>
@@ -468,7 +468,12 @@ for(i in 1:dim(dataVIRembf)[1]){
 </div>
 <div id="export" class="section level2">
 <h2>6. Export</h2>
-<pre class="r"><code># Components
+<pre class="r"><code># create output folder if it does not already exist
+if (! file.exists(ofolder)){
+    dir.create(ofolder)
+}
+
+# Components
 save(dataVISeasbf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Seasbf.rda&#39;)))
 save(dataVIRembf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Rembf.rda&#39;)))
 save(dataVITrbf, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), &#39;_Trbf.rda&#39;)))
