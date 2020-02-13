@@ -93,7 +93,7 @@ dataVISeasCoef <- tmp[[4]]
 The following characteristics are derived from the decomposed time series:
 
 * fraction of missing values
-* half of the seasonal amplitude (one value for input each time series)
+* seasonal amplitude (one value for input each time series)
 * average seasonal pattern
 * offset 
 * standard deviation of the remainder component (one value per input time series)
@@ -108,7 +108,7 @@ tsVIMissVal <- rowSums(is.na(dfVi))/dim(dfVi)[2]
 # ------------------------------------------------
 # seasonality
 
-# half of the seasonal amplitude for each pixel
+# seasonal amplitude for each pixel
 seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) 
 #average seasonal pattern
 seasS <- dataVISeasbf[dataVISeasbf[,1]<0,]# only southern hemisphere to avoid interference of seasonal cycles

@@ -19,19 +19,19 @@ knitr::opts_chunk$set(echo = TRUE)
 * __df__: a dataframe with time series that need to be decomposed. The dataframe needs to be structured as follows: each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the time series values for each observation date.
 * __nyr__: number of years of the input time series
 * __nobsYr__: number of observations per year of the input time series</font>
- 
- <font color=gray>__Function outputs__:
- 
+
+<font color=gray>__Function outputs__:
+
 * __Seasonality__: a dataframe with the seasonality of each pixel. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the seasonality values for each observation date.
 * __Remainder__: a dataframe with the remainder of each pixel. Dataframe is structured in the same way as the seasonality.
 * __Trend__: a dataframe with the trend of each pixel. Dataframe is structured in the same way as the seasonality.
 * __Seasonality_coefficients__: a dataframe with the coeficients of the fitted harmonic function. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the coefficients of the fitted harmonic function. </font>
 
- 
+
 
 ```{r}
 decompTSbfast <- function(df, nyr, nobsYr){
-# Initialize each output data frame with NA values  
+  # Initialize each output data frame with NA values  
   # seasonality
   dfSeas <- data.frame(data= matrix(NA, nrow = dim(df)[1],ncol= dim(df)[2]))
   colnames(dfSeas) <-  c('lat', 'lon', colnames(df)[-c(1,2)])
@@ -46,22 +46,22 @@ decompTSbfast <- function(df, nyr, nobsYr){
   colnames(dfSeasCoef) <-  c('lat', 'lon', 'cos', 'sin')
   
   library(bfast)
-    # Iterate over each pixel and decompose time series
+  # Iterate over each pixel and decompose time series
   for (i in 1:dim(df)[1]){
-      err <- 0
-      # Create time series object
+    err <- 0
+    # Create time series object
     tss <- ts(as.numeric(df[i,-c(1,2)]), frequency =nobsYr )
-      # Use BFAST01 to decompose time series
+    # Use BFAST01 to decompose time series
     tryCatch({
-    tmp <- bfast01(tss, 
-                   formula = response ~ trend + harmon, order=1, level = 0.0001)#'periodic'
-        }, error = function(e) {
-    if(e$message == "inadmissable change points: 'from' is larger than 'to'"){
+      tmp <- bfast01(tss, 
+                     formula = response ~ trend + harmon, order=1, level = 0.0001)#'periodic'
+    }, error = function(e) {
+      if(e$message == "inadmissable change points: 'from' is larger than 'to'"){
         #print(i)
         err <- 1
-    }
+      }
     })
-      if(err == 1){next}
+    if(err == 1){next}
     # coeficients of fitted trend and seasonality
     coef<-tmp$model[[1]]$coefficients
     # fitted seasonality and trend
@@ -73,11 +73,11 @@ decompTSbfast <- function(df, nyr, nobsYr){
     dfSeas[i,] <- c(df$lat[i], df$lon[i], coef[3]*cos(2*pi*time(tss))+ coef[4]*sin(2*pi*time(tss)))
     dfRem[i,] <- c(df$lat[i], df$lon[i], rem)
     dfTr[i,] <- c(df$lat[i], df$lon[i],coef[1]+coef[2]* 1:length(tss))
-        
+    
   }
   lst <- list(dfSeas,dfRem,dfTr, dfSeasCoef)
-    names(lst) <- c('Seasonality', 'Remainder', 'Trend', 'Seasonality_coefficients')
-    lst
+  names(lst) <- c('Seasonality', 'Remainder', 'Trend', 'Seasonality_coefficients')
+  lst
 }
 ```
 
@@ -93,32 +93,32 @@ _This function automatically fits an ARMA model without seasonal component._
 
 * ARMA model coefficients. A list containing the ARMA coefficients and their order (number of AR coefficients, non-seasonal differences and MA coefficients</font>
 
- ```{r}
- # ARMA coefficients
+```{r}
+# ARMA coefficients
 getARMAcoef <- function(tsx){
-  arm <- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving 
-  #the number of AR, MA, seasonal AR and seasonal MA coefficients, 
-  #plus the period, and the number of non-seasonal, and seasonal differences.
-  teller <- 0
-  coefmod <- list()
-  if(arm$arma[1]>0){
-    coefmod <- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
-    teller <- teller + arm$arma[1]
-  }
-  if(arm$arma[2]>0){
-    coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[1])]))
-    teller <- teller + arm$arma[2]
-  }
-  coefmod <- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
-  coefmod
+arm <- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving 
+#the number of AR, MA, seasonal AR and seasonal MA coefficients, 
+#plus the period, and the number of non-seasonal, and seasonal differences.
+teller <- 0
+coefmod <- list()
+if(arm$arma[1]>0){
+coefmod <- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
+teller <- teller + arm$arma[1]
 }
- ```
- 
+if(arm$arma[2]>0){
+coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[1])]))
+teller <- teller + arm$arma[2]
+}
+coefmod <- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
+coefmod
+}
+```
+
 # 2. Time series simulation
- 
+
 ## 2.1 Simulate one time series with disturbance
 _Function to simulate a time series with disturbance._
-    
+
 <_font color=gray>__Function inputs__:
 
 * __nyr__ = number of years that need to be simulated
@@ -126,19 +126,19 @@ _Function to simulate a time series with disturbance._
 * __tMiss__ = timing of missing values [observation number]. If tMiss equals NA, no missing values are introduced.
 * __nDr__ = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen.
 * __seasAv__= average seasonality profile
-* __seasAmp__ = half of the seasonality amplitude
+* __seasAmp__ = seasonality amplitude
 * __trAv__ = offset value of time series
 * __remSd__ = standard deviation of the remainder
 * __remMod__ = ARMA model of remainder
 * __distMag__ = magnitude of the disturbance
 * __distT__ = timing of the disturbance [observation number]
 * __distRec__ = duration of the recovery [number of observations]</font>
- 
- <font color=gray>__Function outputs__:
- 
+
+<font color=gray>__Function outputs__:
+
 * years for which a drought was introduced 
 * a time series object, containing the simulated seasonality, trend, remainder, disturbance, and the sum of these components. </font>
- 
+
 ```{r simults}
 simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod, distMag, distT, distRec){
   #-------------------------------------------------
@@ -148,7 +148,7 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
     simSeas <- simSeas[1:(length(simSeas)-nobsyr)]
   }
   simSeas <- simSeas/max(seasAv)*seasAmp
-    
+  
   # introduce drought years (seasonality equal to minimum value)
   if (nDr==0) ydr <- 0
   if (nDr > 0){
@@ -161,29 +161,29 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
       simSeas[strt : endt] <- -seasAmp
     }
   }
- 
+  
   #-------------------------------------------------
   # simulate offset
   simTr <- rep(trAv, times=(nyr*nobsyr))
-    
+  
   #-------------------------------------------------
   # simulate remainder
   simRem <- arima.sim(model = remMod, n = nobsyr*nyr, sd = remSd)
-    
+  
   #-------------------------------------------------
   # simulate disturbance
-    simDist <- simulDist(distT, distRec, distMag, nobsyr*nyr)
+  simDist <- simulDist(distT, distRec, distMag, nobsyr*nyr)
   #if ((distT+distRec) <= (nobsyr*nyr)){
-   # simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobsyr*nyr)-distRec -distT +1)))
+  # simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobsyr*nyr)-distRec -distT +1)))
   #}
   #if ((distT+distRec) > (nobsyr*nyr)){
-   # simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
-    #simDist <- simDist[1:(nobsyr*nyr)]
+  # simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
+  #simDist <- simDist[1:(nobsyr*nyr)]
   #}
   #-------------------------------------------------
   # Sum components
-   simTS <-simSeas+simTr+simRem+simDist
-   # set missing values
+  simTS <-simSeas+simTr+simRem+simDist
+  # set missing values
   if (is.na(tMiss[1])==F){
     simTS[tMiss] <- NA
   }
@@ -193,7 +193,7 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
 ## 2.2 Simulate disturbance component
 
 _Simulation of a disturbance as a step function with linear recovery trend. The time series equals zero when it is not being disturbed. The disturbance introduces at observation number *distT* a negative value with magnitude *distMag*. The linear recovery takes *distRec* observations._
-    
+
 <font color=gray>__Function inputs__:
 
 * __distT__ = timing of the disturbance [observation number]
@@ -205,24 +205,24 @@ _Simulation of a disturbance as a step function with linear recovery trend. The 
 
 * a vector with the simulated disturbance component
 
- 
+
 ```{r simulDist}
 simulDist <- function(distT, distRec, distMag, nobs){
-    if ((distT+distRec) <= (nobs)){
-        simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobs)-distRec -distT +1)))
-    }
-    if ((distT+distRec) > (nobs)){
-        simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
-        simDist <- simDist[1:(nobs)]
-    }
-    simDist
+  if ((distT+distRec) <= (nobs)){
+    simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobs)-distRec -distT +1)))
+  }
+  if ((distT+distRec) > (nobs)){
+    simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
+    simDist <- simDist[1:(nobs)]
+  }
+  simDist
 }
 
 ```
 ## 2.3 Simulate a set of time series
 
 _Simulation of *nrep* disturbance time series._
-    
+
 <font color=gray>__Function inputs__:
 
 * __nrep__ = number of time series to simulate
@@ -230,7 +230,7 @@ _Simulation of *nrep* disturbance time series._
 *  __nobsyr__ = number of observations per year that will be simulated
 * __nDr__ = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen for each of the simulated time series.
 * __seasAv__= average seasonality profile
-* __seasAmp__ = half of the seasonality amplitude
+* __seasAmp__ = seasonality amplitude
 * __trAv__ = offset value of time series
 * __remSd__ = standard deviation of the remainder
 * __distMaglim__ = limits of the disturbance magnitude, should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the disturbance magnitude is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a disturbance magnitude is randomly chosen in the given interval for each simulated time series.
@@ -284,13 +284,13 @@ simulCase <- function(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
     
     # missing values to be introduced
     if (is.na(mval)){tMiss = NA}else{
-        if(mvaldist == 'interval'){
-            tMiss <- 1:(nyr*nobsYr) # missing values
-            tMiss <- tMiss[-seq(1,(nyr*nobsYr),mval)]
-        }
-        if(mvaldist == 'random'){
-           tMiss <- sample(1:(nyr*nobsYr), round(nyr*nobsYr*mval)) 
-        } 
+      if(mvaldist == 'interval'){
+        tMiss <- 1:(nyr*nobsYr) # missing values
+        tMiss <- tMiss[-seq(1,(nyr*nobsYr),mval)]
+      }
+      if(mvaldist == 'random'){
+        tMiss <- sample(1:(nyr*nobsYr), round(nyr*nobsYr*mval)) 
+      } 
     }
     # simulate time series
     sts <- simulTS(nyr, nobsYr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remcoef[[modi]], distMag, distT, distRec)
