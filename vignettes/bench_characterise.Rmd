@@ -29,7 +29,7 @@ This script decomposes time series into a set of components (trend, remainder, a
 
 ## 1. Import libraries and source functions
 
-```{r, message=FALSE}
+```{r}
 library(bfast)
 library(forecast)
 source_rmd('fun_general.Rmd')
@@ -49,7 +49,7 @@ The following inputs are required:
 
 
 ```{r}
-ifolder <- '../Data/SampledData'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
+ifolder <- '../Data/SampledData/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
 ofolder <-'../Data/char'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
 basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
 nyr <- 18 # number of years in observation period
@@ -154,4 +154,9 @@ save(Rem_VIsd, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileV
 
 save(Rem_VIcoef, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), '_Rem_VIcoef.rda')))
 save(tsVIMissVal, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifileVI), '_ts_VIMissVal.rda')))
+```
+
+## 7. Plot data characteristics
+```{r}
+
 ```
