@@ -1,6 +1,6 @@
 context("Characterise time series")
 
-test_that("Decomposition harmonic + noise", {
+test_that("Decomposition harmonic + trend + noise", {
 
   source_rmd <- function(file, local = FALSE, ...){
     options(knitr.duplicate.label = 'allow')
@@ -23,7 +23,7 @@ test_that("Decomposition harmonic + noise", {
   seas <- 0.5*sin(2*pi*(1:(12*6))/12)
 
   # trend
-  tr <- 0.7
+  tr <- 0.3 + 0.02*(1:(12*6))
 
   # noise
   rn <- runif(12*6, min=0, max=100)/200
@@ -37,11 +37,11 @@ test_that("Decomposition harmonic + noise", {
   dc <- decompTSbfast(tsi, 6, 12)
 
   #compare simulated and derived seasonality
+  difftr <- mean(as.numeric(dc$Trend[,-c(1,2)]) - tr)
   diffseas <- mean(as.numeric(dc$Seasonality[,-c(1,2)]) - seas)
 
   # test
   expect_equal(diffseas, 0, tolerance = 1e-4)
-
+  expect_equal(diffseas, 0, tolerance = 1e-4)
 })
-
 
