@@ -57,8 +57,44 @@ test_that("ARMA coefficients",{
 })
 
 test_that("Disturbance simulation",{
+  source('fun_simulate.R')
+  # disturbance and recovery before end of time series
+  distT1 <- 5
+  distRec1 <- 12
+  distMag1 <- -10
+  nobs1 <- 20
 
+  ts1 <- simulDist(distT1, distRec1, distMag1, nobs1)
+
+  # recovery after end of time series
+  distT2 <- 5
+  distRec2 <- 20
+  distMag2 <- -10
+  nobs2 <- 20
+
+  ts2 <- simulDist(distT2, distRec2, distMag2, nobs2)
+
+  # disturbance after end of time series
+  distT3 <- 25
+  distRec3 <- 16
+  distMag3 <- -10
+  nobs3 <- 20
+
+  ts3 <- simulDist(distT3, distRec3, distMag3, nobs3)
+
+  # tests
+  expect_equal(distMag1,min(ts1))# magnitude disturbance
+  expect_equal(distT1,which(ts1 == min(ts1)))# timing disturbance
+  expect_equal(distRec1,length(which(ts1 < 0)), tolerance = 1)# recovery period
+
+  expect_equal(distMag2,min(ts2))# magnitude disturbance
+  expect_equal(distT2,which(ts2 == min(ts2)))# timing disturbance
+  expect_equal(distMag2/(distRec2-1), (ts2[distT2] - ts2[distT2 + 1]))# recovery slope
+
+  expect_equal(nobs3,length(which(ts3 == 0)))# no disturbance and recovery
 })
+
+
 
 
 test_that("Time series simulation",{
