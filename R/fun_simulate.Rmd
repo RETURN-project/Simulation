@@ -106,8 +106,8 @@ coefmod <- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
 teller <- teller + arm$arma[1]
 }
 if(arm$arma[2]>0){
-coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[1])]))
-teller <- teller + arm$arma[2]
+coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[2])]))
+#teller <- teller + arm$arma[2]
 }
 coefmod <- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
 coefmod

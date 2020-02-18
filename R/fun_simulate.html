@@ -388,7 +388,7 @@ summary {
 <li><strong>Seasonality_coefficients</strong>: a dataframe with the coeficients of the fitted harmonic function. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the coefficients of the fitted harmonic function. </font></li>
 </ul>
 <pre class="r"><code>decompTSbfast &lt;- function(df, nyr, nobsYr){
-# Initialize each output data frame with NA values  
+  # Initialize each output data frame with NA values  
   # seasonality
   dfSeas &lt;- data.frame(data= matrix(NA, nrow = dim(df)[1],ncol= dim(df)[2]))
   colnames(dfSeas) &lt;-  c(&#39;lat&#39;, &#39;lon&#39;, colnames(df)[-c(1,2)])
@@ -403,22 +403,22 @@ summary {
   colnames(dfSeasCoef) &lt;-  c(&#39;lat&#39;, &#39;lon&#39;, &#39;cos&#39;, &#39;sin&#39;)
   
   library(bfast)
-    # Iterate over each pixel and decompose time series
+  # Iterate over each pixel and decompose time series
   for (i in 1:dim(df)[1]){
-      err &lt;- 0
-      # Create time series object
+    err &lt;- 0
+    # Create time series object
     tss &lt;- ts(as.numeric(df[i,-c(1,2)]), frequency =nobsYr )
-      # Use BFAST01 to decompose time series
+    # Use BFAST01 to decompose time series
     tryCatch({
-    tmp &lt;- bfast01(tss, 
-                   formula = response ~ trend + harmon, order=1, level = 0.0001)#&#39;periodic&#39;
-        }, error = function(e) {
-    if(e$message == &quot;inadmissable change points: &#39;from&#39; is larger than &#39;to&#39;&quot;){
+      tmp &lt;- bfast01(tss, 
+                     formula = response ~ trend + harmon, order=1, level = 0.0001)#&#39;periodic&#39;
+    }, error = function(e) {
+      if(e$message == &quot;inadmissable change points: &#39;from&#39; is larger than &#39;to&#39;&quot;){
         #print(i)
         err &lt;- 1
-    }
+      }
     })
-      if(err == 1){next}
+    if(err == 1){next}
     # coeficients of fitted trend and seasonality
     coef&lt;-tmp$model[[1]]$coefficients
     # fitted seasonality and trend
@@ -430,11 +430,11 @@ summary {
     dfSeas[i,] &lt;- c(df$lat[i], df$lon[i], coef[3]*cos(2*pi*time(tss))+ coef[4]*sin(2*pi*time(tss)))
     dfRem[i,] &lt;- c(df$lat[i], df$lon[i], rem)
     dfTr[i,] &lt;- c(df$lat[i], df$lon[i],coef[1]+coef[2]* 1:length(tss))
-        
+    
   }
   lst &lt;- list(dfSeas,dfRem,dfTr, dfSeasCoef)
-    names(lst) &lt;- c(&#39;Seasonality&#39;, &#39;Remainder&#39;, &#39;Trend&#39;, &#39;Seasonality_coefficients&#39;)
-    lst
+  names(lst) &lt;- c(&#39;Seasonality&#39;, &#39;Remainder&#39;, &#39;Trend&#39;, &#39;Seasonality_coefficients&#39;)
+  lst
 }</code></pre>
 </div>
 <div id="fit-arma-model" class="section level2">
@@ -450,21 +450,21 @@ summary {
 </ul>
 <pre class="r"><code># ARMA coefficients
 getARMAcoef &lt;- function(tsx){
- arm &lt;- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving 
- #the number of AR, MA, seasonal AR and seasonal MA coefficients, 
- #plus the period, and the number of non-seasonal, and seasonal differences.
- teller &lt;- 0
- coefmod &lt;- list()
- if(arm$arma[1]&gt;0){
-   coefmod &lt;- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
-   teller &lt;- teller + arm$arma[1]
- }
- if(arm$arma[2]&gt;0){
-   coefmod &lt;- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[1])]))
-   teller &lt;- teller + arm$arma[2]
- }
- coefmod &lt;- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
- coefmod
+arm &lt;- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving 
+#the number of AR, MA, seasonal AR and seasonal MA coefficients, 
+#plus the period, and the number of non-seasonal, and seasonal differences.
+teller &lt;- 0
+coefmod &lt;- list()
+if(arm$arma[1]&gt;0){
+coefmod &lt;- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
+teller &lt;- teller + arm$arma[1]
+}
+if(arm$arma[2]&gt;0){
+coefmod &lt;- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[2])]))
+#teller &lt;- teller + arm$arma[2]
+}
+coefmod &lt;- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
+coefmod
 }</code></pre>
 </div>
 </div>
@@ -480,7 +480,7 @@ getARMAcoef &lt;- function(tsx){
 <li><strong>tMiss</strong> = timing of missing values [observation number]. If tMiss equals NA, no missing values are introduced.</li>
 <li><strong>nDr</strong> = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen.</li>
 <li><strong>seasAv</strong>= average seasonality profile</li>
-<li><strong>seasAmp</strong> = half of the seasonality amplitude</li>
+<li><strong>seasAmp</strong> = seasonality amplitude</li>
 <li><strong>trAv</strong> = offset value of time series</li>
 <li><strong>remSd</strong> = standard deviation of the remainder</li>
 <li><strong>remMod</strong> = ARMA model of remainder</li>
@@ -501,7 +501,7 @@ getARMAcoef &lt;- function(tsx){
     simSeas &lt;- simSeas[1:(length(simSeas)-nobsyr)]
   }
   simSeas &lt;- simSeas/max(seasAv)*seasAmp
-    
+  
   # introduce drought years (seasonality equal to minimum value)
   if (nDr==0) ydr &lt;- 0
   if (nDr &gt; 0){
@@ -514,29 +514,29 @@ getARMAcoef &lt;- function(tsx){
       simSeas[strt : endt] &lt;- -seasAmp
     }
   }
- 
+  
   #-------------------------------------------------
   # simulate offset
   simTr &lt;- rep(trAv, times=(nyr*nobsyr))
-    
+  
   #-------------------------------------------------
   # simulate remainder
   simRem &lt;- arima.sim(model = remMod, n = nobsyr*nyr, sd = remSd)
-    
+  
   #-------------------------------------------------
   # simulate disturbance
-    simDist &lt;- simulDist(distT, distRec, distMag, nobsyr*nyr)
+  simDist &lt;- simulDist(distT, distRec, distMag, nobsyr*nyr)
   #if ((distT+distRec) &lt;= (nobsyr*nyr)){
-   # simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobsyr*nyr)-distRec -distT +1)))
+  # simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobsyr*nyr)-distRec -distT +1)))
   #}
   #if ((distT+distRec) &gt; (nobsyr*nyr)){
-   # simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
-    #simDist &lt;- simDist[1:(nobsyr*nyr)]
+  # simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
+  #simDist &lt;- simDist[1:(nobsyr*nyr)]
   #}
   #-------------------------------------------------
   # Sum components
-   simTS &lt;-simSeas+simTr+simRem+simDist
-   # set missing values
+  simTS &lt;-simSeas+simTr+simRem+simDist
+  # set missing values
   if (is.na(tMiss[1])==F){
     simTS[tMiss] &lt;- NA
   }
@@ -558,14 +558,14 @@ getARMAcoef &lt;- function(tsx){
 <li>a vector with the simulated disturbance component</li>
 </ul>
 <pre class="r"><code>simulDist &lt;- function(distT, distRec, distMag, nobs){
-    if ((distT+distRec) &lt;= (nobs)){
-        simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobs)-distRec -distT +1)))
-    }
-    if ((distT+distRec) &gt; (nobs)){
-        simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
-        simDist &lt;- simDist[1:(nobs)]
-    }
-    simDist
+  if ((distT+distRec) &lt;= (nobs)){
+    simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobs)-distRec -distT +1)))
+  }
+  if ((distT+distRec) &gt; (nobs)){
+    simDist &lt;- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec))
+    simDist &lt;- simDist[1:(nobs)]
+  }
+  simDist
 }</code></pre>
 </div>
 <div id="simulate-a-set-of-time-series" class="section level2">
@@ -578,7 +578,7 @@ getARMAcoef &lt;- function(tsx){
 <li><strong>nobsyr</strong> = number of observations per year that will be simulated</li>
 <li><strong>nDr</strong> = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen for each of the simulated time series.</li>
 <li><strong>seasAv</strong>= average seasonality profile</li>
-<li><strong>seasAmp</strong> = half of the seasonality amplitude</li>
+<li><strong>seasAmp</strong> = seasonality amplitude</li>
 <li><strong>trAv</strong> = offset value of time series</li>
 <li><strong>remSd</strong> = standard deviation of the remainder</li>
 <li><strong>distMaglim</strong> = limits of the disturbance magnitude, should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the disturbance magnitude is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a disturbance magnitude is randomly chosen in the given interval for each simulated time series.</li>
@@ -631,13 +631,13 @@ getARMAcoef &lt;- function(tsx){
     
     # missing values to be introduced
     if (is.na(mval)){tMiss = NA}else{
-        if(mvaldist == &#39;interval&#39;){
-            tMiss &lt;- 1:(nyr*nobsYr) # missing values
-            tMiss &lt;- tMiss[-seq(1,(nyr*nobsYr),mval)]
-        }
-        if(mvaldist == &#39;random&#39;){
-           tMiss &lt;- sample(1:(nyr*nobsYr), round(nyr*nobsYr*mval)) 
-        } 
+      if(mvaldist == &#39;interval&#39;){
+        tMiss &lt;- 1:(nyr*nobsYr) # missing values
+        tMiss &lt;- tMiss[-seq(1,(nyr*nobsYr),mval)]
+      }
+      if(mvaldist == &#39;random&#39;){
+        tMiss &lt;- sample(1:(nyr*nobsYr), round(nyr*nobsYr*mval)) 
+      } 
     }
     # simulate time series
     sts &lt;- simulTS(nyr, nobsYr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remcoef[[modi]], distMag, distT, distRec)
