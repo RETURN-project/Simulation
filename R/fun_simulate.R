@@ -96,21 +96,22 @@ decompTSbfast <- function(df, nyr, nobsYr){
 ## ------------------------------------------------------------------------
 # ARMA coefficients
 getARMAcoef <- function(tsx){
-arm <- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving
-#the number of AR, MA, seasonal AR and seasonal MA coefficients,
-#plus the period, and the number of non-seasonal, and seasonal differences.
-teller <- 0
-coefmod <- list()
-if(arm$arma[1]>0){
-coefmod <- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
-teller <- teller + arm$arma[1]
-}
-if(arm$arma[2]>0){
-coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[2])]))
-#teller <- teller + arm$arma[2]
-}
-coefmod <- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
-coefmod
+  library(forecast)
+  arm <- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving
+  #the number of AR, MA, seasonal AR and seasonal MA coefficients,
+  #plus the period, and the number of non-seasonal, and seasonal differences.
+  teller <- 0
+  coefmod <- list()
+  if(arm$arma[1]>0){
+    coefmod <- c(coefmod, ar = as.numeric(arm$coef[1:arm$arma[1]]))
+    teller <- teller + arm$arma[1]
+  }
+  if(arm$arma[2]>0){
+    coefmod <- c(coefmod, ma = as.numeric(arm$coef[(1+teller):(teller+arm$arma[2])]))
+    #teller <- teller + arm$arma[2]
+  }
+  coefmod <- c(coefmod, order = as.numeric(c(arm$arma[1], arm$arma[6], arm$arma[2])))
+  coefmod
 }
 
 #'
