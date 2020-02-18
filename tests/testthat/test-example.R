@@ -33,7 +33,6 @@ test_that("Decomposition harmonic + trend + noise", {
   expect_equal(diffseas, 0, tolerance = 1e-4)
 })
 
-
 test_that("ARMA coefficients",{
   source('fun_simulate.R')
   # Generate time series with predefined ARMA coefficients
@@ -94,9 +93,6 @@ test_that("Disturbance simulation",{
   expect_equal(nobs3,length(which(ts3 == 0)))# no disturbance and recovery
 })
 
-
-
-
 test_that("Time series simulation",{
   source('fun_simulate.R')
   nyr <- 5 # number of years
@@ -127,6 +123,27 @@ test_that("Time series simulation",{
   expect_equal(distRec,length(which(tsi[[2]][,4] < 0)), tolerance = 1)# recovery period
 })
 
+test_that('simulation case'){
+  source('fun_simulate.R')
+  nrep <- 5
+  nyr <- 5 # number of years
+  nobsYr <- 12 # number of observations per year
+  #tMiss <- c(1,5,11,23)# observations having missing values
+  mval <- 0.2
+  mvaldist <- 'random'
+  nDr <- 0 # nimber of drought years
+  seasAv <- rep((c(1,2,3,4,5,6,6,5,4,3,2,1)-3.5),3)# seasonal pattern
+  seasAmp <- 3 # seasonal amplitude
+  trAv <- 5 # offset
+  remSd <- 2 # standard deviation remainder
+  remcoef <- list(list(order1 = 0, order2 = 0, order3 = 0),list(order1 = 0, order2 = 0, order3 = 0)) # model remainder series
+  distMaglim <- c(-6,-6) # disturbance magnitude
+  distTy <- 1 # disturbance timing (year)
+  distReclim <- c(25,25) # recovery period (number of observations)
 
+  simulCase(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
+            trAv, remSd,distMaglim,distTy,distReclim, remcoef, mval, mvaldist)
+
+}
 
 
