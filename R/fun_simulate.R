@@ -6,7 +6,7 @@
 #' ---
 #'
 ## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
 
 #'
 #' # 1. Time series characterisation
@@ -151,7 +151,7 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
   simSeas <- simSeas/max(seasAv)*seasAmp
 
   # introduce drought years (seasonality equal to minimum value)
-  if (nDr==0) ydr <- 0
+  if (nDr==0){ydr <- 0}
   if (nDr > 0){
     ydr <- sample(1:(nyr-1), nDr)
     #print(ydr)
@@ -170,6 +170,8 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
   #-------------------------------------------------
   # simulate remainder
   simRem <- arima.sim(model = remMod, n = nobsyr*nyr, sd = remSd)
+  simRem <- (simRem - mean(simRem))# zero mean
+  simRem <- simRem/sd(simRem)*remSd # set standard deviation
 
   #-------------------------------------------------
   # simulate disturbance

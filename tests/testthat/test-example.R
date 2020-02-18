@@ -56,6 +56,41 @@ test_that("ARMA coefficients",{
   expect_equal(coef_ar2, list(ar1 = 0.7, ar2 = 0.2, order1 = 2, order2 = 0, order3 = 0), tolerance = 1e-1)
 })
 
+test_that("Disturbance simulation",{
+
+})
+
+
+test_that("Time series simulation",{
+  source('fun_simulate.R')
+  nyr <- 5 # number of years
+  nobsyr <- 12 # number of observations per year
+  tMiss <- c(1,5,11,23)# observations having missing values
+  nDr <- 0 # nimber of drought years
+  seasAv <- rep((c(1,2,3,4,5,6,6,5,4,3,2,1)-3.5),3)# seasonal pattern
+  seasAmp <- 3 # seasonal amplitude
+  trAv <- 5 # offset
+  remSd <- 2 # standard deviation remainder
+  remMod <- list(order1 = 0, order2 = 0, order3 = 0) # model remainder series
+  distMag <- -6 # disturbance magnitude
+  distT <- 27 # disturbance timing (observation number)
+  distRec <- 25 # recovery period (number of observations)
+
+  # simulate time series
+  tsi <- simulTS(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod,
+                 distMag, distT, distRec)
+
+  expect_equal(tMiss,which(is.na(tsi[[2]][,5])))# missing values
+  expect_equal((nyr*nobsyr),length(tsi[[2]][,5]))# number of observations
+  expect_equal((seasAv[1:nobsyr])/(max(seasAv[1:nobsyr]))*seasAmp,tsi[[2]][1:nobsyr,1])# seasonal pattern
+  expect_equal(seasAmp,max(tsi[[2]][,1]))# seasonal amplitude
+  expect_equal(remSd,sd(tsi[[2]][,3]))# standard deviation remainder
+  expect_equal(trAv,as.numeric(tsi[[2]][1,2]))# offset
+  expect_equal(distMag,min(tsi[[2]][,4]))# magnitude disturbance
+  expect_equal(distT,which(tsi[[2]][,4] == min(tsi[[2]][,4])))# timing disturbance
+  expect_equal(distRec,length(which(tsi[[2]][,4] < 0)), tolerance = 1)# recovery period
+})
+
 
 
 
