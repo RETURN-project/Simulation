@@ -4,18 +4,15 @@
 #' date: "2/6/2020"
 #' output: html_document
 #' ---
-#' 
-## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE)
-
-#' 
+#'
+#'
 #' # 1. Load RData file and returns it
-#' _This function is a substitute for the load function, allowing to assign a user defined variable name when loading a RData file._
-#' 
-#' <font color=gray>__Function inputs__:
-#' 
-#' * __fileName__: the path to the Rdata file that needs to be loaded</font>
-#' 
+#' This function is a substitute for the load function, allowing to assign a user defined variable name when loading a RData file.
+#'
+#' Function inputs:
+#'
+#' * fileName: the path to the Rdata file that needs to be loaded</font>
+#'
 ## ------------------------------------------------------------------------
 loadRData <- function(fileName){
   #loads an RData file, and returns it
@@ -24,54 +21,54 @@ loadRData <- function(fileName){
 }
 
 #' # 2. Time series compression
-#' _The TScompress function compresses a time series vector. The purpose is to avoid storing many NA values._
-#' 
-#' <font color=gray>__Function inputs__:
-#' 
-#' * __ts__: a vector that will be compressed
-#' 
-#' <font color=gray>__Function outputs__:
-#' 
+#' The TScompress function compresses a time series vector. The purpose is to avoid storing many NA values._
+#'
+#' Function inputs:
+#'
+#' * ts: a vector that will be compressed
+#'
+#' Function outputs:
+#'
 #' * a vector containing, in order, the length of the input vector, the number of observations without NA, the observations without NA, and the values of the observations that are no NA
-#' 
+#'
 ## ------------------------------------------------------------------------
 TScompress <- function(ts){
     c(length(ts), length(which(!is.na(ts))), which(!is.na(ts)), ts[!is.na(ts)])
 }
 
 #' # 3. Time series decompression
-#' _The TSdecompress recovers a vector that has been compressed by the TScompress function in its original format._
-#' 
-#' <font color=gray>__Function inputs__:
-#' 
-#' * __ts__: a vector compressed be the TScompress function
-#' 
-#' <font color=gray>__Function outputs__:
-#' 
+#' The TSdecompress recovers a vector that has been compressed by the TScompress function in its original format.
+#'
+#' Function inputs:
+#'
+#' * ts: a vector compressed be the TScompress function
+#'
+#' Function outputs:
+#'
 #' * the vector restored in its original format
-#' 
+#'
 ## ------------------------------------------------------------------------
 TSdecompress <- function(ts){
     vec <- rep(NA,ts[1])
     if(ts[2] > 0){
         vec[ts[3:(ts[2]+2)]] <- ts[(ts[2]+3):((2*ts[2])+2)]
-    } 
+    }
     vec
 }
 
 #' # 3. Convert time series to annual frequency
-#' *The toAnnualTS function converts a time series with n observations per year to an annual time series (one observation per year). The main concept is to select observations per year closest to a given day of year that have no missing value (NA). Here, the day of year for which the seasonality is maximum is being used.*
-#' 
-#' <font color=gray>__Function inputs__:
-#'  - __tsseas__: vector of observations (time series) representing the seasonal component of the time series to be converted
-#'  - __tsi__: vector of observations (time series) that needs to be converted to an annual time series
-#'  - __obspyr__: number of observations per year of the time series to be converted
-#'  </font>
-#'  
-#'  <font color=gray>__Function outputs__:
-#'  - __tsyr__: vector of observations (time series) with annual observation frequency
-#'  </font>
-#'  
+#' The toAnnualTS function converts a time series with n observations per year to an annual time series (one observation per year). The main concept is to select observations per year closest to a given day of year that have no missing value (NA). Here, the day of year for which the seasonality is maximum is being used.*
+#'
+#' Function inputs:
+#'  - tsseas: vector of observations (time series) representing the seasonal component of the time series to be converted
+#'  - tsi: vector of observations (time series) that needs to be converted to an annual time series
+#'  - obspyr: number of observations per year of the time series to be converted
+#'
+#'
+#'  Function outputs:
+#'  - tsyr: vector of observations (time series) with annual observation frequency
+#'
+#'
 ## ------------------------------------------------------------------------
  toAnnualTS <- function(tsseas, tsi, obspyr){
     seasi <- rowMeans(matrix(tsseas, nrow = obspyr),na.rm=T)# average seasonality

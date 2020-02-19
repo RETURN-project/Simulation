@@ -5,9 +5,6 @@
 #' output: html_document
 #' ---
 #'
-## ----setup, include=FALSE------------------------------------------------
-#knitr::opts_chunk$set(echo = TRUE)
-
 #'
 #' # 1. Time series characterisation
 #'
@@ -333,6 +330,7 @@ simulCase <- function(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
                          'dist_magn', 'dist_time', 'dist_rec')
   TSsimParam$year_drought <- m_year_dr
   TSsimParam$rem_coef <- m_remcoef
+
   out <- list( TSsim, TSsimTr, TSsimSeas, TSsimRem, TSsimDist, TSsimParam)
   names(out) <- c('timeSeries', 'Trend', 'Seasonality', 'Remainder', 'Disturbance', 'Parameters')
   out
