@@ -125,13 +125,13 @@ test_that("Time series simulation",{
 
 test_that('simulation case'){
   source('fun_simulate.R')
-  nrep <- 5
+  # simulation settings
+  nrep <- 5 # number of repetitions
   nyr <- 5 # number of years
   nobsYr <- 12 # number of observations per year
-  #tMiss <- c(1,5,11,23)# observations having missing values
-  mval <- 0.2
-  mvaldist <- 'random'
-  nDr <- 0 # nimber of drought years
+  mval <- 0.2 # fraction of missing values
+  mvaldist <- 'random' # random distribution of missing values
+  nDr <- 0 # number of drought years
   seasAv <- rep((c(1,2,3,4,5,6,6,5,4,3,2,1)-3.5),3)# seasonal pattern
   seasAmp <- 3 # seasonal amplitude
   trAv <- 5 # offset
@@ -141,9 +141,17 @@ test_that('simulation case'){
   distTy <- 1 # disturbance timing (year)
   distReclim <- c(25,25) # recovery period (number of observations)
 
-  simulCase(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
-            trAv, remSd,distMaglim,distTy,distReclim, remcoef, mval, mvaldist)
+  # simulate set of time series
+  tsi <- simulCase(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
+                   trAv, remSd,distMaglim,distTy,distReclim, remcoef, mval, mvaldist)
 
+  # tests
+  expect_equal(nrep,dim(tsi$timeSeries)[1])# number of repetitions
+  expect_equal((nyr*nobsYr),dim(tsi$timeSeries)[2])# number of repetitions
+  expect_equal(apply(tsi$Disturbance, 1, min), rep(distMaglim[1],nrep))# disturbance magnitude
+  expect_equal(apply(tsi$Remainder,1,sd), rep(remSd,nrep))# standard deviation of remainder
+  expect_equal(colSums(apply(tsi$timeSeries,1,is.na))/(nyr*nobsYr), rep(mval,nrep))# fraction of missing values
+  expect_equal()
 }
 
 
