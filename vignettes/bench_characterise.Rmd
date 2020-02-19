@@ -12,16 +12,16 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 
 
 ```{r, include=FALSE}
-source_rmd <- function(file, local = FALSE, ...){
-  options(knitr.duplicate.label = 'allow')
-  
-  tempR <- tempfile(tmpdir = ".", fileext = ".R")
-  on.exit(unlink(tempR))
-  knitr::purl(file, output=tempR, quiet = TRUE)
-  
-  envir <- globalenv()
-  source(tempR, local = envir, ...)
-}
+# source_rmd <- function(file, local = FALSE, ...){
+#   options(knitr.duplicate.label = 'allow')
+#   
+#   tempR <- tempfile(tmpdir = ".", fileext = ".R")
+#   on.exit(unlink(tempR))
+#   knitr::purl(file, output=tempR, quiet = TRUE)
+#   
+#   envir <- globalenv()
+#   source(tempR, local = envir, ...)
+# }
 ```
 
 # Characterize dynamics of Landsat time series components
@@ -32,8 +32,8 @@ This script decomposes time series into a set of components (trend, remainder, a
 ```{r}
 library(bfast)
 library(forecast)
-source_rmd('fun_general.Rmd')
-source_rmd('fun_simulate.Rmd')
+source('../R/fun_general.R')
+source('../R/fun_simulate.R')
 
 ```
 
@@ -51,7 +51,7 @@ The following inputs are required:
 ```{r}
 ifolder <- '../Data/SampledData/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
 ofolder <-'../Data/char'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
-basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
+basename <- 'toyset'#LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year
 
@@ -158,5 +158,61 @@ save(tsVIMissVal, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifi
 
 ## 7. Plot data characteristics
 ```{r}
+# Decomposition
+library(zoo)
 
+op <- par()
+dev.off()
+# Example time series
+datz <- as.numeric(dfVi[10,-c(1,2)])
+tmz <- as.Date(names(dfVi)[-c(1,2)])
+tsz <- zoo(datz[is.na(datz)==F],tmz[is.na(datz)==F])
+plot(tsz, type = 'o', main = 'Example sampled NBR time series',
+     xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
+
+# Example decomposition time series
+remz <- as.numeric(dataVIRembf[10,-c(1,2)])
+tsrz <- zoo(remz[is.na(remz)==F],tmz[is.na(remz)==F])
+par(mar=c(2,2,2,1))
+par(fig=c(0,1,0.66,1))
+plot(tsz, type = 'o', main = 'Example NBR time series and trend',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+lines(zoo(as.numeric(dataVITrbf[10,-c(1,2)]),tmz), col = 'red')
+par(fig=c(0,1,0.33,0.66), new=TRUE)
+plot(zoo(as.numeric(dataVISeasbf[10,-c(1,2)]),tmz), type = 'l', main = 'Seasonal',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+par(fig=c(0,1,0,0.33), new=TRUE)
+plot(tsrz, type = 'o', main = 'Remainder',
+     xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
+
+# all seasonal cycles 
+par(op)
+plot(zoo(t(dataVISeasbf[,-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonal sampled pixels',
+     xlab = 'Time', ylab = 'NBR [-]')
+
+# seasonal cylce Southern hemisphere and mean seasonal cycle
+plot(zoo(t(dataVISeasbf[which(dataVISeasbf[,1]<0),-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonal Southern hemisphere and mean seasonal',
+     xlab = 'Time', ylab = 'NBR [-]')
+lines(as.Date(names(seasVImean)), seasVImean, type = 'l', lwd = 2)
+
+
+# Amplitude seasonality
+par(op)
+hist(seasVImax, main = 'Amplitude seasonality', xlab = 'Amplitude [-]')
+mx <- mean(seasVImax)
+abline(v = mx, col = "red", lwd = 2)
+
+
+# missing values
+hist(tsVIMissVal, main = 'Fraction missing values (daily temporal resolution)', xlab = 'Fraction missing values [-]')
+mx <- mean(tsVIMissVal)
+abline(v = mx, col = "red", lwd = 2)
+
+# standard deviation remainder
+hist(Rem_VIsd, main = 'Standard deviation remainder', xlab = 'Standard deviation remainder [-]')
+mx <- mean(Rem_VIsd)
+abline(v = mx, col = "red", lwd = 2)
+
+
+# 
 ```
