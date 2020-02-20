@@ -4,48 +4,48 @@
 #' date: "2/6/2020"
 #' output: html_document
 #' ---
-#' 
+#'
 ## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
 
 #' # Functions - recovery indicators
-#' 
+#'
 ## ----include=FALSE-------------------------------------------------------
 # load required libraries
 library(strucchange)
 library(bfast)
 
-#' 
-#' # 1. Recovery 
+#'
+#' # 1. Recovery
 #' ## 1.1 Calculate recovery metrics from a time series with known disturbance date
-#' *The calcFrazier function derives the RRI, R80P and YrYr recovery indicators, defined by Frazier et al. (2018). The indicators are originally developped for annual long-term time series of optical vegetation indices (the indicators are shown in the figures below). Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested. Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators. To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years. Moreover, given the potentially high noise levels of dense time series, the mean value instead of the maximum value was used in the formulas.*
-#' 
+#' The calcFrazier function derives the RRI, R80P and YrYr recovery indicators, defined by Frazier et al. (2018). The indicators are originally developped for annual long-term time series of optical vegetation indices (the indicators are shown in the figures below). Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested. Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators. To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years. Moreover, given the potentially high noise levels of dense time series, the mean value instead of the maximum value was used in the formulas.
+#'
 #' ![](../Img/Frazier_RRI.jpg){#id .class width=30% height=30%}
 #' ![](../Img/Frazier_R80P.jpg){#id .class width=30% height=30%}
 #' ![](../Img/Frazier_YrYr.jpg){#id .class width=30% height=30%}
-#' 
-#' 
+#'
+#'
 #' Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018). Analyzing spatial and temporal variability in short-term rates of post-fire vegetation return from Landsat time series. Remote Sensing of Environment, 205, 32-45.
-#' 
+#'
 #' ****
-#' 
-#' __Function inputs__:
-#' 
-#' * __tsio__: vector of observations (time series with a fixed observation frequency)
-#' * __tdist__: observation number of disturbance, indicating the timing of the disturbance
-#' * __obspyr__: numer of observations per year
-#' * __shortDenseTS__: TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series
-#' * __nPre__: If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value
-#' * __nDist__: If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance
-#' * __nPostMin__: If shortDenseTS is TRUE,  the post-disturbance condition is quantified starting from nPostMin years after the disturbance
-#' * __nPostMax__: If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the post-disturbance condition
-#' 
-#' __Function outputs__:    
-#' 
-#' * __RRI__: RRI recovery indicator
-#' * __R80P__: R80p recovery indicator
-#' * __YrYr__: YrYr recovery 
-#' 
+#'
+#' Function inputs:
+#'
+#' * tsio: vector of observations (time series with a fixed observation frequency)
+#' * tdist: observation number of disturbance, indicating the timing of the disturbance
+#' * obspyr: numer of observations per year
+#' * shortDenseTS: TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series
+#' * nPre: If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value
+#' * nDist: If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance
+#' * nPostMin: If shortDenseTS is TRUE,  the post-disturbance condition is quantified starting from nPostMin years after the disturbance
+#' * nPostMax: If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the post-disturbance condition
+#'
+#' Function outputs:
+#'
+#' * RRI: RRI recovery indicator
+#' * R80P: R80p recovery indicator
+#' * YrYr: YrYr recovery
+#'
 ## ------------------------------------------------------------------------
 calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
     if(shortDenseTS){# Metrics adjusted for short, dense time series
@@ -96,38 +96,38 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
             YrYr <- (tsio[tdist+(5*obspyr)]-V0)/5
             # make list of recovery indicators as output of the function
             lst <- list(RRI, R80P, YrYr)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')            
+            names(lst) <- c('RRI', 'R80P', 'YrYr')
         }else{
             lst <- list(NA, NA, NA)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')            
-        }        
+            names(lst) <- c('RRI', 'R80P', 'YrYr')
+        }
     }
     lst
 }
 
-#' 
+#'
 #' ## 1.2 Post-disturbance slope and recovery metrics derived from BFAST0n trend segments
-#' *The calcBFASTrec function derives a set of recovery indicators after fitting a segmented trend in the time series. Using the breakpoints function of the strucchange package, a segmented trend is fitted (hereafter called BFAST0n trend segments). The detected break showing the largest change (in absolute values) is assumed to represent the disturbance. Using the segmented trend and detected disturbance date, the RRI, R80p, YrYr and the slope of the post-disturbance trend segment are derived as recovery indicators.*
-#' 
-#' __Function inputs__:
-#' 
-#' * __tsio__: vector of observations (time series)
-#' * __obspyr__: number of observations in one year
-#' * __h__: This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.
-#' * __shortDenseTS__: TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series. In case FALSE, the input time series is assumed to have annual observations and at least 2 and 5 pre- and post-disturbance years, respectively. 
-#' * __nPre__: If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value
-#' * __nDist__: If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance
-#' * __nPostMin__: If shortDenseTS is TRUE, min number of years after the disturbance used to quantify the recovery
-#' * __nPostMax__: If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery
-#' 
-#'  
-#' __Function outputs__:
-#' 
-#' * __RRI__: RRI recovery indicator, derived from the BFAST0n trend segments
-#' * __R80P__: R80p recovery indicator, derived from the BFAST0n trend segments
-#' * __YrYr__: YrYr recovery indicator, derived from the BFAST0n trend segments
-#' * __Sl__: slope of the trend segment after the disturbance
-#' 
+#' The calcBFASTrec function derives a set of recovery indicators after fitting a segmented trend in the time series. Using the breakpoints function of the strucchange package, a segmented trend is fitted (hereafter called BFAST0n trend segments). The detected break showing the largest change (in absolute values) is assumed to represent the disturbance. Using the segmented trend and detected disturbance date, the RRI, R80p, YrYr and the slope of the post-disturbance trend segment are derived as recovery indicators.
+#'
+#' Function inputs:
+#'
+#' * tsio: vector of observations (time series)
+#' * obspyr: number of observations in one year
+#' * h: This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.
+#' * shortDenseTS: TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series. In case FALSE, the input time series is assumed to have annual observations and at least 2 and 5 pre- and post-disturbance years, respectively.
+#' * nPre: If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value
+#' * nDist: If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance
+#' * nPostMin: If shortDenseTS is TRUE, min number of years after the disturbance used to quantify the recovery
+#' * nPostMax: If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery
+#'
+#'
+#' Function outputs:
+#'
+#' * RRI: RRI recovery indicator, derived from the BFAST0n trend segments
+#' * R80P: R80p recovery indicator, derived from the BFAST0n trend segments
+#' * YrYr: YrYr recovery indicator, derived from the BFAST0n trend segments
+#' * Sl: slope of the trend segment after the disturbance
+#'
 ## ------------------------------------------------------------------------
 calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
   # Create time series object, needed as input for BFAST
@@ -147,28 +147,28 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         # Extract BFAST trend component and breaks
         cf <- coef(bp)
         # Extract BFAST trend component and breaks
-        tbp <- bp$breakpoints #observation number of break       
+        tbp <- bp$breakpoints #observation number of break
         #tr <- rep(NA,length(tsi))
         indna <- which(is.na(tsi)==F)
-        tbp <- indna[tbp]   # correct observation number for missing values              
+        tbp <- indna[tbp]   # correct observation number for missing values
         #tr[is.na(tsi)==F] <- fitted(bptst, length(tbptst))
-        #Derive trend component without missing values        
+        #Derive trend component without missing values
         bpf <- c(0, tbp, length(tsi))
-        trf <- rep(NA,length(tsi))                
+        trf <- rep(NA,length(tsi))
         for(ti in 1:(length(bpf)-1)){
             trf[(bpf[ti]+1):bpf[ti+1]] <- cf[ti,1] + ((cf[ti,2]*((bpf[ti]+1):bpf[ti+1])))
-        }        
-        # Find the major break                  
+        }
+        # Find the major break
         dbr <- trf[tbp+1]-trf[tbp]
         tbp <- tbp[which(abs(dbr) == max(abs(dbr)))]
         # Calculate Frazier recovery metrics on BFAST trend component
         frz <- calcFrazier(as.numeric(trf), (tbp+1), floor(obspyr), shortDenseTS, nPre, nDist, nPostMin, nPostMax)
         # Calculate the post-disturbance slope of the BFAST trend component (first segment after break)
-        sl <- (trf[tbp+3] - trf[tbp+2])  
+        sl <- (trf[tbp+3] - trf[tbp+2])
         frz <- c(frz, sl)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
-    }    
+    }
     frz
 }
 
-#'  
+#'
