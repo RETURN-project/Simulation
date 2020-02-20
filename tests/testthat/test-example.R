@@ -1,7 +1,7 @@
 context("Characterise time series")
 
 test_that("Decomposition harmonic + trend + noise", {
-  source('fun_simulate.R')
+  source('../R/fun_simulate.R')
 
   set.seed(197)
   # generate time stamps
@@ -34,13 +34,20 @@ test_that("Decomposition harmonic + trend + noise", {
 })
 
 test_that("ARMA coefficients",{
-  source('fun_simulate.R')
+  source('../R/fun_simulate.R')
   # Generate time series with predefined ARMA coefficients
-  set.seed(197) # does not work, need to look for alternative solution
-  rn <- arima.sim(model = list(order = c(0, 0, 0) ), n = 50000)
-  ma1 <- arima.sim(model = list(order = c(0, 0, 1), ma = .9 ), n = 50000)
-  ar1 <- arima.sim(model = list(order = c(1, 0, 0), ar = .9 ), n = 50000)
-  ar2 <- arima.sim(model = list(order = c(2, 0, 0), ar = c(.7, .2) ), n = 50000)
+  nobs <- 50000
+  set.seed(200);innov <- rnorm(nobs) # fix the innovations, so code is reproducible
+  set.seed(200);start.innov <- rnorm(4) # fix the innovations of the burn-in period, so code is reproducible
+
+  rn <- arima.sim(model = list(order = c(0, 0, 0) ), n = nobs, innov =innov,
+                  n.start = 4, start.innov =  start.innov)
+  ma1 <- arima.sim(model = list(order = c(0, 0, 1), ma = .9 ), n = nobs, innov =innov,
+                   n.start = 4, start.innov =  start.innov)
+  ar1 <- arima.sim(model = list(order = c(1, 0, 0), ar = .9 ), n = nobs, innov =innov,
+                   n.start = 4, start.innov =  start.innov)
+  ar2 <- arima.sim(model = list(order = c(2, 0, 0), ar = c(.7, .2) ), n = nobs, innov =innov,
+                   n.start = 4, start.innov =  start.innov)
 
   # estimate coefficients
   coef_rn <- getARMAcoef(rn)
@@ -56,7 +63,7 @@ test_that("ARMA coefficients",{
 })
 
 test_that("Disturbance simulation",{
-  source('fun_simulate.R')
+  source('../R/fun_simulate.R')
   # disturbance and recovery before end of time series
   distT1 <- 5
   distRec1 <- 12
@@ -94,7 +101,7 @@ test_that("Disturbance simulation",{
 })
 
 test_that("Time series simulation",{
-  source('fun_simulate.R')
+  source('../R/fun_simulate.R')
   nyr <- 5 # number of years
   nobsyr <- 12 # number of observations per year
   tMiss <- c(1,5,11,23)# observations having missing values
@@ -124,7 +131,7 @@ test_that("Time series simulation",{
 })
 
 test_that('simulation case'){
-  source('fun_simulate.R')
+  source('../R/fun_simulate.R')
   # simulation settings
   nrep <- 5 # number of repetitions
   nyr <- 5 # number of years
