@@ -197,7 +197,6 @@ lines(as.Date(names(seasVImean)), seasVImean, type = 'l', lwd = 2)
 
 
 # Amplitude seasonality
-par(op)
 hist(seasVImax, main = 'Amplitude seasonality', xlab = 'Amplitude [-]')
 mx <- mean(seasVImax)
 abline(v = mx, col = "red", lwd = 2)

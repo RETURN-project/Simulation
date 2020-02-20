@@ -6,21 +6,21 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 
 ```{r, include=FALSE}
-source_rmd <- function(file, local = FALSE, ...){
-  options(knitr.duplicate.label = 'allow')
-  
-  tempR <- tempfile(tmpdir = ".", fileext = ".R")
-  on.exit(unlink(tempR))
-  knitr::purl(file, output=tempR, quiet = TRUE)
-  
-  envir <- globalenv()
-  source(tempR, local = envir, ...)
-}
+# source_rmd <- function(file, local = FALSE, ...){
+#   options(knitr.duplicate.label = 'allow')
+#   
+#   tempR <- tempfile(tmpdir = ".", fileext = ".R")
+#   on.exit(unlink(tempR))
+#   knitr::purl(file, output=tempR, quiet = TRUE)
+#   
+#   envir <- globalenv()
+#   source(tempR, local = envir, ...)
+# }
 ```
 
 *This script calculates a set of recovery indicators from simulated time series, including the RRI, R80P and YrYr recovery indicators, defined by Frazier et al. (2018), and the post-disturbance slope. These indicators can be derived from dense (having more than one observation per year) time series or the dense time series can be converted to annual time series. In addition, the indicators can be calculated using the raw time series, smoothed time series or after trend segmentation.*
@@ -54,35 +54,35 @@ library(imputeTS)
 + *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance</font>
 
 ```{r}
-ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
-ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
+ifolder <- '../Data/SimTS'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
+ofolder <- '../Data/RecInd'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
 
-basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
-caseList <- c('distMag','missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#)# simulation cases to be evaluated
-funSet <- list('freq' = c( 'dense','dense'),
-               'input' = c('raw','smooth'),# settings for the recovery indicators
-               'shortDenseTS' = c(TRUE,TRUE),
-               'nPre' = c(2,2),
-               'nDist' = c(1,1),
-               'nPostMin' = c(0,0),
-               'nPostMax' = c(1,1),
-               'h' = c(0.15,0.15))
-
-#list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
-#              'input' = c('raw','raw', 'smooth', 'BFAST', 'raw', 'smooth', 'BFAST'),# settings for the recovery indicators
-#              'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
-#              'nPre' = c(2,2,2,2,2,2,2),
-#              'nDist' = c(1,1,1,1,12,12,12),
-#              'nPostMin' = c(0,0,0,0,4,4,4),
-#              'nPostMax' = c(1,1,1,1,6,6,6),
-#              'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
+basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
+caseList <- c('distT', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#) c('distMag','missVal') # simulation cases to be evaluated
+funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
+             'input' = c('raw','raw', 'smooth', 'BFAST', 'raw', 'smooth', 'BFAST'),# settings for the recovery indicators
+             'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+             'nPre' = c(2,2,2,2,2,2,2),
+             'nDist' = c(1,1,1,1,12,12,12),
+             'nPostMin' = c(0,0,0,0,4,4,4),
+             'nPostMax' = c(1,1,1,1,6,6,6),
+             'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
+# funSet <- list('freq' = c( 'dense','dense'),
+#                'input' = c('raw','smooth'),# settings for the recovery indicators
+#                'shortDenseTS' = c(TRUE,TRUE),
+#                'nPre' = c(2,2),
+#                'nDist' = c(1,1),
+#                'nPostMin' = c(0,0),
+#                'nPostMax' = c(1,1),
+#                'h' = c(0.15,0.15))
 
 ```
 ## Extract recovery indicators
 
 ```{r}
-source_rmd('fun_recovery.Rmd')
-source_rmd('fun_general.Rmd')
+source('../R/fun_general.R')
+source('../R/fun_recovery.R')
+source('../R/fun_simulate.R')
 
 # Start the clock
 ptm <- proc.time()

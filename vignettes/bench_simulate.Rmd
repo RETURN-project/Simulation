@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 ```{r, include=FALSE}
@@ -28,10 +28,10 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 * basename: base name of the data files
 
 ```{r}
-ifolder <- '../Data/char' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder with data characteristics
+ifolder <- '../Data/SimTS' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder with data characteristics
 ofolder <- '../Data/SimTS' # 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
 
-basename <- 'toydata' # 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'# base name of the data files
+basename <- 'toyset' # 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'# base name of the data files
 ```
 
 ## Import data and source functions
@@ -41,7 +41,7 @@ basename <- 'toydata' # 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'#
 source( '../R/fun_general.R')
 source( '../R/fun_simulate.R')
 # import settings file
-sttngs <- loadRData(file = file.path(ifolder, paste0(basename, '_VI_simTS_settings_var.rda')))
+sttngs <- loadRData(file = file.path(ifolder, paste0(basename, '_simTS_settings_var.rda')))
 
 ```
 
@@ -49,13 +49,13 @@ sttngs <- loadRData(file = file.path(ifolder, paste0(basename, '_VI_simTS_settin
 
 ```{r}
 # iterate over parameters that are evaluated
-for(vr in c(4,7)){#length(sttngs$variables) 5,7
+for(vr in 1:length(sttngs$variables)){#length(sttngs$variables) c(4,7)
   # initiale lists to store the simulated time series 
   simTS <- list()
   simTSTr <- list()
   simTSSeas <- list()
   simTSRem <- list()
-  simTSDist <- list()
+  # simTSDist <- list()
   simTSParam <- list()
   
   #setvr <- sttngs[[vr]]# settings of simulation
@@ -74,7 +74,7 @@ for(vr in c(4,7)){#length(sttngs$variables) 5,7
     simTSTri <- list()
     simTSSeasi <- list()
     simTSRemi <- list()
-    #simTSDist <- list()
+    # simTSDisti <- list()
     simTSParami <- list()
     
     # iterate over the parameter combinations and simulate each time nrep time series per parameter combination
@@ -96,8 +96,8 @@ for(vr in c(4,7)){#length(sttngs$variables) 5,7
         tmp <-sc[[4]][parii,]
         tmp[is.na(sc[[1]])] <- NA
         simTSRemi[[cnt]] <- TScompress(tmp)
-        #simTSDist[[cnt]] <- TScompress(sc[[5]])
-        simTSParami[[cnt]] <- sc[[6]] [parii,]
+        # simTSDisti[[cnt]] <- sc[[5]][parii,]
+        simTSParami[[cnt]] <- sc[[6]][parii,]
       }            
       rm(sc)
     } 
@@ -106,18 +106,18 @@ for(vr in c(4,7)){#length(sttngs$variables) 5,7
     simTSTr[[i]] <- simTSTri
     simTSSeas[[i]] <- simTSSeasi
     simTSRem[[i]] <- simTSRemi
-    #simTSDist[[i]] <- simTSDisti
+    # simTSDist[[i]] <- simTSDisti
     simTSParam[[i]] <- simTSParami
     rm(comb, simTSi, simTSTri, simTSSeasi, simTSRemi, simTSParami)#, simTSDisti
     gc()
   }   
-  save(simTS, file = file.path(ofolder, paste0(basename, '_VI_simTS_' , evr, '.rda')))# '_', i,
-  save(simTSTr, file = file.path(ofolder, paste0(basename, '_VI_simTSTr_', evr, '.rda')))
-  save(simTSSeas, file = file.path(ofolder, paste0(basename, '_VI_simTSSeas_', evr, '.rda')))
-  save(simTSRem, file = file.path(ofolder, paste0(basename, '_VI_simTSRem_', evr, '.rda')))
-  #save(simTSDist, file = file.path(ofolder, paste0(basename, '_VI_simTSDist_', evr, '_', i,'.rda')))
-  save(simTSParam, file = file.path(ofolder, paste0(basename, '_VI_simTSParam_', evr, '.rda')))
-  rm(simTS,simTSTr,simTSSeas, simTSRem, simTSParam) #simTSDist
+  save(simTS, file = file.path(ofolder, paste0(basename, '_simTS_' , evr, '.rda')))# '_', i,
+  save(simTSTr, file = file.path(ofolder, paste0(basename, '_simTSTr_', evr, '.rda')))
+  save(simTSSeas, file = file.path(ofolder, paste0(basename, '_simTSSeas_', evr, '.rda')))
+  save(simTSRem, file = file.path(ofolder, paste0(basename, '_simTSRem_', evr, '.rda')))
+  # save(simTSDist, file = file.path(ofolder, paste0(basename, '_simTSDist_', evr, '.rda')))
+  save(simTSParam, file = file.path(ofolder, paste0(basename, '_simTSParam_', evr, '.rda')))
+  rm(simTS,simTSTr,simTSSeas, simTSRem, simTSParam, simTSDist) #
   # gc()
 }
 ```

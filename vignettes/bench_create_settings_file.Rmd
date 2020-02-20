@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 
@@ -62,10 +62,10 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 * __basename__: base name of the simulated time series files
 
 ```{r}
-ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
-ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
+ifolder <- '../Data/char' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
+ofolder <- '../Data/SimTS' #C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
 
-basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
+basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
 
 ```
 
@@ -78,8 +78,8 @@ basename <- c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base nam
 * remcoef: ARMA model coefficients of remainder term
 * missval: fraction of missing values
 ```{r}
-source_rmd( 'fun_general.Rmd')
-source_rmd( 'fun_simulate.Rmd')
+source( '../R/fun_general.R')
+source( '../R/fun_simulate.R')
 
 seasmax <- loadRData(file = file.path(ifolder, paste0(basename, '_seasVImax.rda')))# half seasonal amplitude
 seasmean <- loadRData(file = file.path(ifolder, paste0(basename, '_seasVImean.rda')))
@@ -110,18 +110,18 @@ missval <- loadRData(file = file.path(ifolder, paste0(basename, '_ts_VIMissVal.r
 ```{r}
   #-------------------------------------------------
   #  settings  
-STnrep <- 10 # number of repetitions per parameter combination
+STnrep <- 1 # number of repetitions per parameter combination
 STnobsYr <- 365
 DistMissVal <- 'random' # random or interval
 STseasAv <- seasmean
 STtrAv <- trmean # offset
 
 VnDr <- c(0) # number of droughts
-Vnyr <- seq(6,40,6)# number of years
-VdistMag <- -seq(0.1,0.5,0.1)# magnitude disturbance
-VdistT <- seq(3,18,3)# timing disturbance
-VdistRec <- seq(3,15,2)*STnobsYr# recovery disturbance
-Vqntl <- c(.05, .275, .5, .725, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
+Vnyr <- c(10,20)#seq(6,40,6)# number of years
+VdistMag <- -c(0.1,0.5)#-seq(0.1,0.5,0.1)# magnitude disturbance
+VdistT <- c(5,15) #seq(3,18,3)# timing disturbance
+VdistRec <- c(3,10)*STnobsYr#seq(3,15,2)*STnobsYr# recovery disturbance
+Vqntl <- c(.05, .95)#c(.05, .275, .5, .725, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
 VmissVal <- quantile(missval, Vqntl)
 VseasAmp <- quantile(seasmax, Vqntl)# seasonal amplitude
 VremSd <- quantile(remsd, Vqntl)# sd of remainder
@@ -172,6 +172,6 @@ names(sttngs) <- c('nrep',
 ## Export
 
 ```{r}
-save(sttngs, file = file.path(ofolder, paste0(basename, '_', pol, '_simTS_settings_var.rda')))
+save(sttngs, file = file.path(ofolder, paste0(basename, '_simTS_settings_var.rda')))
   
 ```
