@@ -13,8 +13,8 @@
 piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
   m <- -pert / (2 * thalf) # Slope of the transitory regime
   ttrans <- 2*thalf # Duration of the transitory regime
-  y <- offset                             * (t <= tpert) +
-       (offset + pert + m *(t - tpert))   * (t > tpert) * (t <= tpert + ttrans) + # Transitory regime
+  y <- offset                             * (t < tpert) +
+       (offset + pert + m *(t - tpert))   * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
        offset                             * (t > tpert + ttrans)
   y
 }
