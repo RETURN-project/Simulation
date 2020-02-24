@@ -1,0 +1,31 @@
+---
+title: "Plotting decay functions"
+author: "Pablo Rodriguez-Sanchez"
+date: "2/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(BenchmarkRecovery)
+```
+
+## R Markdown
+
+```{r}
+ts <- seq(0, 10, by = 0.025)
+
+offset <- 0
+pert <- 1
+tpert <- 1.5
+recover <- 3
+
+ys_p <- piecewise(ts, offset, pert, tpert, recover)
+ys_e <- exponential(ts, offset, pert, tpert, recover)
+
+plot(ts, ys_p, 'l', col = 'red')
+lines(ts, ys_e, col = 'blue')
+```
