@@ -2,7 +2,7 @@ context("Simulation of benchmarking time series")
 
 test_that("Exponential decay", {
 
-  ts <- seq(0, 10, by=0.1)
+  ts <- seq(0, 25, by=0.1)
   pert <- 1.5
   ys <- exponential(ts, pert=pert)
 
