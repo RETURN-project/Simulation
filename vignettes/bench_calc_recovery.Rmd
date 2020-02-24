@@ -47,7 +47,7 @@ library(imputeTS)
 * __caseList__: list of parameters. The recovery indicators will be calculated for the simulated time series of these parameters.  
 * __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters. 
 + *freq*:  'dense' or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual', the time series are converted to annual frequency.
-+ *input*: 'smooth', 'raw', 'BFAST'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
++ *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
 + *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
 + *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
 + *nDist*: in case *shortDenseTS* is TRUE: the number of months after the disturbance used to derive the value during the disturbance 
@@ -60,12 +60,12 @@ ofolder <- '../Data/RecInd'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RET
 basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
 caseList <- c('distT', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#) c('distMag','missVal') # simulation cases to be evaluated
 funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
-             'input' = c('raw','raw', 'smooth', 'BFAST', 'raw', 'smooth', 'BFAST'),# settings for the recovery indicators
+             'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),# settings for the recovery indicators
              'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
              'nPre' = c(2,2,2,2,2,2,2),
-             'nDist' = c(1,1,1,1,12,12,12),
-             'nPostMin' = c(0,0,0,0,4,4,4),
-             'nPostMax' = c(1,1,1,1,6,6,6),
+             'nDist' = c(12,1,1,1,12,12,12),
+             'nPostMin' = c(4,0,0,0,4,4,4),
+             'nPostMax' = c(6,1,1,1,6,6,6),
              'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
 # funSet <- list('freq' = c( 'dense','dense'),
 #                'input' = c('raw','smooth'),# settings for the recovery indicators
@@ -154,7 +154,7 @@ for(si in 1:length(caseList)){# # iterate over simulation cases
           tdist <- ceiling(tdist/obspyr)
           obspyr <- 1
         }
-        if (inp == 'smooth'){
+        if (inp == 'smoothed'){
           #tmp <- sgolayfilt(na_interpolation(tsi, 'linear'), p=2, n=11)# smooth time series using golay filter
           #tsi[is.na(tsi)==F] <- tmp[is.na(tsi)==F]
           df <- data.frame(dat = tsi,tm = 1:length(tsi))
@@ -163,14 +163,14 @@ for(si in 1:length(caseList)){# # iterate over simulation cases
           tsi <- tmps$fit    
         }
         
-        if((inp == 'smooth') | (inp == 'raw')){ 
+        if((inp == 'smoothed') | (inp == 'raw')){ 
           outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
           m_RRIi[ii,i] <- outp$RRI# measured RRI 
           m_R80pi[ii,i] <- outp$R80P# measured R80p 
           m_YrYri[ii,i] <- outp$YrYr# measured YrYR
           rm(outp)
         }
-        if(funSet$input[rset] == 'BFAST'){ 
+        if(funSet$input[rset] == 'segmented'){ 
           outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
           m_RRIi[ii,i] <- outp$RRI# measured RRI 
           m_R80pi[ii,i] <- outp$R80P# measured R80p 

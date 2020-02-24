@@ -43,9 +43,9 @@ calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
   simcases <- names(meas)
   #vsimcases <- paste0('V',simcases)
 
-  for(sci in 1:length(meas)){
+  for(sci in 1:length(meas)){# evaluated parameters
     vls <- list()
-    for(rpi in 1:length(meas[[1]])){
+    for(rpi in 1:length(meas[[1]])){# recovery settings
       if((metr == 'SL') & ((recSttngs$input[rpi] == 'raw') | (recSttngs$input[rpi] == 'smooth'))){
       }else{
         val[[sci]][[rpi]][is.infinite(val[[sci]][[rpi]])] <- NA
@@ -65,14 +65,22 @@ calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
         tmp2 <- melt(tmp)
         tmp2$Metric <- factor(metr)
         tmp2$Dense <- factor(recSttngs$freq[rpi])
-        tmp2$Smooth <- revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
-        tmp2$Period <- revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
-        tmp2$Period[tmp2$Dense == 'annual'] <- 'Long'
+        tmp2$Smooth <- factor(recSttngs$input[rpi])#revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
+        tmp2$Period <- factor(recSttngs$nDist[rpi])#revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
+        #tmp2$Period <- revalue(factor(tmp2$Period), c("1"="Short", "12"="Long"))
+
+
+
         #tmp2$Method <- factor(paste0(metr, ', ',recSttngs$freq[rpi], ', ', recSttngs$input[rpi],', ', recSttngs$nDist[rpi]))
         #print(typeof(tmp2))
         vls <- rbind(vls,tmp2)
       }
     }
+    # vls$Smooth <- revalue(vls$Smooth, c("BFAST"="segmented", 'smooth'='smoothed'))
+    vls$Period <- revalue(vls$Period, c("1"="Short", "12"="Long"))
+
+    levels(vls$Period) <- c('Short', 'Long')
+    vls$Period[vls$Dense == 'annual'] <- "Long"
     lst[[names(meas)[sci]]] <- vls
   }
   lst
