@@ -1,16 +1,10 @@
-#' ---
-#' title: "Functions to evaluate the performance"
-#' author: "Wanda De Keersmaecker"
-#' date: "2/12/2020"
-#' output: html_document
-#' ---
+#' R squared
 #'
-## ----setup, include=FALSE------------------------------------------------
-#knitr::opts_chunk$set(echo = TRUE)
-
+#' @param x vector of x values
+#' @param y vector of y values
 #'
-#' ## R squared
-## ------------------------------------------------------------------------
+#' @return the R squared between the x and y variables
+#' @export
 rsq <- function(x, y) {
   if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
     rs <- summary(lm(y~x))$r.squared
@@ -18,26 +12,41 @@ rsq <- function(x, y) {
   rs
 }
 
+#' RMSE
 #'
-#' ## RMSE
-## ------------------------------------------------------------------------
-# calculate RMSE
+#' @param val vector of x values
+#' @param meas vector of y values
+#'
+#' @return the RMSE of the two vectors
+#' @export
 rmse <- function(val, meas){
   sqrt(mean((val - meas)^2,na.rm=TRUE))
 }
 
+#' MAPE
 #'
-#' ## MAPE
-## ------------------------------------------------------------------------
-# calculate MAPE
+#' @param val vector of x values
+#' @param meas vector of y values
+#'
+#' @return the MAPE of the two vectors
+#' @export
 mape <- function(val, meas){
   mean(abs(val - meas)/abs(val),na.rm=TRUE)
 }
 
+#' Derive performance (R2, MAPE or RMSE) from recovery indicators
 #'
-#' ## Calculate performance of recovery indicators
-## ------------------------------------------------------------------------
-# Derive performance (R2 or RMSE) from recovery indicators
+#' @param val  ground truth
+#' @param meas measured
+#' @param sttngs simulation settings file
+#' @param recSttngs recovery settings file
+#' @param metr recovery metric being evaluated
+#' @param perf performance indicator
+#'
+#' @return list of performance indicator
+#' @export
+#' @import reshape2
+#' @import plyr
 calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
   lst <- list()
   simcases <- names(meas)
