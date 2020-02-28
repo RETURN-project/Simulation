@@ -35,6 +35,7 @@ test_that("Decomposition harmonic + trend + noise", {
 
 test_that("ARMA coefficients",{
   #source('../R/fun_simulate.R')
+
   # Generate time series with predefined ARMA coefficients
   nobs <- 50000
   set.seed(200);innov <- rnorm(nobs) # fix the innovations, so code is reproducible
@@ -64,6 +65,7 @@ test_that("ARMA coefficients",{
 
 test_that("Disturbance simulation",{
  # source('../R/fun_simulate.R')
+
   # disturbance and recovery before end of time series
   distT1 <- 5
   distRec1 <- 12
@@ -102,6 +104,7 @@ test_that("Disturbance simulation",{
 
 test_that("Time series simulation",{
   #source('../R/fun_simulate.R')
+
   nyr <- 5 # number of years
   nobsyr <- 12 # number of observations per year
   tMiss <- c(1,5,11,23)# observations having missing values
@@ -158,7 +161,6 @@ test_that('simulation case',{
   expect_equal(apply(tsi$Disturbance, 1, min), rep(distMaglim[1],nrep))# disturbance magnitude
   expect_equal(apply(tsi$Remainder,1,sd), rep(remSd,nrep))# standard deviation of remainder
   expect_equal(colSums(apply(tsi$timeSeries,1,is.na))/(nyr*nobsYr), rep(mval,nrep))# fraction of missing values
-  #expect_equal()
 })
 
 
