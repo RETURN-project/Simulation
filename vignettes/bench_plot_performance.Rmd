@@ -1,12 +1,15 @@
 ---
 title: "Evaluate & plot the performance of the recovery indicators"
 author: "Wanda De Keersmaecker"
-date: "2/12/2020"
-output: html_document
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Evaluate & plot the performance of the recovery indicators}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 ```{r, include=FALSE}
@@ -48,9 +51,9 @@ __User inputs:__
 ```{r}
 #-------------------------------------------------
 # inputs
-ifolder <- '../Data/RecInd'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\RecInd\\' # folder with data characteristics
-setfolder <- '../Data/SimTS'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\SimTS\\' # folder with data characteristics
-figfolder <- '../Data/Figures'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Test_TSrequired\\Figures\\' # folder where the simulated time series will be saved
+ifolder <- '../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\RecInd\\' # folder with data characteristics
+setfolder <- '../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_1\\SimTS\\' # folder with data characteristics
+figfolder <- '../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Test_TSrequired\\Figures\\' # folder where the simulated time series will be saved
 
 basename <- 'toyset' #c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
 

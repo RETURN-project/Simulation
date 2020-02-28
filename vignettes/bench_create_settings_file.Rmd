@@ -1,12 +1,15 @@
 ---
 title: "Create simulation settings file"
 author: "Wanda De Keersmaecker"
-date: "2/11/2020"
-output: html_document
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Create simulation settings file}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 
@@ -62,8 +65,8 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 * __basename__: base name of the simulated time series files
 
 ```{r}
-ifolder <- '../Data/char' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
-ofolder <- '../Data/SimTS' #C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
+ifolder <- '../Data/' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
+ofolder <- '../Data/' #C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
 
 basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
 
@@ -78,6 +81,7 @@ basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')#
 * remcoef: ARMA model coefficients of remainder term
 * missval: fraction of missing values
 ```{r}
+print(getwd())
 source( '../R/fun_general.R')
 source( '../R/fun_simulate.R')
 

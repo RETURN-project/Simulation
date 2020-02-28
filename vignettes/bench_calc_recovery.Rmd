@@ -1,12 +1,15 @@
 ---
 title: "Calculate recovery indicators"
 author: "Wanda De Keersmaecker"
-date: "2/12/2020"
-output: html_document
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Calculate recovery indicators}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 
@@ -54,8 +57,8 @@ library(imputeTS)
 + *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance</font>
 
 ```{r}
-ifolder <- '../Data/SimTS'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
-ofolder <- '../Data/RecInd'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
+ifolder <- '../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\SimTS\\' # folder with data characteristics
+ofolder <- '../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_2\\RecInd\\' # folder where the simulated time series will be saved
 
 basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
 caseList <- c('distT', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#) c('distMag','missVal') # simulation cases to be evaluated
@@ -85,7 +88,7 @@ source('../R/fun_recovery.R')
 source('../R/fun_simulate.R')
 
 # Start the clock
-ptm <- proc.time()
+#ptm <- proc.time()
 
 # Initiate 
 m_RRI <- list()# measured RRI 
@@ -206,7 +209,7 @@ for(si in 1:length(caseList)){# # iterate over simulation cases
 
 
 # Stop the clock
-proc.time() - ptm
+#proc.time() - ptm
 ```
 
 ## Export results
