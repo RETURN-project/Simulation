@@ -1,16 +1,10 @@
-#' ---
-#' title: "Functions to evaluate the performance"
-#' author: "Wanda De Keersmaecker"
-#' date: "2/12/2020"
-#' output: html_document
-#' ---
+#' R squared
 #'
-## ----setup, include=FALSE------------------------------------------------
-#knitr::opts_chunk$set(echo = TRUE)
-
+#' @param x vector of x values
+#' @param y vector of y values
 #'
-#' ## R squared
-## ------------------------------------------------------------------------
+#' @return the R squared between the x and y variables
+#' @export
 rsq <- function(x, y) {
   if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
     rs <- summary(lm(y~x))$r.squared
@@ -18,34 +12,49 @@ rsq <- function(x, y) {
   rs
 }
 
+#' RMSE
 #'
-#' ## RMSE
-## ------------------------------------------------------------------------
-# calculate RMSE
+#' @param val vector of x values
+#' @param meas vector of y values
+#'
+#' @return the RMSE of the two vectors
+#' @export
 rmse <- function(val, meas){
   sqrt(mean((val - meas)^2,na.rm=TRUE))
 }
 
+#' MAPE
 #'
-#' ## MAPE
-## ------------------------------------------------------------------------
-# calculate MAPE
+#' @param val vector of x values
+#' @param meas vector of y values
+#'
+#' @return the MAPE of the two vectors
+#' @export
 mape <- function(val, meas){
   mean(abs(val - meas)/abs(val),na.rm=TRUE)
 }
 
+#' Derive performance (R2, MAPE or RMSE) from recovery indicators
 #'
-#' ## Calculate performance of recovery indicators
-## ------------------------------------------------------------------------
-# Derive performance (R2 or RMSE) from recovery indicators
+#' @param val  ground truth
+#' @param meas measured
+#' @param sttngs simulation settings file
+#' @param recSttngs recovery settings file
+#' @param metr recovery metric being evaluated
+#' @param perf performance indicator
+#'
+#' @return list of performance indicator
+#' @export
+#' @import reshape2
+#' @import plyr
 calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
   lst <- list()
   simcases <- names(meas)
   #vsimcases <- paste0('V',simcases)
 
-  for(sci in 1:length(meas)){
+  for(sci in 1:length(meas)){# evaluated parameters
     vls <- list()
-    for(rpi in 1:length(meas[[1]])){
+    for(rpi in 1:length(meas[[1]])){# recovery settings
       if((metr == 'SL') & ((recSttngs$input[rpi] == 'raw') | (recSttngs$input[rpi] == 'smooth'))){
       }else{
         val[[sci]][[rpi]][is.infinite(val[[sci]][[rpi]])] <- NA
@@ -65,14 +74,22 @@ calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
         tmp2 <- melt(tmp)
         tmp2$Metric <- factor(metr)
         tmp2$Dense <- factor(recSttngs$freq[rpi])
-        tmp2$Smooth <- revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
-        tmp2$Period <- revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
-        tmp2$Period[tmp2$Dense == 'annual'] <- 'Long'
+        tmp2$Smooth <- factor(recSttngs$input[rpi])#revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
+        tmp2$Period <- factor(recSttngs$nDist[rpi])#revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
+        #tmp2$Period <- revalue(factor(tmp2$Period), c("1"="Short", "12"="Long"))
+
+
+
         #tmp2$Method <- factor(paste0(metr, ', ',recSttngs$freq[rpi], ', ', recSttngs$input[rpi],', ', recSttngs$nDist[rpi]))
         #print(typeof(tmp2))
         vls <- rbind(vls,tmp2)
       }
     }
+    # vls$Smooth <- revalue(vls$Smooth, c("BFAST"="segmented", 'smooth'='smoothed'))
+    vls$Period <- revalue(vls$Period, c("1"="Short", "12"="Long"))
+
+    levels(vls$Period) <- c('Short', 'Long')
+    vls$Period[vls$Dense == 'annual'] <- "Long"
     lst[[names(meas)[sci]]] <- vls
   }
   lst
