@@ -1,13 +1,17 @@
 ---
 title: "Characterise time series"
 author: "Wanda De Keersmaecker"
-date: "2/10/2020"
-output: html_document
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Characterise time series}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 ```{r setup, include=FALSE}
 #eval = FALSE prevents code chunks to be run
-knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 
@@ -49,8 +53,8 @@ The following inputs are required:
 
 
 ```{r}
-ifolder <- '../Data/SampledData/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
-ofolder <-'../Data/char'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
+ifolder <- '../Data/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
+ofolder <-'../Data/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
 basename <- 'toyset'#LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year

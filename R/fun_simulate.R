@@ -1,33 +1,14 @@
-#' ---
-#' title: "Simulation functions"
-#' author: "Wanda De Keersmaecker"
-#' date: "2/5/2020"
-#' output: html_document
-#' ---
+#' Decompose time series into trend, seasonality and remainder: This function decomposes time series into three components using BFAST01 functionality: trend, seasonality and remainder. Trends are fitted using linear regression without breaks, seasonality is fitted using a first order harmonic function and the remainder equals the anomalies (i.e. time series - trend - seasonality).
 #'
+#' @param df a dataframe with time series that need to be decomposed. The dataframe needs to be structured as follows: each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the time series values for each observation date.
+#' @param nyr number of years of the input time series
+#' @param nobsYr number of observations per year of the input time series
 #'
-#' # 1. Time series characterisation
-#'
-#' ## 1.1 Decompose time series into trend, seasonality and remainder
-#' This function decomposes time series into three components using BFAST01 functionality: trend, seasonality and remainder. Trends are fitted using linear regression without breaks, seasonality is fitted using a first order harmonic function and the remainder equals the anomalies (i.e. time series - trend - seasonality).
-#'
-#' Function inputs:
-#'
-#' * df: a dataframe with time series that need to be decomposed. The dataframe needs to be structured as follows: each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the time series values for each observation date.
-#' * nyr: number of years of the input time series
-#' * nobsYr: number of observations per year of the input time series</font>
-#'
-#' Function outputs:
-#'
-#' * Seasonality: a dataframe with the seasonality of each pixel. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the seasonality values for each observation date.
-#' * Remainder: a dataframe with the remainder of each pixel. Dataframe is structured in the same way as the seasonality.
-#' * Trend: a dataframe with the trend of each pixel. Dataframe is structured in the same way as the seasonality.
-#' * Seasonality_coefficients: a dataframe with the coeficients of the fitted harmonic function. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the coefficients of the fitted harmonic function.
-#'
-#'
-#'
-## ------------------------------------------------------------------------
+#' @return a list containing the estimated seasonality, remainder, trend and seasonality coefficients. The seasonality is a dataframe with the seasonality of each pixel. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the seasonality values for each observation date. The trend and remainder are dataframes with the trend and remainder of each pixel (dataframe is structured in the same way as the seasonality). Seasonality_coefficients is a dataframe with the coeficients of the fitted harmonic function. Each row represents a sampled pixel. The first two columns contain the latitude and longitude of the pixel. The next columns contain the coefficients of the fitted harmonic function.
+#' @export
+#' @import bfast
 decompTSbfast <- function(df, nyr, nobsYr){
+  #library(bfast)
   # Initialize each output data frame with NA values
   # seasonality
   dfSeas <- data.frame(data= matrix(NA, nrow = dim(df)[1],ncol= dim(df)[2]))
@@ -42,7 +23,6 @@ decompTSbfast <- function(df, nyr, nobsYr){
   dfSeasCoef <- data.frame(data= matrix(NA, nrow = dim(df)[1],ncol= (4)))
   colnames(dfSeasCoef) <-  c('lat', 'lon', 'cos', 'sin')
 
-  library(bfast)
   # Iterate over each pixel and decompose time series
   for (i in 1:dim(df)[1]){
     err <- 0
@@ -77,23 +57,16 @@ decompTSbfast <- function(df, nyr, nobsYr){
   lst
 }
 
+
+#'  Fit ARMA model: This function automatically fits an ARMA model without seasonal component.
 #'
+#' @param tsx a time series object for which an ARMA model needs to be fitted.
 #'
-#' ## 1.2 Fit ARMA model
-#' This function automatically fits an ARMA model without seasonal component.
-#'
-#' Function inputs:
-#'
-#' * tsx: a time series object for which an ARMA model needs to be fitted.
-#'
-#' Function outputs:
-#'
-#' * ARMA model coefficients. A list containing the ARMA coefficients and their order (number of AR coefficients, non-seasonal differences and MA coefficients
-#'
-## ------------------------------------------------------------------------
-# ARMA coefficients
+#' @return ARMA model coefficients. A list containing the ARMA coefficients and their order (number of AR coefficients, non-seasonal differences and MA coefficients
+#' @export
+#' @import forecast
 getARMAcoef <- function(tsx){
-  library(forecast)
+  #library(forecast)
   arm <- auto.arima(tsx, seasonal=F) #arm$arma #A compact form of the specification, as a vector giving
   #the number of AR, MA, seasonal AR and seasonal MA coefficients,
   #plus the period, and the number of non-seasonal, and seasonal differences.
@@ -111,33 +84,23 @@ getARMAcoef <- function(tsx){
   coefmod
 }
 
+#' Simulate one time series with disturbance
 #'
-#' # 2. Time series simulation
+#' @param nyr number of years that need to be simulated
+#' @param nobsyr number of observations per year that will be simulated
+#' @param tMiss timing of missing values [observation number]. If tMiss equals NA, no missing values are introduced.
+#' @param nDr number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen.
+#' @param seasAv average seasonality profile
+#' @param seasAmp seasonality amplitude
+#' @param trAv offset value of time series
+#' @param remSd standard deviation of the remainder
+#' @param remMod ARMA model of remainder
+#' @param distMag magnitude of the disturbance
+#' @param distT timing of the disturbance [observation number]
+#' @param distRec duration of the recovery [number of observations]
 #'
-#' ## 2.1 Simulate one time series with disturbance
-#' Function to simulate a time series with disturbance.
-#'
-#' Function inputs:
-#'
-#' * nyr = number of years that need to be simulated
-#' * nobsyr = number of observations per year that will be simulated
-#' * tMiss = timing of missing values [observation number]. If tMiss equals NA, no missing values are introduced.
-#' * nDr = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen.
-#' * seasAv= average seasonality profile
-#' * seasAmp = seasonality amplitude
-#' * trAv = offset value of time series
-#' * remSd = standard deviation of the remainder
-#' * remMod = ARMA model of remainder
-#' * distMag = magnitude of the disturbance
-#' * distT = timing of the disturbance [observation number]
-#' * distRec = duration of the recovery [number of observations]</font>
-#'
-#' Function outputs:
-#'
-#' * years for which a drought was introduced
-#' * a time series object, containing the simulated seasonality, trend, remainder, disturbance, and the sum of these components.
-#'
-## ----simults-------------------------------------------------------------
+#' @return  a list containign the years for which a drought was introduced and a time series object, containing the simulated seasonality, trend, remainder, disturbance, and the sum of these components.
+#' @export
 simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod, distMag, distT, distRec){
   #-------------------------------------------------
   # simulate seasonality
@@ -190,23 +153,15 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
   list(ydr, ts(t(rbind(simSeas, simTr, simRem, simDist, simTS)), frequency = nobsyr))
 }
 
-#' ## 2.2 Simulate disturbance component
+#' Simulate disturbance component: Simulation of a disturbance as a step function with linear recovery trend. The time series equals zero when it is not being disturbed. The disturbance introduces at observation number *distT* a negative value with magnitude *distMag*. The linear recovery takes *distRec* observations.
 #'
-#' Simulation of a disturbance as a step function with linear recovery trend. The time series equals zero when it is not being disturbed. The disturbance introduces at observation number *distT* a negative value with magnitude *distMag*. The linear recovery takes *distRec* observations.
+#' @param distT timing of the disturbance [observation number]
+#' @param distRec duration of the recovery period [number of observations]
+#' @param distMag magnitude of the disturbance
+#' @param nobs number of observations per year that will be simulated
 #'
-#' Function inputs:
-#'
-#' * distT = timing of the disturbance [observation number]
-#' * distRec = duration of the recovery period [number of observations]
-#' * distMag = magnitude of the disturbance
-#' * nobs = number of observations per year that will be simulated
-#'
-#' Function outputs:
-#'
-#' * a vector with the simulated disturbance component
-#'
-#'
-## ----simulDist-----------------------------------------------------------
+#' @return a vector with the simulated disturbance component
+#' @export
 simulDist <- function(distT, distRec, distMag, nobs){
   if ((distT+distRec) <= (nobs)){
     simDist <- c(rep(0,(distT-1)), seq(distMag, 0, length.out = distRec), rep(0, ((nobs)-distRec -distT +1)))
@@ -219,32 +174,25 @@ simulDist <- function(distT, distRec, distMag, nobs){
 }
 
 
-#' ## 2.3 Simulate a set of time series
+#' Simulation of nrep disturbance time series.
 #'
-#' Simulation of *nrep* disturbance time series.
+#' @param nrep number of time series to simulate
+#' @param nyr number of years that need to be simulated
+#' @param nobsYr number of observations per year that will be simulated
+#' @param nDr number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen for each of the simulated time series.
+#' @param seasAv average seasonality profile
+#' @param seasAmp seasonality amplitude
+#' @param trAv offset value of time series
+#' @param remSd standard deviation of the remainder
+#' @param distMaglim limits of the disturbance magnitude, should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the disturbance magnitude is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a disturbance magnitude is randomly chosen in the given interval for each simulated time series.
+#' @param distTy year of the disturbance. If distTy equals one, the disturbance will take place in the first year. The exact disturbance date (day or year) is randomly chosen per time series.
+#' @param distReclim limits of the recovery duration of the recovery [number of observations], should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the recovery period is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a recovery period is randomly chosen in the given interval for each simulated time series.
+#' @param remcoef list of ARMA models of remainder component. For each simulated time series, a remainder model is randomly chosen from the list.
+#' @param mval number of missing values to be introduced. If mval equals NA, no missing values are introduced. For missing values with a random interval (see mvaldist), this should equal the fraction of missing values (mval equal to 0.1 will result in an NA value for 10 percent of the time series). For missing values having a regular interval, every mval observations one value is kept (eg for a daily time series, a mval equal to 5 will result in one observation every 5 days).
+#' @param mvaldist the distribution of the missing values. Should equal 'random'or 'interval'.
 #'
-#' Function inputs:
-#'
-#' * nrep = number of time series to simulate
-#' * nyr = number of years that need to be simulated
-#' * nobsyr = number of observations per year that will be simulated
-#' * nDr = number of drought years that are introduced [i.e. setting seasonality of a year equal to its minimum value]. These drought years are randomly chosen for each of the simulated time series.
-#' * seasAv= average seasonality profile
-#' * seasAmp = seasonality amplitude
-#' * trAv = offset value of time series
-#' * remSd = standard deviation of the remainder
-#' * distMaglim = limits of the disturbance magnitude, should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the disturbance magnitude is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a disturbance magnitude is randomly chosen in the given interval for each simulated time series.
-#' * distTy = year of the disturbance. If distTy equals one, the disturbance will take place in the first year. The exact disturbance date (day or year) is randomly chosen per time series.
-#' * distReclim = limits of the recovery duration of the recovery [number of observations], should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the recovery period is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a recovery period is randomly chosen in the given interval for each simulated time series.</font>
-#' * remcoef = list of ARMA models of remainder component. For each simulated time series, a remainder model is randomly chosen from the list.
-#' * mval = number of missing values to be introduced. If mval equals NA, no missing values are introduced. For missing values with a random interval (see mvaldist), this should equal the fraction of missing values (mval equal to 0.1 will result in an NA value for 10% of the time series). For missing values having a regular interval, every mval observations one value is kept (eg for a daily time series, a mval equal to 5 will result in one observation every 5 days).
-#' * mvaldist = the distribution of the missing values. Should equal 'random'or 'interval'.
-#'
-#' Function outputs:
-#'
-#' * a list with the simulated time series, offest, seasonality, remainder, disturbance component and parameters used for the simulation. The time series (components) are stored as matrix where each row is a time series and the columns are associated with the observation numbers.
-#'
-## ----simulCase-----------------------------------------------------------
+#' @return a list with the simulated time series, offest, seasonality, remainder, disturbance component and parameters used for the simulation. The time series (components) are stored as matrix where each row is a time series and the columns are associated with the observation numbers.
+#' @export
 simulCase <- function(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
                       trAv, remSd,distMaglim,distTy,distReclim, remcoef, mval, mvaldist){
   # matrices to store the time series
@@ -334,5 +282,5 @@ simulCase <- function(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
   out <- list( TSsim, TSsimTr, TSsimSeas, TSsimRem, TSsimDist, TSsimParam)
   names(out) <- c('timeSeries', 'Trend', 'Seasonality', 'Remainder', 'Disturbance', 'Parameters')
   out
-}# function to simulate a case with n repetitions and store all settings
+}
 

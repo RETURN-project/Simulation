@@ -1,7 +1,7 @@
 context("Characterise time series")
 
 test_that("Decomposition harmonic + trend + noise", {
-  source('../../R/fun_simulate.R')
+  #source('../R/fun_simulate.R')
 
   set.seed(197)
   # generate time stamps
@@ -34,7 +34,8 @@ test_that("Decomposition harmonic + trend + noise", {
 })
 
 test_that("ARMA coefficients",{
-  source('../../R/fun_simulate.R')
+  #source('../R/fun_simulate.R')
+
   # Generate time series with predefined ARMA coefficients
   nobs <- 50000
   set.seed(200);innov <- rnorm(nobs) # fix the innovations, so code is reproducible
@@ -63,7 +64,8 @@ test_that("ARMA coefficients",{
 })
 
 test_that("Disturbance simulation",{
-  source('../../R/fun_simulate.R')
+ # source('../R/fun_simulate.R')
+
   # disturbance and recovery before end of time series
   distT1 <- 5
   distRec1 <- 12
@@ -101,7 +103,8 @@ test_that("Disturbance simulation",{
 })
 
 test_that("Time series simulation",{
-  source('../../R/fun_simulate.R')
+  #source('../R/fun_simulate.R')
+
   nyr <- 5 # number of years
   nobsyr <- 12 # number of observations per year
   tMiss <- c(1,5,11,23)# observations having missing values
@@ -130,8 +133,8 @@ test_that("Time series simulation",{
   expect_equal(distRec,length(which(tsi[[2]][,4] < 0)), tolerance = 1)# recovery period
 })
 
-test_that('simulation case', {
-  source('../../R/fun_simulate.R')
+test_that('simulation case',{
+  #source('../R/fun_simulate.R')
   # simulation settings
   nrep <- 5 # number of repetitions
   nyr <- 5 # number of years
