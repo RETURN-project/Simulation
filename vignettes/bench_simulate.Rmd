@@ -87,7 +87,7 @@ for(vr in 1:length(sttngs$variables)){#length(sttngs$variables) c(4,7)
       sc <- simulCase(sttngs$nrep, comb$nyr[pari], sttngs$nobsYr, sttngs$nDr, sttngs$seasAv, comb$seasAmp[pari],
                       sttngs$trAv, comb$remSd[pari], c(comb$distMag[pari],comb$distMag[pari]), 
                       comb$distT[pari], c(comb$distRec[pari],comb$distRec[pari]), sttngs$remcoef, 
-                      comb$missVal[pari], sttngs$DistMissVal)
+                      comb$missVal[pari], sttngs$DistMissVal, sttngs$DistType)
       # compress each of the simulated time series and store the time series in a list 
       for (parii in 1:sttngs$nrep){
         cnt <- cnt+1
