@@ -105,7 +105,7 @@ missval <- loadRData(file = file.path(ifolder, paste0(basename, '_ts_VIMissVal.r
 * __Vnyr__: time series length (number of years)
 * __VdistMag__: disturbance magnitude, should be a negative value to simulate a drop
 * __VdistT__: timing disturbance (disturbance year)
-* __VdistRec__: recovery time after disturbance (number of observations)
+* __VdistRec__: recovery half time after disturbance (number of observations)
 * __VmissVal__: fraction of missing values in time series
 * __VseasAmp__: <- seasonal amplitude
 * __VremSd__: standard deviation of the remainder
@@ -124,11 +124,12 @@ VnDr <- c(0) # number of droughts
 Vnyr <- c(16,20)#seq(6,40,6)# number of years
 VdistMag <- -c(0.1,0.5)#-seq(0.1,0.5,0.1)# magnitude disturbance
 VdistT <- c(5,10) #seq(3,18,3)# timing disturbance
-VdistRec <- c(3,10)*STnobsYr#seq(3,15,2)*STnobsYr# recovery disturbance
+VdistRec <- c(1.5,5)*STnobsYr#seq(3,15,2)*STnobsYr# recovery disturbance
 Vqntl <- c(.05, .95)#c(.05, .275, .5, .725, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
 VmissVal <- quantile(missval, Vqntl)
 VseasAmp <- quantile(seasmax, Vqntl)# seasonal amplitude
 VremSd <- quantile(remsd, Vqntl)# sd of remainder
+VdistType <- 'piecewise'
   
 ```
 ## Create settings list
@@ -148,6 +149,7 @@ sttngs <- list(STnrep,
               VmissVal, 
               DistMissVal, 
               remcoef,
+              VdistType,
               c( 'nyr',  
                   'seasAmp',
                   'remSd', 
@@ -169,6 +171,7 @@ names(sttngs) <- c('nrep',
                   'missVal', 
                   'DistMissVal',
                   'remcoef',
+                  'distType',
                   'variables')
 
 
