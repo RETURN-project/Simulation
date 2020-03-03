@@ -1,8 +1,12 @@
 ---
 title: "Plotting decay functions"
 author: "Pablo Rodriguez-Sanchez"
-date: "2/24/2020"
-output: html_document
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Plotting decay functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 ```{r setup, include=FALSE}

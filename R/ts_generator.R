@@ -8,8 +8,6 @@
 #'
 #' @return The time series
 #' @export
-#'
-#' @examples
 piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
   m <- -pert / (2 * thalf) # Slope of the transitory regime
   ttrans <- 2*thalf # Duration of the transitory regime
@@ -30,8 +28,6 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
 #'
 #' @return The time series
 #' @export
-#'
-#' @examples
 exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
   c <- log(2)/thalf # Translate the half-life to a multiplicative constant
   y <- offset + pert * exp(-c*(t-tpert)) * (t >= tpert)
