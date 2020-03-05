@@ -51,12 +51,12 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
             # Ddist =  decrease due to disturbance (~impact)
             Ddist <- Vpre-V0
             # ARI: difference between maximum value within nPost years after disturbance and the disturbance value
-            ARI <- max(tsio[(tdist +(4+obspyr)):(tdist+(5*obspyr))], na.rm=T) - V0
+            ARI <- max(tsio[(tdist +(4*obspyr)):(tdist+(5*obspyr))], na.rm=T) - V0
             # RRI: Relative Recovery Index (~recovery relative to impact)
             RRI <- ARI/Ddist
             if(is.infinite(RRI)){RRI <- NA}
             # R80p recovery index (~ ability to reach 80% of pre-disturbance value)
-            R80P <- max(tsio[(tdist +(4+obspyr)):(tdist+(5*obspyr))], na.rm=T)/(Vpre*0.8)
+            R80P <- max(tsio[(tdist +(4*obspyr)):(tdist+(5*obspyr))], na.rm=T)/(Vpre*0.8)
             if(is.infinite(R80P)){R80P <- NA}
             # YrYR recovery index (~ related to slope)
             YrYr <- (tsio[tdist+(5*obspyr)]-V0)/5
