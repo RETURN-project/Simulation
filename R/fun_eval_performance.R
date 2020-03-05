@@ -50,7 +50,6 @@ mape <- function(val, meas){
 calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
   lst <- list()
   simcases <- names(meas)
-  #vsimcases <- paste0('V',simcases)
 
   for(sci in 1:length(meas)){# evaluated parameters
     vls <- list()
@@ -69,23 +68,15 @@ calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
           vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) mape(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))
         }
         tmp <- data.frame(t(vl))
-        #print(typeof(tmp))
         names(tmp) <- sttngs[[simcases[sci]]]
         tmp2 <- melt(tmp)
         tmp2$Metric <- factor(metr)
         tmp2$Dense <- factor(recSttngs$freq[rpi])
         tmp2$Smooth <- factor(recSttngs$input[rpi])#revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
         tmp2$Period <- factor(recSttngs$nDist[rpi])#revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
-        #tmp2$Period <- revalue(factor(tmp2$Period), c("1"="Short", "12"="Long"))
-
-
-
-        #tmp2$Method <- factor(paste0(metr, ', ',recSttngs$freq[rpi], ', ', recSttngs$input[rpi],', ', recSttngs$nDist[rpi]))
-        #print(typeof(tmp2))
         vls <- rbind(vls,tmp2)
       }
     }
-    # vls$Smooth <- revalue(vls$Smooth, c("BFAST"="segmented", 'smooth'='smoothed'))
     vls$Period <- revalue(vls$Period, c("1"="Short", "12"="Long"))
 
     levels(vls$Period) <- c('Short', 'Long')
