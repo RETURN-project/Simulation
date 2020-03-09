@@ -36,8 +36,10 @@ This script decomposes time series into a set of components (trend, remainder, a
 ```{r}
 library(bfast)
 library(forecast)
-source('../R/fun_general.R')
-source('../R/fun_simulate.R')
+library(BenchmarkRecovery)
+library(zoo)
+#source('../R/fun_general.R')
+#source('../R/fun_simulate.R')
 
 ```
 
@@ -53,9 +55,9 @@ The following inputs are required:
 
 
 ```{r}
-ifolder <- '../Data/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
-ofolder <-'../Data/'#'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
-basename <- 'toyset'#LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
+ifolder <- 'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'#'../Data/' #'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'
+ofolder <-'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'#'../Data/' #'C:\\Users\\keers001\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'
+basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'#'toyset'#LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year
 
@@ -107,7 +109,7 @@ The following characteristics are derived from the decomposed time series:
 # general
 
 # fraction missing values
-tsVIMissVal <- rowSums(is.na(dfVi))/dim(dfVi)[2]
+tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2)
 
 # ------------------------------------------------
 # seasonality
@@ -163,7 +165,6 @@ save(tsVIMissVal, file = file.path(ofolder, paste0(tools::file_path_sans_ext(ifi
 ## 7. Plot data characteristics
 ```{r}
 # Decomposition
-library(zoo)
 
 op <- par()
 dev.off()
