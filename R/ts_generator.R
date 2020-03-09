@@ -146,6 +146,8 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
   m_distMag <- matrix(NA, nrow = nrep, ncol = 1)
   m_distT <- matrix(NA, nrow = nrep, ncol = 1)
   m_distRec <- matrix(NA, nrow = nrep, ncol = 1)
+  m_distType<- matrix(NA, nrow = nrep, ncol = 1)
+  m_mVal<- matrix(NA, nrow = nrep, ncol = 1)
 
 
   for (ii in 1:nrep){
@@ -193,6 +195,8 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
     m_distMag[ii] <- distMag
     m_distT[ii] <-distT
     m_distRec[ii] <- distRec
+    m_distType[ii] <- distType
+    m_mVal[ii] <- mval
     rm(modi, distT, sts)
   }
 
@@ -205,10 +209,12 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
                            m_remSd,
                            m_distMag,
                            m_distT,
-                           m_distRec)
+                           m_distRec,
+                           m_distType,
+                           m_mVal)
   names(TSsimParam) <- c("number_yrs", "obs_per_year", "number_droughts",
                          "seas_amp", "trend_av", 'rem_sd',
-                         'dist_magn', 'dist_time', 'dist_rec')
+                         'dist_magn', 'dist_time', 'dist_rec', 'dist_type', 'miss_val')
   TSsimParam$year_drought <- m_year_dr
   TSsimParam$rem_coef <- m_remcoef
 
