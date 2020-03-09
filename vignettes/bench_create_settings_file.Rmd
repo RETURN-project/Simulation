@@ -9,7 +9,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 
@@ -65,10 +65,10 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 * __basename__: base name of the simulated time series files
 
 ```{r}
-ifolder <- '../Data/' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
-ofolder <- '../Data/' #C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
+ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\' #'../Data/' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Char\\'  # folder with data characteristics
+ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\'#'../Data/' #C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
 
-basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
+basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'#'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')# base name of the data files
 
 ```
 
@@ -81,9 +81,10 @@ basename <- 'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI')#
 * remcoef: ARMA model coefficients of remainder term
 * missval: fraction of missing values
 ```{r}
-print(getwd())
-source( '../R/fun_general.R')
-source( '../R/fun_simulate.R')
+# print(getwd())
+library(BenchmarkRecovery)
+# source( '../R/fun_general.R')
+# source( '../R/fun_simulate.R')
 
 seasmax <- loadRData(file = file.path(ifolder, paste0(basename, '_seasVImax.rda')))# half seasonal amplitude
 seasmean <- loadRData(file = file.path(ifolder, paste0(basename, '_seasVImean.rda')))
@@ -123,13 +124,13 @@ STtrAv <- trmean # offset
 VnDr <- c(0) # number of droughts
 Vnyr <- c(16,20)#seq(6,40,6)# number of years
 VdistMag <- -c(0.1,0.5)#-seq(0.1,0.5,0.1)# magnitude disturbance
-VdistT <- c(5,10) #seq(3,18,3)# timing disturbance
-VdistRec <- c(1.5,5)*STnobsYr#seq(3,15,2)*STnobsYr# recovery disturbance
+VdistT <- c(5,10) #seq(3,33,6)# timing disturbance
+VdistRec <- c(1.5,5)*STnobsYr#seq(1,10,2)*STnobsYr# recovery disturbance
 Vqntl <- c(.05, .95)#c(.05, .275, .5, .725, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
 VmissVal <- quantile(missval, Vqntl)
 VseasAmp <- quantile(seasmax, Vqntl)# seasonal amplitude
 VremSd <- quantile(remsd, Vqntl)# sd of remainder
-VdistType <- 'piecewise'
+VdistType <- 'exponential' #piecewise or exponential
   
 ```
 ## Create settings list
