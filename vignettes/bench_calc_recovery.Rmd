@@ -237,3 +237,9 @@ save(s_SL, file=file.path(ofolder, paste0(basename, '_s_SL.rda')))
 save(funSet, file=file.path(ofolder, paste0(basename, '_recSettings.rda')))
 
 ```
+
+```{r}
+#-------------------------------------------------
+# Plot
+
+```
