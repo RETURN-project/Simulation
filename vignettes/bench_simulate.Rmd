@@ -9,7 +9,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
   ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 ```{r, include=FALSE}
@@ -31,8 +31,8 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 * basename: base name of the data files
 
 ```{r}
-ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\'#'../Data/' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder with data characteristics
-ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\'#'../Data/' # 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
+ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie3\\'#'../Data/' #'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder with data characteristics
+ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie3\\'#'../Data/' # 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Test_TSrequired\\TS_10\\SimTS\\'  # folder where the simulated time series will be saved
 
 basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'# 'toyset' # 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'# base name of the data files
 ```
