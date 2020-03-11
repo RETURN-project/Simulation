@@ -92,15 +92,17 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
   # Convert the time series object into a dataframe, needed for the breakpoints function
     datapp <- bfastpp(tsi, order = 1, lag = NULL, slag = NULL,
                   na.action = na.omit, stl = 'none')
-    # Apply BFAST0n on time series: find breaks in the regression
-    bp <- breakpoints(response ~ trend, data = datapp, h = h)##, breaks = nbrks
-    # Check if BFAST0n found breakpoints
-    if(is.na(bp$breakpoints[1])){# no breakpoint found
-        tr <- fitted(bp, 0)
-        sl <- (tr[2] - tr[1])
-        frz <- list(NA, NA, NA, sl)
+    # Test if enough observations are available to use time series segmentation
+    if(round(length(tsio[is.na(tsio)==F]) * h) > 2){
+      # Apply BFAST0n on time series: find breaks in the regression
+      bp <- breakpoints(response ~ trend, data = datapp, h = h)##, breaks = nbrks
+      # Check if BFAST0n found breakpoints
+      if(is.na(bp$breakpoints[1])){# no breakpoint found
+        # tr <- fitted(bp, 0)
+        # sl <- (tr[2] - tr[1])
+        frz <- list(NA, NA, NA, NA)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
-    }else{# at least one breakpoint found
+      }else{# at least one breakpoint found
         # Extract BFAST trend component and breaks
         cf <- coef(bp)
         # Extract BFAST trend component and breaks
@@ -113,7 +115,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         bpf <- c(0, tbp, length(tsi))
         trf <- rep(NA,length(tsi))
         for(ti in 1:(length(bpf)-1)){
-            trf[(bpf[ti]+1):bpf[ti+1]] <- cf[ti,1] + ((cf[ti,2]*((bpf[ti]+1):bpf[ti+1])))
+          trf[(bpf[ti]+1):bpf[ti+1]] <- cf[ti,1] + ((cf[ti,2]*((bpf[ti]+1):bpf[ti+1])))
         }
         # Find the major break
         dbr <- trf[tbp+1]-trf[tbp]
@@ -124,7 +126,12 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         sl <- (trf[tbp+3] - trf[tbp+2])
         frz <- c(frz, sl)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
+      }
+    }else{
+      frz <- list(NA, NA, NA, NA)
+      names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
     }
+
     frz
 }
 
