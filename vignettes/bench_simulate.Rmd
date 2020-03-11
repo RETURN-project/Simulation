@@ -9,7 +9,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
   ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 ```{r, include=FALSE}

@@ -8,12 +8,12 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
   ---
-  ```{r setup, include=FALSE}
+```{r setup, include=FALSE}
   knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-  ```
+```
   
   
-  ```{r, include=FALSE}
+```{r, include=FALSE}
   # source_rmd <- function(file, local = FALSE, ...){
 #   options(knitr.duplicate.label = 'allow')
 #   
