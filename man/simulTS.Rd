@@ -4,21 +4,8 @@
 \alias{simulTS}
 \title{Simulate one time series with disturbance}
 \usage{
-simulTS(
-  nyr,
-  nobsyr,
-  tMiss,
-  nDr,
-  seasAv,
-  seasAmp,
-  trAv,
-  remSd,
-  remMod,
-  distMag,
-  distT,
-  distRec,
-  distType
-)
+simulTS(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod,
+  distMag, distT, distRec, distType)
 }
 \arguments{
 \item{nyr}{number of years that need to be simulated}
