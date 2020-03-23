@@ -4,8 +4,7 @@
 \alias{calcBFASTrec}
 \title{Post-disturbance slope and recovery metrics derived from BFAST0n trend segments. The calcBFASTrec function derives a set of recovery indicators after fitting a segmented trend in the time series. Using the breakpoints function of the strucchange package, a segmented trend is fitted (hereafter called BFAST0n trend segments). The detected break showing the largest change (in absolute values) is assumed to represent the disturbance. Using the segmented trend and detected disturbance date, the RRI, R80p, YrYr and the slope of the post-disturbance trend segment are derived as recovery indicators.}
 \usage{
-calcBFASTrec(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin,
-  nPostMax)
+calcBFASTrec(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
 }
 \arguments{
 \item{tsio}{vector of observations (time series)}
