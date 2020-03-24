@@ -57,24 +57,30 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
   # TODO: implement tpert
 
-  # Pose the differential equation dydt = -r * y
-  # This differential equation represents the deterministic part of an exponential decay
-  dy <- function(time, y, parms) {
-    with(as.list(c(y, parms)), {
-      dy <- -r*y # r should be contained in parms (e.g.: parms = c(r = 1))
-      return(list(dy))
-    })
+  # Pose the differential equation dy = f(y,t) dt + g(y,t) dW
+  #
+  # With
+  # f(y, t) = -r * y (exponential decay)
+  # and
+  # g(y, t) = s (white noise)
+
+  ## Define the deterministic part
+  f <- function(y, p, time) {
+    return(-p[1]*y)
+  }
+
+  # Define the stochastic part
+  g <- function(y, p, time) {
+    return(p[2])
   }
 
   ## Translate parameters to the language of differential equations
   y0 <- pert
-  parms <- c(r = log(2)/thalf) # Translate the half-life to a multiplicative constant
+  parms <- c(r = log(2)/thalf, # Translate the half-life to a multiplicative constant
+             s = noise)
 
   # Solve
-  sol <- deSolve::ode(y = y0,
-                      func = dy,
-                      times = t,
-                      parms = parms)
+  sol <- diffeqr::sde.solve(f, g, y0, tspan, p = parms)
 
   # Extract the states
   #
