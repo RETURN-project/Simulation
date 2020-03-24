@@ -5,15 +5,18 @@
 #' @param pert Perturbation intensity (signed)
 #' @param tpert Perturbation timing
 #' @param thalf Perturbation half-life
+#' @param noise Strength of the additive white noise (standard deviation)
 #'
 #' @return The time series
 #' @export
-piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
+piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
   m <- -pert / (2 * thalf) # Slope of the transitory regime
   ttrans <- 2*thalf # Duration of the transitory regime
   y <- offset                             * (t < tpert) +
        (offset + pert + m *(t - tpert))   * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
        offset                             * (t > tpert + ttrans)
+
+  y <- y + rnorm(length(t), sd = noise) # Add the noise
   y
 }
 
@@ -25,12 +28,15 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
 #' @param pert Perturbation intensity (signed)
 #' @param tpert Perturbation timing
 #' @param thalf Perturbation half-life
+#' @param noise Strength of the additive white noise (standard deviation)
 #'
 #' @return The time series
 #' @export
-exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
+exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
   r <- log(2)/thalf # Translate the half-life to a multiplicative constant
   y <- offset + pert * exp(-r*(t-tpert)) * (t >= tpert)
+
+  y <- y + rnorm(length(t), sd = noise) # Add the noise
   y
 }
 
@@ -44,10 +50,11 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
 #' @param pert Perturbation intensity (signed)
 #' @param tpert Perturbation timing
 #' @param thalf Perturbation half-life
+#' @param noise Strength of the additive white noise (standard deviation)
 #'
 #' @return The time series
 #' @export
-realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
+realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
   # TODO: implement tpert
 
   # Pose the differential equation dydt = -r * y
