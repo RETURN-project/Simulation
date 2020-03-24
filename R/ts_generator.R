@@ -29,8 +29,53 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
 #' @return The time series
 #' @export
 exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
-  c <- log(2)/thalf # Translate the half-life to a multiplicative constant
-  y <- offset + pert * exp(-c*(t-tpert)) * (t >= tpert)
+  r <- log(2)/thalf # Translate the half-life to a multiplicative constant
+  y <- offset + pert * exp(-r*(t-tpert)) * (t >= tpert)
+  y
+}
+
+
+#' Realistic time series simulation
+#'
+#' TODO explain more
+#'
+#' @param t Times to simulate
+#' @param offset Offset
+#' @param pert Perturbation intensity (signed)
+#' @param tpert Perturbation timing
+#' @param thalf Perturbation half-life
+#'
+#' @return The time series
+#' @export
+realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1) {
+  # TODO: implement tpert
+
+  # Pose the differential equation dydt = -r * y
+  # This differential equation represents the deterministic part of an exponential decay
+  dy <- function(time, y, parms) {
+    with(as.list(c(y, parms)), {
+      dy <- -r*y # r should be contained in parms (e.g.: parms = c(r = 1))
+      return(list(dy))
+    })
+  }
+
+  ## Translate parameters to the language of differential equations
+  y0 <- pert
+  parms <- c(r = log(2)/thalf) # Translate the half-life to a multiplicative constant
+
+  # Solve
+  sol <- deSolve::ode(y = y0,
+                      func = dy,
+                      times = t,
+                      parms = parms)
+
+  # Extract the states
+  #
+  # sol contains both times and states. We want to keep only the states to follow the same input/output structure as in piecewise and exponential
+  sol <- as.data.frame(sol)
+  y <- sol$`1`
+
+  y <- y + offset # Don't forget to add the offset
   y
 }
 
