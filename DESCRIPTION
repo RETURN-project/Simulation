@@ -17,7 +17,7 @@ Imports: bfast,
          ggplot2,
          reshape2,
          plyr,
-         deSolve
+         sde
 Suggests: imputeTS,
           signal,
           GGally,

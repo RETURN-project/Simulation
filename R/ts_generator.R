@@ -17,7 +17,8 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
        offset                             * (t > tpert + ttrans)
 
   y <- y + rnorm(length(t), sd = noise) # Add the noise
-  y
+
+  return(y)
 }
 
 
@@ -37,13 +38,17 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
   y <- offset + pert * exp(-r*(t-tpert)) * (t >= tpert)
 
   y <- y + rnorm(length(t), sd = noise) # Add the noise
-  y
+
+  return(y)
 }
 
 
 #' Realistic time series simulation
 #'
-#' TODO explain more
+#' Simulates a return to equilibrium after a perturbation under the influence of a stochastic differential equation where:
+#'
+#' 1. The deterministic dynamics are given by an exponential decay with the given half life
+#' 2. The stochastic dynamics have the given infinitesimal standard deviation
 #'
 #' @param t Times to simulate
 #' @param offset Offset
@@ -56,6 +61,11 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @export
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
   # TODO: implement tpert
+  # TODO: scale noise
+
+  ## Translate parameters to the language of differential equations
+  y0 <- pert
+  r <- log(2)/thalf # Translate the half-life to a multiplicative constant
 
   # Pose the differential equation dy = f(y,t) dt + g(y,t) dW
   #
@@ -63,33 +73,39 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   # f(y, t) = -r * y (exponential decay)
   # and
   # g(y, t) = s (white noise)
-
-  ## Define the deterministic part
-  f <- function(y, p, time) {
-    return(-p[1]*y)
-  }
-
-  # Define the stochastic part
-  g <- function(y, p, time) {
-    return(p[2])
-  }
-
-  ## Translate parameters to the language of differential equations
-  y0 <- pert
-  parms <- c(r = log(2)/thalf, # Translate the half-life to a multiplicative constant
-             s = noise)
+  #
+  # Unfortunately, the package sde uses a very obscure syntax. Instead of functions it expects
+  # expressions depending on x and t as an input. When those object contain, additionally,
+  # parameters, we need to pass them via the substitute command.
+  #
+  # e.g: substitute(a + x, list(a = 2)) returns 2 + x
+  # 2 + x is an object of class call, that must be converted to expression
+  f <- as.expression(
+                      substitute(-r * x,
+                                 list(r = r))
+                    )
+  g <- as.expression(
+                     substitute(s,
+                                list(s = noise))
+                     )
 
   # Solve
-  sol <- diffeqr::sde.solve(f, g, y0, tspan, p = parms)
+  sol <- sde::sde.sim(X0 = y0,
+                      T = max(t),
+                      N = length(t)-1,
+                      drift = f,
+                      sigma = g,
+                      sigma.x = 0.0,
+                      method = 'euler')
 
-  # Extract the states
-  #
-  # sol contains both times and states. We want to keep only the states to follow the same input/output structure as in piecewise and exponential
+  # Extract the state only (so the output has the same structure as in piecewise and exponential)
   sol <- as.data.frame(sol)
-  y <- sol$`1`
+  y <- as.numeric(sol$x)
 
-  y <- y + offset # Don't forget to add the offset
-  y
+  # Don't forget to add the offset
+  y <- y + offset
+
+  return(y)
 }
 
 #' Simulate one time series with disturbance
