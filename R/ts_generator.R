@@ -60,8 +60,11 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @return The time series
 #' @export
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
-  # TODO: implement tpert
   # TODO: scale noise
+
+  # Avoid wrong inputs
+  # The current implementation doesn't use any tpert different than 0
+  if(tpert != 0) { stop("Currently tpert different than 0 is not supported by this method") } # TODO: implement functionality tpert
 
   ## Translate parameters to the language of differential equations
   y0 <- pert
