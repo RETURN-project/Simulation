@@ -10,26 +10,41 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-```
+# Default chunk configuration
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = TRUE, 
+                      fig.width=8, 
+                      fig.height=6) 
 
-```{r}
+# Load libraries
 library(BenchmarkRecovery)
 ```
 
-## R Markdown
+## Comparing decay functions
 
-```{r}
-ts <- seq(0, 10, by = 0.025)
+```{r simulate}
+# Set the problem
+## Set the times
+ts <- seq(0, 15, by = 0.025)
 
+## Set the parameters (the same for all)
 offset <- 0
-pert <- 1
-tpert <- 1.5
-recover <- 3
+pert <- 5
+tpert <- 0
+thalf <- 3
+noise <- .05
 
-ys_p <- piecewise(ts, offset, pert, tpert, recover)
-ys_e <- exponential(ts, offset, pert, tpert, recover)
+# Generate the time series
+ys_p <- piecewise(ts, offset, pert, tpert, thalf, noise)
+ys_e <- exponential(ts, offset, pert, tpert, thalf, noise)
+ys_r <- realistic(ts, offset, pert, tpert, thalf, noise)
+```
 
-plot(ts, ys_p, 'l', col = 'red')
-lines(ts, ys_e, col = 'blue')
+```{r plot, echo=FALSE}
+# Plot the time series
+plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state')
+lines(ts, ys_e, col = 'red')
+lines(ts, ys_r, col = 'blue')
+legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
+       col = c('black', 'red', 'blue'), lty = 1, cex = 1)
 ```
