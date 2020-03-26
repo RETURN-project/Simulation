@@ -60,15 +60,23 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @return The time series
 #' @export
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
-  # TODO: scale noise
 
   # Avoid wrong inputs
   # The current implementation doesn't use any tpert different than 0
-  if(tpert != 0) { stop("Currently tpert different than 0 is not supported by this method") } # TODO: implement functionality tpert
+  # TODO: implement this functionality
+  if(tpert != 0) { stop("Currently tpert different than 0 is not supported by this method") }
 
-  ## Translate parameters to the language of differential equations
-  y0 <- pert
+  # Translate parameters to the language of differential equations
+  y0 <- pert # The perturbation represents the initial condition
   r <- log(2)/thalf # Translate the half-life to a multiplicative constant
+
+  # Scale the noise
+  # We want to interpret the parameters in piecewise, exponential and realistic uniformly.
+  # Parameter noise is of course no exception. In order to make sure that the standard deviation
+  # of the resulting time series is (roughly) equal to the parameter noise, we need to rescale
+  # the infinitesimal standard deviation term used in the stochastic differential equation
+  tStep <- max(diff(t)) # Numerical time step
+  isd <- noise/sqrt(tStep) # Infinitesimal standard deviation
 
   # Pose the differential equation dy = f(y,t) dt + g(y,t) dW
   #
@@ -89,7 +97,7 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
                     )
   g <- as.expression(
                      substitute(s,
-                                list(s = noise))
+                                list(s = isd))
                      )
 
   # Solve
