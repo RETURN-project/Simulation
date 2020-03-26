@@ -24,6 +24,21 @@ test_that("Linear decay", {
   expect_equal(abs(max(ys)), abs(pert), tolerance = 1e-4)
 })
 
+test_that("Realistic decay (deterministic)", {
+
+  ts <- seq(0, 25, by = 0.1)
+  pert <- 1.5
+  tpert <- 0
+  thalf <- 1
+  offset <- 2
+
+  ys_exp <- exponential(ts, offset = offset, pert = pert, tpert = tpert, thalf = thalf)
+  ys_rea <- realistic(ts, offset = offset, pert = pert, tpert = tpert, thalf = thalf)
+
+  # In the absence of noise, realistic and exponential decays should be identical
+  expect_equal(ys_rea, ys_exp, tolerance = 1e-4)
+})
+
 test_that("Disturbance simulation",{
   # source('../R/fun_simulate.R')
 
