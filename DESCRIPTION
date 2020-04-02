@@ -24,6 +24,5 @@ Suggests: imputeTS,
           testthat,
           knitr,
           rmarkdown
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr
-
