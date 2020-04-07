@@ -32,12 +32,15 @@ offset <- 0
 pert <- 5
 tpert <- 0
 thalf <- 3
-noise <- .05
+noise <- 0.05
+
+## The 'realistic' time series contains an extra parameter, controlling the 'dynamic' noise
+sigma <- 0.1
 
 # Generate the time series
 ys_p <- piecewise(ts, offset, pert, tpert, thalf, noise)
 ys_e <- exponential(ts, offset, pert, tpert, thalf, noise)
-ys_r <- realistic(ts, offset, pert, tpert, thalf, noise)
+ys_r <- realistic(ts, offset, pert, tpert, thalf, noise, sigma)
 ```
 
 ```{r plot, echo=FALSE}
