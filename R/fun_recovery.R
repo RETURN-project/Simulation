@@ -95,7 +95,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
     # Test if enough observations are available to use time series segmentation
     if(round(length(tsio[is.na(tsio)==F]) * h) > 2){
       # Apply BFAST0n on time series: find breaks in the regression
-      bp <- breakpoints(response ~ trend, data = datapp, h = h)##, breaks = nbrks
+      bp <- breakpoints(response ~ trend, data = datapp, h = h, hpc = 'foreach')##, breaks = nbrks
       # Check if BFAST0n found breakpoints
       if(is.na(bp$breakpoints[1])){# no breakpoint found
         # tr <- fitted(bp, 0)
@@ -103,9 +103,9 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         frz <- list(NA, NA, NA, NA)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
       }else{# at least one breakpoint found
-        # Extract BFAST trend component and breaks
+        # Extract trend component and breaks
         cf <- coef(bp)
-        # Extract BFAST trend component and breaks
+        # Extract trend component and breaks
         tbp <- bp$breakpoints #observation number of break
         #tr <- rep(NA,length(tsi))
         indna <- which(is.na(tsi)==F)
@@ -120,9 +120,9 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         # Find the major break
         dbr <- trf[tbp+1]-trf[tbp]
         tbp <- tbp[which(abs(dbr) == max(abs(dbr)))]
-        # Calculate Frazier recovery metrics on BFAST trend component
+        # Calculate Frazier recovery metrics on trend component
         frz <- calcFrazier(as.numeric(trf), (tbp+1), floor(obspyr), shortDenseTS, nPre, nDist, nPostMin, nPostMax)
-        # Calculate the post-disturbance slope of the BFAST trend component (first segment after break)
+        # Calculate the post-disturbance slope of the trend component (first segment after break)
         sl <- (trf[tbp+3] - trf[tbp+2])
         frz <- c(frz, sl)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
@@ -133,6 +133,28 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
     }
 
     frz
+}
+
+#
+#' convert to matrix of performance indicators to a dataframe
+#'
+#' @param mat matrix of recovery indicators (rows represent the values of the tested time series characteristic, colums represent the different recovery indicators)
+#' @param setvr time series characteristic being evaluated
+#' @param metric recovery metric being evaluated
+#' @param freq vector of temporal frequencies per recovery indicator
+#' @param input vector of preprocessing techniques per recovery indicator
+#' @param nDist vector of the time span during the disturbance used to measure recovery
+#'
+#' @return dataframe
+#' @export
+toDF <- function(mat, setvr, metric, freq, input, nDist){
+  tst <- as.data.frame(t(mat))
+  names(tst) <- setvr
+  tst$Metric <- factor(metric)
+  tst$Dense <- factor(freq)
+  tst$Smooth <- factor(input)
+  tst$Period <- revalue(factor(nDist), c("1"="Short", "12"="Long"))#factor(recSttngs$nDist)#
+  tst
 }
 
 #'

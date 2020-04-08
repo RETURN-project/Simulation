@@ -4,23 +4,8 @@
 \alias{simulCase}
 \title{Simulation of nrep disturbance time series.}
 \usage{
-simulCase(
-  nrep,
-  nyr,
-  nobsYr,
-  nDr,
-  seasAv,
-  seasAmp,
-  trAv,
-  remSd,
-  distMaglim,
-  distTy,
-  distReclim,
-  remcoef,
-  mval,
-  mvaldist,
-  distType
-)
+simulCase(nrep, nyr, nobsYr, nDr, seasAv, seasAmp, trAv, remSd, distMaglim,
+  distTy, distReclim, remcoef, mval, mvaldist, distType)
 }
 \arguments{
 \item{nrep}{number of time series to simulate}
