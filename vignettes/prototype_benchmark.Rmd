@@ -39,8 +39,8 @@ The following characteristics are derived from the decomposed time series:
 #profvis({
 # ------------------------------------------------
 # inputs
-ifolder <- '../Data/' #folder where input data is located
-ofolder <-'../Data/' # folder where outputs will be written
+ifolder <- '../data/' #folder where input data is located
+ofolder <-'../data/' # folder where outputs will be written
 basename <- 'toyset'# name of the input dataset (contains sampled satellite time series)
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year
