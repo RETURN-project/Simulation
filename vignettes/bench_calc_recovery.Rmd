@@ -8,24 +8,10 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
   ---
-```{r setup, include=FALSE}
-  knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```{r setup, include=TRUE}
+  knitr::opts_chunk$set(echo = TRUE, eval = F)
 ```
   
-  
-```{r, include=FALSE}
-  # source_rmd <- function(file, local = FALSE, ...){
-#   options(knitr.duplicate.label = 'allow')
-#   
-#   tempR <- tempfile(tmpdir = ".", fileext = ".R")
-#   on.exit(unlink(tempR))
-#   knitr::purl(file, output=tempR, quiet = TRUE)
-#   
-#   envir <- globalenv()
-#   source(tempR, local = envir, ...)
-# }
-```
-
 *This script calculates a set of recovery indicators from simulated time series, including the RRI, R80P and YrYr recovery indicators, defined by Frazier et al. (2018), and the post-disturbance slope. These indicators can be derived from dense (having more than one observation per year) time series or the dense time series can be converted to annual time series. In addition, the indicators can be calculated using the raw time series, smoothed time series or after trend segmentation.*
 
 *The RRI, R80p and YrYr recovery indicators are originally developped for annual long-term time series of optical vegetation indices. Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested. Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators. To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years. Moreover, given the potentially high noise levels of dense time series, the mean value instead of the maximum value was used in the formulas.*
@@ -39,6 +25,7 @@ library(signal)
 library(BenchmarkRecovery)
 #install.packages('imputeTS')
 library(imputeTS)
+library(doParallel)
 ```
 ## Inputs
 
@@ -58,12 +45,12 @@ library(imputeTS)
 + *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance</font>
 
 ```{r}
-ifolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie1\\' #'../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie1\\' # folder with data characteristics
-ofolder <- 'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\RecInd\\pie1\\' #'../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie1' # folder where the simulated time series will be saved
-ncores <-  2 # number of cores used for parallel computing
+ifolder <- '/media/wanda/DATA/SimTS/pie1/' #'../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie1\\' # folder with data characteristics
+ofolder <- '/home/wanda/Dropbox/RecInd/pie1/' #'../Data/'#'C:\\Users\\keers001\\OneDrive\ -\ WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SimTS\\pie1' # folder where the simulated time series will be saved
+ncores <-  8 # number of cores used for parallel computing
 
 basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'#'toyset'#c('LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI_VI')# base name of the data files
-caseList <- c('distT', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#) c('distMag','missVal') # simulation cases to be evaluated
+caseList <- c('nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#c('distT','nDr', 'nyr','seasAmp','remSd', 'distMag','distT', 'distRec', 'missVal')#) c('distMag','missVal') # simulation cases to be evaluated
 funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
                'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),# settings for the recovery indicators
                'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
@@ -77,7 +64,6 @@ funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','den
 ## Extract recovery indicators
 
 ```{r}
-library(doParallel)
 registerDoParallel(cores=ncores)
 
 ccomb <- function(...) {
@@ -204,7 +190,7 @@ for(si in 1:length(caseList)){# # iterate over simulation cases
       }
     }
     
-    list(m_RRIi, m_R80pi, m_YrYri, m_SLi, s_RRIi, s_R80pi, s_YrYri, s_SLi)
+    return(list(m_RRIi, m_R80pi, m_YrYri, m_SLi, s_RRIi, s_R80pi, s_YrYri, s_SLi))
   }
   m_RRI[[simcase]] <- lapply(m,function(xl) xl[[1]]) #m_RRIi
   m_R80p[[simcase]]<- lapply(m,function(xl) xl[[2]])
@@ -219,7 +205,7 @@ for(si in 1:length(caseList)){# # iterate over simulation cases
 }
 
 # stop the cluster
-stopCluster(cl)
+# stopCluster(cl)
 
 # Stop the clock
 #proc.time() - ptm
