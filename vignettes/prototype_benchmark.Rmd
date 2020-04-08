@@ -1,0 +1,555 @@
+---
+title: "Prototype of benchmark study"
+author: "Wanda De Keersmaecker"
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Plotting decay functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = TRUE,
+                      fig.width=8,
+                      fig.height=10)
+
+# Load libraries
+library(BenchmarkRecovery)
+library(zoo)
+library(plyr)
+  library(reshape2)
+  library(ggplot2)
+library(profvis)
+library(doParallel)
+```
+
+# Extract time series characteristics from sampled time series
+The following characteristics are derived from the decomposed time series:
+
+* fraction of missing values
+* seasonal amplitude (one value for input each time series)
+* average seasonal pattern
+* offset 
+* standard deviation of the remainder component (one value per input time series)
+* fitted ARMA model in the remainder component (one model per input time series)
+```{r}
+profvis({
+# ------------------------------------------------
+# inputs
+ifolder <- '../Data/' #folder where input data is located
+ofolder <-'../Data/' # folder where outputs will be written
+basename <- 'toyset'# name of the input dataset (contains sampled satellite time series)
+nyr <- 18 # number of years in observation period
+nobsYr <- 365 # number of observations per year
+ncores <- 3
+
+ifileVI <- paste0(basename, '.rda')
+dfVi <- loadRData(file = file.path(ifolder, ifileVI))
+
+# ------------------------------------------------
+# First decompose time series into seasonality, trend and remainder:
+tmp <- decompTSbfast(dfVi, nyr, nobsYr)
+dataVISeasbf <-  tmp[[1]]# sesonality (fitted harmonic function)
+dataVIRembf <- tmp[[2]]# remainder
+dataVITrbf <- tmp[[3]]# trend (linear trend without break)
+dataVISeasCoef <- tmp[[4]]# coefficients of fitted harmonic functions 
+
+
+# ------------------------------------------------
+# Then, derive the characteristics:
+
+tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2)# fraction missing values
+
+seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # seasonal amplitude for each pixel
+seasS <- dataVISeasbf[dataVISeasbf[,1]<0,]#average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
+seasVImean <- colMeans(as.matrix(seasS[,-c(1,2)]))
+
+TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T)# offset 
+
+Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T)# SD of remainder per pixel
+Rem_VIcoef <- list()# ARMA model - characterization of the remainder dynamics per pixel
+for(i in 1:dim(dataVIRembf)[1]){
+  Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
+}
+})
+```
+
+```{r plot, echo=FALSE}
+# Plot the time series
+# Decomposition
+
+# Example time series
+datz <- as.numeric(dfVi[10,-c(1,2)])
+tmz <- as.Date(names(dfVi)[-c(1,2)])
+tsz <- zoo(datz[is.na(datz)==F],tmz[is.na(datz)==F])
+# plot(tsz, type = 'o', main = 'Example sampled NBR time series',
+#      xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
+
+# Example decomposition time series
+remz <- as.numeric(dataVIRembf[10,-c(1,2)])
+tsrz <- zoo(remz[is.na(remz)==F],tmz[is.na(remz)==F])
+par(mar=c(2,2,2,1))
+par(fig=c(0,1,0.66,1))
+plot(tsz, type = 'o', main = 'Example NBR time series and trend',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+lines(zoo(as.numeric(dataVITrbf[10,-c(1,2)]),tmz), col = 'red')
+par(fig=c(0,1,0.33,0.66), new=TRUE)
+plot(zoo(as.numeric(dataVISeasbf[10,-c(1,2)]),tmz), type = 'l', main = 'Seasonal',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+par(fig=c(0,1,0,0.33), new=TRUE)
+plot(tsrz, type = 'o', main = 'Remainder',
+     xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
+
+# all seasonal cycles 
+plot(zoo(t(dataVISeasbf[,-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of sampled pixels',
+     xlab = 'Time', ylab = 'NBR [-]')
+
+# seasonal cylce Southern hemisphere and mean seasonal cycle
+plot(zoo(t(dataVISeasbf[which(dataVISeasbf[,1]<0),-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of pixels in Southern hemisphere and mean seasonal',
+     xlab = 'Time', ylab = 'NBR [-]')
+lines(as.Date(names(seasVImean)), seasVImean, type = 'l', lwd = 2)
+
+
+# Amplitude seasonality
+hist(seasVImax, main = 'Amplitude seasonality', xlab = 'Amplitude [-]')
+mx <- mean(seasVImax)
+abline(v = mx, col = "red", lwd = 2)
+
+
+# missing values
+hist(tsVIMissVal, main = 'Fraction missing values (daily temporal resolution)', xlab = 'Fraction missing values [-]')
+mx <- mean(tsVIMissVal)
+abline(v = mx, col = "red", lwd = 2)
+
+# standard deviation remainder
+hist(Rem_VIsd, main = 'Standard deviation remainder', xlab = 'Standard deviation remainder [-]')
+mx <- mean(Rem_VIsd)
+abline(v = mx, col = "red", lwd = 2)
+
+```
+
+# Simulate time series and measure recovery
+Based on the characteristics of the measured time series, time series are simulated 
+
+## Define simulation settings 
+First, the simulation settings are defined:
+
+* __STnrep__: number of time series simulated per combination of all settings
+* __STnobsYr__: number of observations simulated per year (this should equal the frequency of the sampled time series)
+* __DistMissVal__: defines how the introduced missing values should be distributed: random or at an equal interval
+* __STseasAv__: represents the seasonal pattern
+* __STtrAv__: offset
+* __VnDr__: number of droughts simulated
+* __Vnyr__: time series length (number of years)
+* __VdistMag__: disturbance magnitude, should be a negative value to simulate a drop
+* __VdistT__: timing disturbance (disturbance year)
+* __VdistRec__: recovery half time after disturbance (number of observations)
+* __VmissVal__: fraction of missing values in time series
+* __VseasAmp__: <- seasonal amplitude
+* __VremSd__: standard deviation of the remainder
+
+```{r}
+  #-------------------------------------------------
+  #  settings  simulation
+STnrep <- 1 # number of repetitions per parameter combination
+STnobsYr <- 365 # number observations per year
+DistMissVal <- 'random' # random or interval
+STseasAv <- seasVImean # seasonal pattern
+STtrAv <- TrVImean # offset
+
+VnDr <- c(0) # number of droughts
+Vnyr <- c(6,40)# number of years
+VdistMag <- -c(0.1,0.5)# magnitude disturbance
+VdistT <- c(3,33)# timing disturbance
+VdistRec <- c(0.5,5)*STnobsYr# recovery disturbance
+Vqntl <- c(.05, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
+VmissVal <- quantile(tsVIMissVal, Vqntl)
+VseasAmp <- quantile(seasVImax, Vqntl)# seasonal amplitude
+VremSd <- quantile(Rem_VIsd, Vqntl)# sd of remainder
+VdistType <- 'exponential' #piecewise or exponential
+ 
+## Create settings list
+# All settings are combined in a list, this settings list can be used to simulate time series
+sttngs <- list(STnrep, Vnyr,STnobsYr,VnDr, STseasAv, VseasAmp,STtrAv,VremSd,VdistMag,VdistT, VdistRec, VmissVal, DistMissVal, Rem_VIcoef, VdistType,
+              c( 'nyr', 'seasAmp','remSd','distMag','distT', 'distRec', 'missVal'))
+names(sttngs) <- c('nrep','nyr', 'nobsYr','nDr', 'seasAv',  'seasAmp','trAv', 'remSd', 'distMag', 'distT', 'distRec',  'missVal', 'DistMissVal', 'remcoef','distType', 'variables')
+
+# remove redundant variables
+rm(list=setdiff(ls(), c("sttngs",'ifolder', 'ofolder', 'basename', 'ncores')))
+save(sttngs, file = file.path(ofolder, paste0(basename,  '_simTS_settings.rda')))
+
+```
+
+The following inputs are needed to calculate the recovery indicators:
+
+* __caseList__: list of parameters. The recovery indicators will be calculated for the simulated time series of these parameters.  
+* __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters. 
++ *freq*:  'dense' or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual', the time series are converted to annual frequency.
++ *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
++ *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
++ *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
++ *nDist*: in case *shortDenseTS* is TRUE: the number of months after the disturbance used to derive the value during the disturbance 
++ *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance</font>
+
+```{r}
+# recovery settings
+caseList <- c( 'remSd')
+funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
+               'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),
+               'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+               'nPre' = c(2,2,2,2,2,2,2),
+               'nDist' = c(12,1,1,1,12,12,12),
+               'nPostMin' = c(4,0,0,0,4,4,4),
+               'nPostMax' = c(6,1,1,1,6,6,6),
+               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
+
+save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
+
+
+```
+
+The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
+
+```{r}
+registerDoParallel(cores=ncores)
+
+profvis({
+# iterate over time series parameters that are evaluated
+for(vr in 1:length(caseList)){
+  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
+  setvr <- sttngs[[evr]]# settings of simulation
+  
+  RRI_rmse <- matrix(NA,length(setvr), length(funSet[[1]]))
+  RRI_mape <- matrix(NA,length(setvr), length(funSet[[1]]))
+  RRI_rsq <- matrix(NA,length(setvr), length(funSet[[1]]))
+  RRI_nTS <- matrix(NA,length(setvr), length(funSet[[1]]))
+  
+  R80p_rmse <- matrix(NA,length(setvr), length(funSet[[1]]))
+  R80p_mape <- matrix(NA,length(setvr), length(funSet[[1]]))
+  R80p_rsq <- matrix(NA,length(setvr), length(funSet[[1]]))
+  R80p_nTS <- matrix(NA,length(setvr), length(funSet[[1]]))
+  
+  YrYr_rmse <- matrix(NA,length(setvr), length(funSet[[1]]))
+  YrYr_mape <- matrix(NA,length(setvr), length(funSet[[1]]))
+  YrYr_rsq <- matrix(NA,length(setvr), length(funSet[[1]]))
+  YrYr_nTS <- matrix(NA,length(setvr), length(funSet[[1]]))
+  
+  SL_rmse <- matrix(NA,length(setvr), length(funSet[[1]]))
+  SL_mape <- matrix(NA,length(setvr), length(funSet[[1]]))
+  SL_rsq <- matrix(NA,length(setvr), length(funSet[[1]]))
+  SL_nTS <- matrix(NA,length(setvr), length(funSet[[1]]))
+  
+  
+  # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
+  for (i in 1:length(setvr)){#length(setvr)     
+    
+    # define all possible combination of the values of the parameters (except the one to be evaluated)
+    vrit <- sttngs$variables[sttngs$variables != evr] # parameters that should be combined
+    comb <- expand.grid(sttngs[vrit]) # combine all parameters, except the evaluated one
+    comb[[evr]] <- sttngs[[evr]][i] # add value of parameter to be evaluated
+    
+    m_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))# recovery settings - matrix 1 x comb*nrep     #rep(NA,(sttngs$nrep*dim(comb[1])))
+    m_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))#rep(NA,(sttngs$nrep*dim(comb[1])))
+    m_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))#rep(NA,(sttngs$nrep*dim(comb[1])))
+    m_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))#rep(NA,(sttngs$nrep*dim(comb[1])))
+    s_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))# recovery settings - matrix 1 x comb*nrep     #rep(NA,(sttngs$nrep*dim(comb[1])))
+    s_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))#rep(NA,(sttngs$nrep*dim(comb[1])))
+    s_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))#rep(NA,(sttngs$nrep*dim(comb[1])))
+    s_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = (sttngs$nrep*dim(comb[1])))
+    
+    # iterate over the parameter combinations and simulate each time nrep time series per parameter combination
+    cnt <- 0
+    for (pari in 1: dim(comb)[1]){#dim(comb)[1]
+      # simulate nrep time series for a parameter combination
+      sc <- simulCase(sttngs$nrep, comb$nyr[pari], sttngs$nobsYr, sttngs$nDr, sttngs$seasAv, comb$seasAmp[pari],
+                      sttngs$trAv, comb$remSd[pari], c(comb$distMag[pari],comb$distMag[pari]), 
+                      comb$distT[pari], c(comb$distRec[pari],comb$distRec[pari]), sttngs$remcoef, 
+                      comb$missVal[pari], sttngs$DistMissVal, sttngs$distType)
+      # iterate over the time series and calculate recovery indicators
+      for (parii in 1:sttngs$nrep){#1:sttngs$nrep
+        cnt <- cnt + 1
+        
+        
+        # iterate over the recovery indicator settings
+        for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
+        tsi <- sc[[1]][parii,]
+        tsseas <-sc[[3]][parii,] 
+        obspyr <- sc[[6]][parii,]$obs_per_year
+        tdist <- sc[[6]][parii,]$dist_time
+        tsref <- sc[[2]][parii,] + sc[[5]][parii,]
+        nobs <- (sc[[6]][parii,]$number_yrs)* obspyr
+        tm <- 1:nobs
+        
+          inp <- funSet$input[rset]
+          frq <- funSet[['freq']][rset]
+          shortDenseTS <- funSet[['shortDenseTS']][rset]
+          nPre <- funSet[['nPre']][rset]
+          nDist <- funSet[['nDist']][rset]
+          nPostMin <- funSet[['nPostMin']][rset]
+          nPostMax <- funSet[['nPostMax']][rset]
+          h <- funSet[['h']][rset]
+          
+          
+          if (frq == 'annual'){
+            # print(frq)
+            # print('annual')
+            #convert time series to annual values by selecting date closest to seasonal max
+            tsi <- toAnnualTS(tsseas, tsi, obspyr)
+            tsref <- toAnnualTS(tsseas, tsref, obspyr)
+            tdist <- ceiling(tdist/obspyr)
+            obspyr <- 1
+          }
+          if (inp == 'smoothed'){
+            #tmp <- sgolayfilt(na_interpolation(tsi, 'linear'), p=2, n=11)# smooth time series using golay filter
+            #tsi[is.na(tsi)==F] <- tmp[is.na(tsi)==F]
+            df <- data.frame(dat = tsi,tm = 1:length(tsi))
+            ls <- loess(dat  ~ tm, df, span = 0.2)#, span = 0.5
+            tmps <- predict(ls, data.frame(tm = 1:length(tsi)), se = TRUE)
+            tsi <- tmps$fit
+          }
+          
+          if((inp == 'smoothed') | (inp == 'raw')){
+            outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+            m_RRIi[rset,cnt] <- outp$RRI# measured RRI
+            m_R80pi[rset,cnt] <- outp$R80P# measured R80p
+            m_YrYri[rset,cnt] <- outp$YrYr# measured YrYR
+            rm(outp)
+          }
+          if(funSet$input[rset] == 'segmented'){
+            outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+            m_RRIi[rset,cnt] <- outp$RRI# measured RRI
+            m_R80pi[rset,cnt] <- outp$R80P# measured R80p
+            m_YrYri[rset,cnt] <- outp$YrYr# measured YrYR
+            m_SLi[rset,cnt] <- outp$Sl# measured YrYR
+            #print(outp)
+            rm(outp)
+          }
+          
+          # reference indicators
+          outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+          s_RRIi[rset,cnt] <- outp$RRI#simulated (true) RRI
+          s_R80pi[rset,cnt] <- outp$R80P#simulated (true) R80p
+          s_YrYri[rset,cnt] <- outp$YrYr
+          if(inp == 'segmented'){
+            s_SLi[rset,cnt] <- tsref[tdist+3] - tsref[tdist+2]
+          }
+        }
+      }            
+      rm(sc)
+    } 
+    # evaluate recovery indicators
+    # R2
+    RRI_rsq[i,] <- sapply(1:dim(s_RRIi)[1], function(it) rsq(s_RRIi[it,], m_RRIi[it,]))
+    R80p_rsq[i,] <- sapply(1:dim(s_R80pi)[1], function(it) rsq(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_rsq[i,] <- sapply(1:dim(s_YrYri)[1], function(it) rsq(s_YrYri[it,], m_YrYri[it,]))
+    SL_rsq[i,] <- sapply(1:dim(s_SLi)[1], function(it) rsq(s_SLi[it,], m_SLi[it,]))
+    
+    # MAPE
+    RRI_mape[i,] <- sapply(1:dim(s_RRIi)[1], function(it) mape(s_RRIi[it,], m_RRIi[it,]))
+    R80p_mape[i,] <- sapply(1:dim(s_R80pi)[1], function(it) mape(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_mape[i,] <- sapply(1:dim(s_YrYri)[1], function(it) mape(s_YrYri[it,], m_YrYri[it,]))
+    SL_mape[i,] <- sapply(1:dim(s_SLi)[1], function(it) mape(s_SLi[it,], m_SLi[it,]))
+    
+    # RMSE
+    RRI_rmse[i,] <- sapply(1:dim(s_RRIi)[1], function(it) rmse(s_RRIi[it,], m_RRIi[it,]))
+    R80p_rmse[i,] <- sapply(1:dim(s_R80pi)[1], function(it) rmse(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_rmse[i,] <- sapply(1:dim(s_YrYri)[1], function(it) rmse(s_YrYri[it,], m_YrYri[it,]))
+    SL_rmse[i,] <- sapply(1:dim(s_SLi)[1], function(it) rmse(s_SLi[it,], m_SLi[it,]))
+    
+    # nTS
+    RRI_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    R80p_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    YrYr_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    SL_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+  }   
+  
+  # convert to dataframe 
+  toDF <- function(mat, setvr, metric, freq, input, nDist){
+    tst <- as.data.frame(t(mat))
+    names(tst) <- setvr
+    tst$Metric <- factor(metric)
+    tst$Dense <- factor(freq)
+    tst$Smooth <- factor(input)
+    tst$Period <- revalue(factor(nDist), c("1"="Short", "12"="Long"))#factor(recSttngs$nDist)#
+    tst
+  }
+  
+  RRI_rsqDF <- toDF(RRI_rsq, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
+  R80p_rsqDF <- toDF(R80p_rsq, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
+  YrYr_rsqDF <- toDF(YrYr_rsq, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
+  SL_rsqDF <- toDF(SL_rsq, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  
+  RRI_mapeDF <- toDF(RRI_mape, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
+  R80p_mapeDF <- toDF(R80p_mape, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
+  YrYr_mapeDF <- toDF(YrYr_mape, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
+  SL_mapeDF <- toDF(SL_mape, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  
+  RRI_rmseDF <- toDF(RRI_rmse, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
+  R80p_rmseDF <- toDF(R80p_rmse, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
+  YrYr_rmseDF <- toDF(YrYr_rmse, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
+  SL_rmseDF <- toDF(SL_rmse, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  
+  RRI_nTSDF <- toDF(RRI_nTS, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
+  R80p_nTSDF <- toDF(R80p_nTS, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
+  YrYr_nTSDF <- toDF(YrYr_nTS, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
+  SL_nTSDF <- toDF(SL_nTS, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  
+  # export the performance indicators
+  save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
+  save(R80p_rsqDF, file = file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
+  save(YrYr_rsqDF, file = file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+  save(SL_rsqDF, file = file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
+  
+  save(RRI_rmseDF, file = file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
+  save(R80p_rmseDF, file = file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
+  save(YrYr_rmseDF, file = file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
+  save(SL_rmseDF, file = file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
+  
+  save(RRI_mapeDF, file = file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
+  save(R80p_mapeDF, file = file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
+  save(YrYr_mapeDF, file = file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+  save(SL_mapeDF, file = file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
+  
+  save(RRI_nTSDF, file = file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
+  save(R80p_nTSDF, file = file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
+  save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
+  save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+  
+  # rm(simTS,simTSTr,simTSSeas, simTSRem, simTSParam) #simTSDist
+  # # gc()
+}
+rm(list=setdiff(ls(), c('ifolder', 'ofolder', 'basename')))
+})
+```
+# Plot the performance indicators
+```{r}
+caseList <- c( 'remSd')
+
+sttngs <- loadRData(file.path(ifolder, paste0(basename,  '_simTS_settings.rda')))
+sttngs$VdistRec$distRec <- sttngs$VdistRec$distRec/365
+recSttngs <- loadRData(file.path(ifolder, paste0(basename, '_recSettings.rda')))
+
+
+simFullName  <- list('Disturbance magnitude',
+                     'Number of droughts',
+                     'Time series length',
+                     'Seasonal amplitude',
+                     'SD remainder',
+                     'Disturbance timing',
+                     'Recovery period [years]',
+                     'Missing values')
+names(simFullName) <- c('distMag',
+                        'nDr', 
+                        'len',
+                        'seasAmp',
+                        'remSd',
+                        'distT',
+                        'distRec',
+                        'missVal')
+
+for(vr in 1:length(caseList)){
+  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
+  setvr <- sttngs[[evr]]# settings of simulation
+  
+  RRI_rsq <- loadRData(file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
+  R80p_rsq <- loadRData(file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
+  YrYr_rsq <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+  SL_rsq <- loadRData(file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
+  
+  RRI_rmse <- loadRData(file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
+  R80p_rmse <- loadRData(file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
+  YrYr_rmse <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
+  SL_rmse <- loadRData(file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
+  
+  RRI_mape <- loadRData(file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
+  R80p_mape <- loadRData(file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
+  YrYr_mape <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+  SL_mape <- loadRData(file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
+  
+  RRI_nTS <- loadRData(file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
+  R80p_nTS <- loadRData(file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
+  YrYr_nTS <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
+  SL_nTS <- loadRData(file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+  
+  tot_rsq <- rbind(RRI_rsq, R80p_rsq, YrYr_rsq, SL_rsq)
+  tot_rmse <- rbind(RRI_rmse, R80p_rmse, YrYr_rmse, SL_rmse)
+  tot_mape <- rbind(RRI_mape, R80p_mape, YrYr_mape, SL_mape)
+  tot_nTS <- rbind(RRI_nTS, R80p_nTS, YrYr_nTS, SL_nTS)
+  
+  melt(tot_rsq)
+  
+  sname <- caseList[[vr]]
+  # plot R2
+  print(ggplot(melt(tot_rsq), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period))+ 
+          xlab(simFullName[[sname]]) +
+          ylab('R²')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  # plot RMSE
+  print(ggplot(melt(tot_rmse), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period), scales = "free_y")+ 
+          xlab(simFullName[[sname]]) +
+          ylab('RMSE')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  # plot MAPE
+  print(ggplot(melt(tot_mape), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period))+ 
+          xlab(simFullName[[sname]]) +
+          ylab('MAPE')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  
+  # plot fraction of time series processed
+  print(ggplot(melt(tot_nTS), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
+          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period))+ 
+          xlab(simFullName[[sname]]) +
+          ylab('Fraction')+
+          theme(axis.text.x = element_text(color = "grey50", size = 20),
+                axis.text.y = element_text(color = "grey50", size = 20),  
+                axis.title.x = element_text(color = "grey20", size = 25),
+                axis.title.y = element_text(color = "grey20", size = 25),
+                plot.title = element_text(size=25),
+                legend.title = element_text(size=25),
+                legend.text = element_text(color = "grey50",size=25),
+                strip.text.x = element_text(size = 20),
+                strip.text.y = element_text(size = 20,color = "grey20")))
+  
+}
+
+
+
+```
