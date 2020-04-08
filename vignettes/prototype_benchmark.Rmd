@@ -20,8 +20,8 @@ knitr::opts_chunk$set(echo = TRUE,
 library(BenchmarkRecovery)
 library(zoo)
 library(plyr)
-  library(reshape2)
-  library(ggplot2)
+library(reshape2)
+library(ggplot2)
 library(profvis)
 library(doParallel)
 ```
@@ -36,7 +36,7 @@ The following characteristics are derived from the decomposed time series:
 * standard deviation of the remainder component (one value per input time series)
 * fitted ARMA model in the remainder component (one model per input time series)
 ```{r}
-profvis({
+#profvis({
 # ------------------------------------------------
 # inputs
 ifolder <- '../Data/' #folder where input data is located
@@ -44,7 +44,7 @@ ofolder <-'../Data/' # folder where outputs will be written
 basename <- 'toyset'# name of the input dataset (contains sampled satellite time series)
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year
-ncores <- 3
+ncores <- 3 # number of cores used for parallel computing
 
 ifileVI <- paste0(basename, '.rda')
 dfVi <- loadRData(file = file.path(ifolder, ifileVI))
@@ -74,7 +74,7 @@ Rem_VIcoef <- list()# ARMA model - characterization of the remainder dynamics pe
 for(i in 1:dim(dataVIRembf)[1]){
   Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
 }
-})
+# })
 ```
 
 ```{r plot, echo=FALSE}
@@ -85,8 +85,6 @@ for(i in 1:dim(dataVIRembf)[1]){
 datz <- as.numeric(dfVi[10,-c(1,2)])
 tmz <- as.Date(names(dfVi)[-c(1,2)])
 tsz <- zoo(datz[is.na(datz)==F],tmz[is.na(datz)==F])
-# plot(tsz, type = 'o', main = 'Example sampled NBR time series',
-#      xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
 
 # Example decomposition time series
 remz <- as.numeric(dataVIRembf[10,-c(1,2)])
@@ -152,8 +150,8 @@ First, the simulation settings are defined:
 * __VremSd__: standard deviation of the remainder
 
 ```{r}
-  #-------------------------------------------------
-  #  settings  simulation
+#-------------------------------------------------
+#  settings  simulation
 STnrep <- 1 # number of repetitions per parameter combination
 STnobsYr <- 365 # number observations per year
 DistMissVal <- 'random' # random or interval
@@ -170,11 +168,11 @@ VmissVal <- quantile(tsVIMissVal, Vqntl)
 VseasAmp <- quantile(seasVImax, Vqntl)# seasonal amplitude
 VremSd <- quantile(Rem_VIsd, Vqntl)# sd of remainder
 VdistType <- 'exponential' #piecewise or exponential
- 
+
 ## Create settings list
 # All settings are combined in a list, this settings list can be used to simulate time series
 sttngs <- list(STnrep, Vnyr,STnobsYr,VnDr, STseasAv, VseasAmp,STtrAv,VremSd,VdistMag,VdistT, VdistRec, VmissVal, DistMissVal, Rem_VIcoef, VdistType,
-              c( 'nyr', 'seasAmp','remSd','distMag','distT', 'distRec', 'missVal'))
+               c( 'nyr', 'seasAmp','remSd','distMag','distT', 'distRec', 'missVal'))
 names(sttngs) <- c('nrep','nyr', 'nobsYr','nDr', 'seasAv',  'seasAmp','trAv', 'remSd', 'distMag', 'distT', 'distRec',  'missVal', 'DistMissVal', 'remcoef','distType', 'variables')
 
 # remove redundant variables
@@ -196,7 +194,7 @@ The following inputs are needed to calculate the recovery indicators:
 
 ```{r}
 # recovery settings
-caseList <- c( 'remSd')
+caseList <- c( 'remSd') # the time series characteristic that is being evaluated
 funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
                'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),
                'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
@@ -204,7 +202,7 @@ funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','den
                'nDist' = c(12,1,1,1,12,12,12),
                'nPostMin' = c(4,0,0,0,4,4,4),
                'nPostMax' = c(6,1,1,1,6,6,6),
-               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))
+               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))# settings for the recovery indicators
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 
@@ -216,7 +214,7 @@ The specified settings are then used to simulate time series, calculate recovery
 ```{r}
 registerDoParallel(cores=ncores)
 
-profvis({
+#profvis({
 # iterate over time series parameters that are evaluated
 for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
@@ -275,14 +273,14 @@ for(vr in 1:length(caseList)){
         
         # iterate over the recovery indicator settings
         for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
-        tsi <- sc[[1]][parii,]
-        tsseas <-sc[[3]][parii,] 
-        obspyr <- sc[[6]][parii,]$obs_per_year
-        tdist <- sc[[6]][parii,]$dist_time
-        tsref <- sc[[2]][parii,] + sc[[5]][parii,]
-        nobs <- (sc[[6]][parii,]$number_yrs)* obspyr
-        tm <- 1:nobs
-        
+          tsi <- sc[[1]][parii,]
+          tsseas <-sc[[3]][parii,] 
+          obspyr <- sc[[6]][parii,]$obs_per_year
+          tdist <- sc[[6]][parii,]$dist_time
+          tsref <- sc[[2]][parii,] + sc[[5]][parii,]
+          nobs <- (sc[[6]][parii,]$number_yrs)* obspyr
+          tm <- 1:nobs
+          
           inp <- funSet$input[rset]
           frq <- funSet[['freq']][rset]
           shortDenseTS <- funSet[['shortDenseTS']][rset]
@@ -303,12 +301,10 @@ for(vr in 1:length(caseList)){
             obspyr <- 1
           }
           if (inp == 'smoothed'){
-            #tmp <- sgolayfilt(na_interpolation(tsi, 'linear'), p=2, n=11)# smooth time series using golay filter
-            #tsi[is.na(tsi)==F] <- tmp[is.na(tsi)==F]
-            df <- data.frame(dat = tsi,tm = 1:length(tsi))
-            ls <- loess(dat  ~ tm, df, span = 0.2)#, span = 0.5
-            tmps <- predict(ls, data.frame(tm = 1:length(tsi)), se = TRUE)
-            tsi <- tmps$fit
+            temp.zoo<-zoo(tsi,(1:length(tsi)))
+            m.av<-rollapply(temp.zoo, 150, mean, na.rm = T, fill = NA)
+            tsi <- as.numeric(m.av)
+            
           }
           
           if((inp == 'smoothed') | (inp == 'raw')){
@@ -366,17 +362,6 @@ for(vr in 1:length(caseList)){
     SL_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
   }   
   
-  # convert to dataframe 
-  toDF <- function(mat, setvr, metric, freq, input, nDist){
-    tst <- as.data.frame(t(mat))
-    names(tst) <- setvr
-    tst$Metric <- factor(metric)
-    tst$Dense <- factor(freq)
-    tst$Smooth <- factor(input)
-    tst$Period <- revalue(factor(nDist), c("1"="Short", "12"="Long"))#factor(recSttngs$nDist)#
-    tst
-  }
-  
   RRI_rsqDF <- toDF(RRI_rsq, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
   R80p_rsqDF <- toDF(R80p_rsq, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
   YrYr_rsqDF <- toDF(YrYr_rsq, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
@@ -418,15 +403,13 @@ for(vr in 1:length(caseList)){
   save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
   save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
   
-  # rm(simTS,simTSTr,simTSSeas, simTSRem, simTSParam) #simTSDist
-  # # gc()
 }
 rm(list=setdiff(ls(), c('ifolder', 'ofolder', 'basename')))
-})
+# })
 ```
 # Plot the performance indicators
 ```{r}
-caseList <- c( 'remSd')
+caseList <- c( 'remSd')# evaluated time series characteristics for which a plot needs to be made
 
 sttngs <- loadRData(file.path(ifolder, paste0(basename,  '_simTS_settings.rda')))
 sttngs$VdistRec$distRec <- sttngs$VdistRec$distRec/365
@@ -547,9 +530,6 @@ for(vr in 1:length(caseList)){
                 legend.text = element_text(color = "grey50",size=25),
                 strip.text.x = element_text(size = 20),
                 strip.text.y = element_text(size = 20,color = "grey20")))
-  
 }
-
-
 
 ```
