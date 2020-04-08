@@ -23,6 +23,8 @@ Suggests: imputeTS,
           GGally,
           testthat,
           knitr,
-          rmarkdown
+          rmarkdown,
+          profvis,
+          doParallel
 RoxygenNote: 7.1.0
 VignetteBuilder: knitr

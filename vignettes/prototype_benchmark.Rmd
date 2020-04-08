@@ -4,7 +4,7 @@ author: "Wanda De Keersmaecker"
 date: ""
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Plotting decay functions}
+  %\VignetteIndexEntry{Prototype of benchmark study}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
