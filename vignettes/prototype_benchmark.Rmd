@@ -18,8 +18,8 @@ knitr::opts_chunk$set(echo = TRUE,
 
 # Load libraries
 library(devtools)
-# install_github("strucchange", ref = "devel")
-# install_github("GreatEmerald/bfast", ref = 'dev')
+install_github("bfast2/strucchange", ref = "devel")
+install_github("bfast2/bfast", ref = 'dev')
 library(BenchmarkRecovery)
 library(zoo)
 library(plyr)
