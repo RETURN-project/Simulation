@@ -59,5 +59,54 @@ TSdecompress <- function(ts){
     tsyr
 }
 
+ #' Create regular time series
+ #'
+ #' @param tsi vector of observations
+ #' @param dts dates associated with the observations. This should be a Date object.
+ #' @param fun function used to aggregate observations to monthly observations. This should be 'max' or 'mean'.
+ #' @param resol desired temporal resolution of the output. This could be 'monthly' or 'daily'
+ #'
+ #' @return a vector with a regular time series object
+ #' @export
+ #' @import zoo
+ #' @import bfast
+ toRegularTS <- function(tsi, dts, fun, resol){
+   # len <- length(tsi)
+   # tdist <- tsi[1:(len/2)]
+   # tsi <- tsi[(1+(len/2)):len]
+   tsi <- as.numeric(tsi)
+   if(resol == 'monthly'){
+     z <- zoo(tsi, dts) ## create a zoo (time) series
+     if(fun == 'max'){
+       mz <- as.ts(aggregate(z, as.yearmon, mmax)) ## max
+     }else if(fun == 'mean'){
+       mz <- as.ts(aggregate(z, as.yearmon, function(x){mean(x, na.rm = T)})) ## mean
+     }
+   }else if (resol == 'daily'){
+     mz <- bfastts(tsi, dts, type = "irregular")
+   }else if (resol == 'quart'){
+     z <- zoo(tsi, dts) ## create a zoo (time) series
+     if(fun == 'max'){
+       mz <- as.ts(aggregate(z, as.yearqtr, mmax)) ## max
+     }
+     if(fun == 'mean'){
+       mz <- as.ts(aggregate(z, as.yearqtr, function(x){mean(x, na.rm = T)})) ## mean
+     }
+   }
+   return(mz)
+ }
 
-
+ #' Helper function for the toRegularTSStack function
+ #'
+ #' @param x vector of observations
+ #'
+ #' @return the maximum value of the vector
+ #' @export
+ mmax <- function(x) {
+   if(length(which.max(x)) == 0) {
+     out <- NA
+   } else {
+     out <- as.numeric(x[which.max(x)])
+   }
+   return(out)
+ }
