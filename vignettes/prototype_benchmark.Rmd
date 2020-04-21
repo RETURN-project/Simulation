@@ -18,8 +18,8 @@ knitr::opts_chunk$set(echo = TRUE,
 
 # Load libraries
 library(devtools)
-install_github("bfast2/strucchange", ref = "devel")
-install_github("bfast2/bfast", ref = 'dev')
+# install_github("bfast2/strucchange", ref = "devel")
+# install_github("bfast2/bfast", ref = 'dev')
 library(BenchmarkRecovery)
 library(zoo)
 library(plyr)
@@ -157,7 +157,7 @@ First, the simulation settings are defined:
 ```{r}
 #-------------------------------------------------
 #  settings  simulation
-STnrep <- 100 # number of repetitions per parameter combination
+STnrep <- 1 # number of repetitions per parameter combination
 STnobsYr <- 365 # number observations per year
 DistMissVal <- 'random' # random or interval
 STseasAv <- seasVImean # seasonal pattern
@@ -208,6 +208,7 @@ funSet <- list('freq' =  c(rep('dense',2)),
                'nPostMin' = rep(c(0,4),1),
                'nPostMax' = rep(c(1,6),1),
                'h' = rep(0.15,2),
+               'breaks' = rep('BIC',4),
                'seas' = c(rep(T,2)))
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
@@ -296,6 +297,7 @@ set_fast_options()
           nPostMax <- funSet[['nPostMax']][rset]
           h <- funSet[['h']][rset]
           seas <- funSet[['seas']][rset]
+          breaks <- funSet[['breaks']][rset]
           
           
           if (frq == 'annual'){
@@ -329,7 +331,7 @@ set_fast_options()
             rm(outp)
           }
           if(funSet$input[rset] == 'segmented'){
-            outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas)
+            outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks, seas)
             m_RRIi[rset,cnt] <- outp$RRI# measured RRI
             m_R80pi[rset,cnt] <- outp$R80P# measured R80p
             m_YrYri[rset,cnt] <- outp$YrYr# measured YrYR

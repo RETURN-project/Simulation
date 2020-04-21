@@ -13,6 +13,7 @@ calcBFASTrec(
   nDist,
   nPostMin,
   nPostMax,
+  breaks = "BIC",
   seas = F
 )
 }
@@ -32,6 +33,8 @@ calcBFASTrec(
 \item{nPostMin}{If shortDenseTS is TRUE, min number of years after the disturbance used to quantify the recovery}
 
 \item{nPostMax}{If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery}
+
+\item{breaks}{'BIC' or 'LWZ': criteria used to define the optimal number of breaks}
 
 \item{seas}{TRUE or FALSE, include seasonal term when detecting breaks?}
 }
