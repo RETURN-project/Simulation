@@ -208,7 +208,7 @@ funSet <- list('freq' =  c(rep('dense',2)),
                'nPostMin' = rep(c(0,4),1),
                'nPostMax' = rep(c(1,6),1),
                'h' = rep(0.15,2),
-               'breaks' = rep('BIC',4),
+               'breaks' = rep('BIC',2),
                'seas' = c(rep(T,2)))
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
