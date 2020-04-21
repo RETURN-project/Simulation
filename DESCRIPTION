@@ -20,7 +20,8 @@ Imports: bfast,
          reshape2,
          plyr,
          sde, 
-         devtools
+         devtools, 
+         zoo
 Suggests: imputeTS,
           signal,
           GGally,
