@@ -11,13 +11,17 @@ Description: What the package does (one paragraph).
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
+Remotes: bfast2/bfast@dev,
+         bfast2/strucchange@devel
 Imports: bfast,
          forecast,
          strucchange,
          ggplot2,
          reshape2,
          plyr,
-         sde
+         sde, 
+         devtools, 
+         zoo
 Suggests: imputeTS,
           signal,
           GGally,

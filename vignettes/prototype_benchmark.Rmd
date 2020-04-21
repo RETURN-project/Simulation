@@ -12,11 +12,14 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
-                      eval = TRUE,
-                      fig.width=8,
-                      fig.height=10)
+                      eval = TRUE)#,
+                      # fig.width=18,
+                      # fig.height=10
 
 # Load libraries
+library(devtools)
+# install_github("bfast2/strucchange", ref = "devel")
+# install_github("bfast2/bfast", ref = 'dev')
 library(BenchmarkRecovery)
 library(zoo)
 library(plyr)
@@ -24,6 +27,8 @@ library(reshape2)
 library(ggplot2)
 library(profvis)
 library(doParallel)
+library(bfast)
+library(strucchange)
 ```
 
 # Extract time series characteristics from sampled time series
@@ -159,15 +164,15 @@ STseasAv <- seasVImean # seasonal pattern
 STtrAv <- TrVImean # offset
 
 VnDr <- c(0) # number of droughts
-Vnyr <- c(6,40)# number of years
-VdistMag <- -c(0.1,0.5)# magnitude disturbance
-VdistT <- c(3,33)# timing disturbance
-VdistRec <- c(0.5,5)*STnobsYr# recovery disturbance
-Vqntl <- c(.05, .95)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
+Vnyr <- c(20)# number of years
+VdistMag <- -c(0.1,0.2,0.3,0.4,0.5)# magnitude disturbance
+VdistT <- c(10)# timing disturbance
+VdistRec <- seq(0.5,5,by=0.5)*STnobsYr# 0.5,2,3,5recovery disturbance
+Vqntl <- c( .05, .25, .5, .75)# c( .05, .25, .5, .75)# set of quantiles used to derive realistic values (for number of missing values, seasonal amplitude and standard deviation of the remainder) from sampled data
 VmissVal <- quantile(tsVIMissVal, Vqntl)
 VseasAmp <- quantile(seasVImax, Vqntl)# seasonal amplitude
 VremSd <- quantile(Rem_VIsd, Vqntl)# sd of remainder
-VdistType <- 'exponential' #piecewise or exponential
+VdistType <- 'piecewise' #piecewise or exponential
 
 ## Create settings list
 # All settings are combined in a list, this settings list can be used to simulate time series
@@ -194,18 +199,19 @@ The following inputs are needed to calculate the recovery indicators:
 
 ```{r}
 # recovery settings
-caseList <- c( 'remSd') # the time series characteristic that is being evaluated
-funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
-               'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),
-               'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
-               'nPre' = c(2,2,2,2,2,2,2),
-               'nDist' = c(12,1,1,1,12,12,12),
-               'nPostMin' = c(4,0,0,0,4,4,4),
-               'nPostMax' = c(6,1,1,1,6,6,6),
-               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15))# settings for the recovery indicators
+caseList <- c( 'distMag') # the time series characteristic that is being evaluated
+funSet <- list('freq' =  c(rep('dense',2)),
+               'input' = rep('segmented',2),
+               'shortDenseTS' =  rep(TRUE,2),
+               'nPre' = rep(2,4),
+               'nDist' = rep(c(1,12),1),
+               'nPostMin' = rep(c(0,4),1),
+               'nPostMax' = rep(c(1,6),1),
+               'h' = rep(0.15,2),
+               'breaks' = rep('BIC',2),
+               'seas' = c(rep(T,2)))
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
-
 
 ```
 
@@ -213,10 +219,11 @@ The specified settings are then used to simulate time series, calculate recovery
 
 ```{r}
 registerDoParallel(cores=ncores)
-
+set_fast_options()
 #profvis({
 # iterate over time series parameters that are evaluated
-for(vr in 1:length(caseList)){
+ m <- foreach(vr = 1:length(caseList), .packages = 'BenchmarkRecovery') %dopar% {
+# for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
   setvr <- sttngs[[evr]]# settings of simulation
   
@@ -289,17 +296,26 @@ for(vr in 1:length(caseList)){
           nPostMin <- funSet[['nPostMin']][rset]
           nPostMax <- funSet[['nPostMax']][rset]
           h <- funSet[['h']][rset]
+          seas <- funSet[['seas']][rset]
+          breaks <- funSet[['breaks']][rset]
           
           
           if (frq == 'annual'){
-            # print(frq)
-            # print('annual')
             #convert time series to annual values by selecting date closest to seasonal max
             tsi <- toAnnualTS(tsseas, tsi, obspyr)
             tsref <- toAnnualTS(tsseas, tsref, obspyr)
             tdist <- ceiling(tdist/obspyr)
             obspyr <- 1
           }
+          if (frq == 'quarterly'){
+            #convert time series to quarterly resolution
+            dts <- seq(as.Date('2000-01-01'), by = '1 days', length = nobs)
+            tsi <- toRegularTS(tsi, dts, 'mean', 'quart')
+            tsref <- toRegularTS(tsref, dts, 'mean', 'quart')
+            tdist <- ceiling(tdist/obspyr)
+            obspyr <- 4
+          }
+          
           if (inp == 'smoothed'){
             temp.zoo<-zoo(tsi,(1:length(tsi)))
             m.av<-rollapply(temp.zoo, 150, mean, na.rm = T, fill = NA)
@@ -315,7 +331,7 @@ for(vr in 1:length(caseList)){
             rm(outp)
           }
           if(funSet$input[rset] == 'segmented'){
-            outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+            outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks, seas)
             m_RRIi[rset,cnt] <- outp$RRI# measured RRI
             m_R80pi[rset,cnt] <- outp$R80P# measured R80p
             m_YrYri[rset,cnt] <- outp$YrYr# measured YrYR
@@ -357,30 +373,30 @@ for(vr in 1:length(caseList)){
     
     # nTS
     RRI_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
-    R80p_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
-    YrYr_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
-    SL_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    R80p_nTS[i,] <- apply(m_R80pi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    YrYr_nTS[i,] <- apply(m_YrYri, 1, function(x){sum(is.na(x)==F)/length(x)})
+    SL_nTS[i,] <- apply(m_SLi, 1, function(x){sum(is.na(x)==F)/length(x)})
   }   
   
-  RRI_rsqDF <- toDF(RRI_rsq, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
-  R80p_rsqDF <- toDF(R80p_rsq, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
-  YrYr_rsqDF <- toDF(YrYr_rsq, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
-  SL_rsqDF <- toDF(SL_rsq, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  RRI_rsqDF <- toDF(RRI_rsq, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_rsqDF <- toDF(R80p_rsq, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_rsqDF <- toDF(YrYr_rsq, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_rsqDF <- toDF(SL_rsq, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
   
-  RRI_mapeDF <- toDF(RRI_mape, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
-  R80p_mapeDF <- toDF(R80p_mape, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
-  YrYr_mapeDF <- toDF(YrYr_mape, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
-  SL_mapeDF <- toDF(SL_mape, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  RRI_mapeDF <- toDF(RRI_mape, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_mapeDF <- toDF(R80p_mape, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_mapeDF <- toDF(YrYr_mape, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_mapeDF <- toDF(SL_mape, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
   
-  RRI_rmseDF <- toDF(RRI_rmse, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
-  R80p_rmseDF <- toDF(R80p_rmse, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
-  YrYr_rmseDF <- toDF(YrYr_rmse, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
-  SL_rmseDF <- toDF(SL_rmse, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  RRI_rmseDF <- toDF(RRI_rmse, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_rmseDF <- toDF(R80p_rmse, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_rmseDF <- toDF(YrYr_rmse, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_rmseDF <- toDF(SL_rmse, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
   
-  RRI_nTSDF <- toDF(RRI_nTS, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist)
-  R80p_nTSDF <- toDF(R80p_nTS, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist)
-  YrYr_nTSDF <- toDF(YrYr_nTS, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist)
-  SL_nTSDF <- toDF(SL_nTS, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist)
+  RRI_nTSDF <- toDF(RRI_nTS, setvr, 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_nTSDF <- toDF(R80p_nTS, setvr, 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_nTSDF <- toDF(YrYr_nTS, setvr, 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_nTSDF <- toDF(SL_nTS, setvr, 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
   
   # export the performance indicators
   save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
@@ -409,7 +425,7 @@ rm(list=setdiff(ls(), c('ifolder', 'ofolder', 'basename')))
 ```
 # Plot the performance indicators
 ```{r}
-caseList <- c( 'remSd')# evaluated time series characteristics for which a plot needs to be made
+caseList <- c( 'distMag')# evaluated time series characteristics for which a plot needs to be made
 
 sttngs <- loadRData(file.path(ifolder, paste0(basename,  '_simTS_settings.rda')))
 sttngs$VdistRec$distRec <- sttngs$VdistRec$distRec/365
@@ -457,17 +473,21 @@ for(vr in 1:length(caseList)){
   YrYr_nTS <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
   SL_nTS <- loadRData(file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
   
-  tot_rsq <- rbind(RRI_rsq, R80p_rsq, YrYr_rsq, SL_rsq)
-  tot_rmse <- rbind(RRI_rmse, R80p_rmse, YrYr_rmse, SL_rmse)
-  tot_mape <- rbind(RRI_mape, R80p_mape, YrYr_mape, SL_mape)
-  tot_nTS <- rbind(RRI_nTS, R80p_nTS, YrYr_nTS, SL_nTS)
+  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq, SL_rsq))
+  tot_rsq$variable <-mapvalues(tot_rsq$variable, levels(tot_rsq$variable), round(as.numeric(levels(tot_rsq$variable)),digits = 3))
+  tot_rmse <- melt(rbind(RRI_rmse, R80p_rmse, YrYr_rmse, SL_rmse))
+  tot_rmse$variable <-mapvalues(tot_rmse$variable, levels(tot_rmse$variable), round(as.numeric(levels(tot_rmse$variable)),digits = 3))
+  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape, SL_mape))
+  tot_mape$variable <-mapvalues(tot_mape$variable, levels(tot_mape$variable), round(as.numeric(levels(tot_mape$variable)),digits = 3))
+  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS, SL_nTS))
+  tot_nTS$variable <-mapvalues(tot_nTS$variable, levels(tot_nTS$variable), round(as.numeric(levels(tot_nTS$variable)),digits = 3))
   
-  melt(tot_rsq)
+  # melt(tot_rsq)
   
   sname <- caseList[[vr]]
   # plot R2
-  print(ggplot(melt(tot_rsq), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
-          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
+  print(ggplot(tot_rsq, aes(variable,value,color=interaction(Smooth,Dense,Breaks, Seas), group = interaction(Smooth,Dense,Breaks, Seas))) +
+          geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+ 
           scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
           facet_grid(vars(Metric), vars(Period))+ 
           xlab(simFullName[[sname]]) +
@@ -482,12 +502,13 @@ for(vr in 1:length(caseList)){
                 strip.text.x = element_text(size = 20),
                 strip.text.y = element_text(size = 20,color = "grey20")))
   # plot RMSE
-  print(ggplot(melt(tot_rmse), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
-          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
-          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
-          facet_grid(vars(Metric), vars(Period), scales = "free_y")+ 
+  print(ggplot(tot_rmse, aes(variable ,value,color=interaction(Smooth,Dense,Breaks, Seas), group = interaction(Smooth,Dense,Breaks, Seas))) +
+          geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing',labels=c("no seasonal, BIC", "no seasonal, LWZ", "seasonal, BIC", "seasonal, LWZ"), values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period), scales = 'free_y')+ 
           xlab(simFullName[[sname]]) +
           ylab('RMSE')+
+          # scale_x_continuous(labels = scales::number_format(accuracy = 0.01))+
           theme(axis.text.x = element_text(color = "grey50", size = 20),
                 axis.text.y = element_text(color = "grey50", size = 20),  
                 axis.title.x = element_text(color = "grey20", size = 25),
@@ -498,10 +519,10 @@ for(vr in 1:length(caseList)){
                 strip.text.x = element_text(size = 20),
                 strip.text.y = element_text(size = 20,color = "grey20")))
   # plot MAPE
-  print(ggplot(melt(tot_mape), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
-          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
-          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
-          facet_grid(vars(Metric), vars(Period))+ 
+  print(ggplot(tot_mape, aes(variable,value,color=interaction(Smooth,Dense,Breaks, Seas), group = interaction(Smooth,Dense,Breaks, Seas))) +
+          geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing',labels=c("no seasonal, BIC", "no seasonal, LWZ", "seasonal, BIC", "seasonal, LWZ"), values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period), scales = 'free_y')+ 
           xlab(simFullName[[sname]]) +
           ylab('MAPE')+
           theme(axis.text.x = element_text(color = "grey50", size = 20),
@@ -515,10 +536,10 @@ for(vr in 1:length(caseList)){
                 strip.text.y = element_text(size = 20,color = "grey20")))
   
   # plot fraction of time series processed
-  print(ggplot(melt(tot_nTS), aes(variable,value,color=interaction(Smooth,Dense), group = interaction(Smooth,Dense))) +
-          geom_line(aes(),size=2, alpha = 0.4)+#linetype=interaction(Dense,Smooth)+ 
-          scale_color_manual('Preprocessing', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
-          facet_grid(vars(Metric), vars(Period))+ 
+  print(ggplot(tot_nTS, aes(variable,value,color=interaction(Smooth,Dense,Breaks, Seas), group = interaction(Smooth,Dense,Breaks, Seas))) +
+          geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+ 
+          scale_color_manual('Preprocessing',labels=c("no seasonal, BIC", "no seasonal, LWZ", "seasonal, BIC", "seasonal, LWZ"), values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+ 
+          facet_grid(vars(Metric), vars(Period), scales = 'free_y')+ 
           xlab(simFullName[[sname]]) +
           ylab('Fraction')+
           theme(axis.text.x = element_text(color = "grey50", size = 20),

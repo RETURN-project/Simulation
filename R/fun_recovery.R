@@ -81,12 +81,14 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @param nDist If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance
 #' @param nPostMin If shortDenseTS is TRUE, min number of years after the disturbance used to quantify the recovery
 #' @param nPostMax If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery
+#' @param seas TRUE or FALSE, include seasonal term when detecting breaks?
+#' @param breaks 'BIC' or 'LWZ': criteria used to define the optimal number of breaks
 #'
 #' @return a list containing  the RRI, R80p, YrYr recovery indicator derived from the BFAST0n trend segments and slope of the trend segment after the disturbance (sl).
 #' @export
 #' @import strucchange
 #' @import stats
-calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
+calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks = 'BIC', seas = F){
   # Create time series object, needed as input for BFAST
   tsi <- ts(tsio, frequency = obspyr)
   # Convert the time series object into a dataframe, needed for the breakpoints function
@@ -94,17 +96,20 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
                   na.action = na.omit, stl = 'none')
     # Test if enough observations are available to use time series segmentation
     if(round(length(tsio[is.na(tsio)==F]) * h) > 2){
+      # set_fast_options()
       # Apply BFAST0n on time series: find breaks in the regression
-      bp <- breakpoints(response ~ trend, data = datapp, h = h, hpc = 'foreach')##, breaks = nbrks
+      if (seas){
+        bp <- breakpoints(response ~ trend + harmon, data = datapp, h = h, breaks = breaks)#, breaks = breaks
+      } else{
+        bp <- breakpoints(response ~ trend, data = datapp, h = h, breaks = breaks)##, breaks = breaks
+      }
       # Check if BFAST0n found breakpoints
       if(is.na(bp$breakpoints[1])){# no breakpoint found
-        # tr <- fitted(bp, 0)
-        # sl <- (tr[2] - tr[1])
         frz <- list(NA, NA, NA, NA)
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
       }else{# at least one breakpoint found
         # Extract trend component and breaks
-        cf <- coef(bp)
+        cf <- coef(bp, breaks = breaks)#, breaks = breaks
         # Extract trend component and breaks
         tbp <- bp$breakpoints #observation number of break
         #tr <- rep(NA,length(tsi))
@@ -147,13 +152,15 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
 #'
 #' @return dataframe
 #' @export
-toDF <- function(mat, setvr, metric, freq, input, nDist){
+toDF <- function(mat, setvr, metric, freq, input, nDist, breaks, seas){
   tst <- as.data.frame(t(mat))
   names(tst) <- setvr
   tst$Metric <- factor(metric)
   tst$Dense <- factor(freq)
   tst$Smooth <- factor(input)
   tst$Period <- revalue(factor(nDist), c("1"="Short", "12"="Long"))#factor(recSttngs$nDist)#
+  tst$Breaks <- factor(breaks)
+  tst$Seas <- factor(seas)
   tst
 }
 
