@@ -94,8 +94,9 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
   # Convert the time series object into a dataframe, needed for the breakpoints function
     datapp <- bfastpp(tsi, order = 1, lag = NULL, slag = NULL,
                   na.action = na.omit, stl = 'none')
+    nreg <- switch(seas, 5, 2)
     # Test if enough observations are available to use time series segmentation
-    if(round(length(tsio[is.na(tsio)==F]) * h) > 2){
+    if(round(length(tsio[is.na(tsio)==F]) * h) > nreg){
       # set_fast_options()
       # Apply BFAST0n on time series: find breaks in the regression
       if (seas){
@@ -164,4 +165,258 @@ toDF <- function(mat, setvr, metric, freq, input, nDist, breaks, seas){
   tst
 }
 
+#' Run sensitivity analysis for particular parameter of interest
 #'
+#' @param vr integer: defines the target parameter for the sensitivity study. The vr'th 'eval' parameter in the settings list is selected as target
+#' @param sttngs list of settings
+#' @param pars list of simulation parameters
+#' @param funSet list of recovery indicator settings
+#' @param ofolder folder where the output files should be stored
+#' @param basename basename for the output files
+#'
+#' @return saves performance indicators to the output folder (R2, RMSE, MAPE) and indicators of the relation between the measured and simulated recovery indicators (slope, intercept, p value of normality test of residuals). For each performace indicator a matrix is saved where the rows refer to the evaluated values of the paramter of interest and the columns to the various recovery indicator settings.
+#' @export
+#'
+evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
+  evr <- sttngs$general$eval[vr]# name of parameter that will be evaluated in the simulation
+  parvr <- pars[[evr]]
+
+  RRI_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_int <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
+  RRI_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
+
+  R80p_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_int <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
+
+  YrYr_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_int <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
+
+  SL_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_int <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
+  SL_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
+
+
+  # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
+  for (i in 1:length(parvr)){#length(setvr)
+
+    m_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))#
+    m_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    m_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    m_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    s_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    s_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    s_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    s_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+
+    # iterate over the parameter settings and simulate each time a time series
+    for (pari in 1: length(parvr[[1]][[1]])){
+      # simulate time series for a parameter combination
+      sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[pari]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$remcoef[pari], parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
+
+      # iterate over the recovery indicator settings
+      for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
+        tsi <- sc[[1]][1,]
+        tsseas <-sc[[3]][1,]
+        obspyr <- sc[[6]][1,]$obs_per_year
+        tdist <- sc[[6]][1,]$dist_time
+        tsref <- sc[[2]][1,] + sc[[5]][1,]
+        nobs <- (sc[[6]][1,]$number_yrs)* obspyr
+        tm <- 1:nobs
+
+        inp <- funSet$input[rset]
+        frq <- funSet[['freq']][rset]
+        shortDenseTS <- funSet[['shortDenseTS']][rset]
+        nPre <- funSet[['nPre']][rset]
+        nDist <- funSet[['nDist']][rset]
+        nPostMin <- funSet[['nPostMin']][rset]
+        nPostMax <- funSet[['nPostMax']][rset]
+        h <- funSet[['h']][rset]
+        seas <- funSet[['seas']][rset]
+        breaks <- funSet[['breaks']][rset]
+
+        if (frq == 'annual'){
+          #convert time series to annual values by selecting date closest to seasonal max
+          tsi <- toAnnualTS(tsseas, tsi, obspyr)
+          tsref <- toAnnualTS(tsseas, tsref, obspyr)
+          tdist <- ceiling(tdist/obspyr)
+          obspyr <- 1
+        }
+        if (frq == 'quarterly'){
+          #convert time series to quarterly resolution
+          dts <- seq(as.Date('2000-01-01'), by = '1 days', length = nobs)
+          tsi <- toRegularTS(tsi, dts, 'mean', 'quart')
+          tsref <- toRegularTS(tsref, dts, 'mean', 'quart')
+          tdist <- ceiling(tdist/obspyr)
+          obspyr <- 4
+        }
+
+        if (inp == 'smoothed'){
+          temp.zoo<-zoo(tsi,(1:length(tsi)))
+          m.av<-rollapply(temp.zoo, 150, mean, na.rm = T, fill = NA)
+          tsi <- as.numeric(m.av)
+
+        }
+
+        if((inp == 'smoothed') | (inp == 'raw')){
+          outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+          m_RRIi[rset,pari] <- outp$RRI# measured RRI
+          m_R80pi[rset,pari] <- outp$R80P# measured R80p
+          m_YrYri[rset,pari] <- outp$YrYr# measured YrYR
+          rm(outp)
+        }
+        if(funSet$input[rset] == 'segmented'){
+          outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks, seas)
+          m_RRIi[rset,pari] <- outp$RRI# measured RRI
+          m_R80pi[rset,pari] <- outp$R80P# measured R80p
+          m_YrYri[rset,pari] <- outp$YrYr# measured YrYR
+          m_SLi[rset,pari] <- outp$Sl# measured YrYR
+          #print(outp)
+          rm(outp)
+        }
+
+        # reference indicators
+        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+        s_RRIi[rset,pari] <- outp$RRI#simulated (true) RRI
+        s_R80pi[rset,pari] <- outp$R80P#simulated (true) R80p
+        s_YrYri[rset,pari] <- outp$YrYr
+        if(inp == 'segmented'){
+          s_SLi[rset,pari] <- tsref[tdist+3] - tsref[tdist+2]
+        }
+      }
+      rm(sc)
+    }
+    # evaluate recovery indicators
+    # R2
+    RRI_rsq[i,] <- sapply(1:dim(s_RRIi)[1], function(it) rsq(s_RRIi[it,], m_RRIi[it,]))
+    R80p_rsq[i,] <- sapply(1:dim(s_R80pi)[1], function(it) rsq(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_rsq[i,] <- sapply(1:dim(s_YrYri)[1], function(it) rsq(s_YrYri[it,], m_YrYri[it,]))
+    SL_rsq[i,] <- sapply(1:dim(s_SLi)[1], function(it) rsq(s_SLi[it,], m_SLi[it,]))
+
+    # MAPE
+    RRI_mape[i,] <- sapply(1:dim(s_RRIi)[1], function(it) mape(s_RRIi[it,], m_RRIi[it,]))
+    R80p_mape[i,] <- sapply(1:dim(s_R80pi)[1], function(it) mape(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_mape[i,] <- sapply(1:dim(s_YrYri)[1], function(it) mape(s_YrYri[it,], m_YrYri[it,]))
+    SL_mape[i,] <- sapply(1:dim(s_SLi)[1], function(it) mape(s_SLi[it,], m_SLi[it,]))
+
+    # RMSE
+    RRI_rmse[i,] <- sapply(1:dim(s_RRIi)[1], function(it) rmse(s_RRIi[it,], m_RRIi[it,]))
+    R80p_rmse[i,] <- sapply(1:dim(s_R80pi)[1], function(it) rmse(s_R80pi[it,], m_R80pi[it,]))
+    YrYr_rmse[i,] <- sapply(1:dim(s_YrYri)[1], function(it) rmse(s_YrYri[it,], m_YrYri[it,]))
+    SL_rmse[i,] <- sapply(1:dim(s_SLi)[1], function(it) rmse(s_SLi[it,], m_SLi[it,]))
+
+    # nTS
+    RRI_nTS[i,] <- apply(m_RRIi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    R80p_nTS[i,] <- apply(m_R80pi, 1, function(x){sum(is.na(x)==F)/length(x)})
+    YrYr_nTS[i,] <- apply(m_YrYri, 1, function(x){sum(is.na(x)==F)/length(x)})
+    SL_nTS[i,] <- apply(m_SLi, 1, function(x){sum(is.na(x)==F)/length(x)})
+
+    # intercept
+    RRI_int[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[1,]
+    R80p_int[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[1,]
+    YrYr_int[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[1,]
+    SL_int[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[1,]
+
+    # slope
+    RRI_slope[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[2,]
+    R80p_slope[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[2,]
+    YrYr_slope[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[2,]
+    SL_slope[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[2,]
+
+    # Shapiro-Wilk normality test
+    RRI_norm[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[3,]
+    R80p_norm[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[3,]
+    YrYr_norm[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[3,]
+    SL_norm[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[3,]
+  }
+
+  RRI_rsqDF <- toDF(RRI_rsq, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_rsqDF <- toDF(R80p_rsq, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_rsqDF <- toDF(YrYr_rsq, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_rsqDF <- toDF(SL_rsq, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_mapeDF <- toDF(RRI_mape, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_mapeDF <- toDF(R80p_mape, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_mapeDF <- toDF(YrYr_mape, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_mapeDF <- toDF(SL_mape, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_rmseDF <- toDF(RRI_rmse, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_rmseDF <- toDF(R80p_rmse, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_rmseDF <- toDF(YrYr_rmse, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_rmseDF <- toDF(SL_rmse, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_nTSDF <- toDF(RRI_nTS, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_nTSDF <- toDF(R80p_nTS, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_nTSDF <- toDF(YrYr_nTS, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_nTSDF <- toDF(SL_nTS, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_intDF <- toDF(RRI_int, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_intDF <- toDF(R80p_int, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_intDF <- toDF(YrYr_int, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_intDF <- toDF(SL_int, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_slopeDF <- toDF(RRI_slope, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_slopeDF <- toDF(R80p_slope, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_slopeDF <- toDF(YrYr_slope, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_slopeDF <- toDF(SL_slope, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  RRI_normDF <- toDF(RRI_norm, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  R80p_normDF <- toDF(R80p_norm, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  YrYr_normDF <- toDF(YrYr_norm, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+  SL_normDF <- toDF(SL_norm, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
+
+  # export the performance indicators
+  save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
+  save(R80p_rsqDF, file = file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
+  save(YrYr_rsqDF, file = file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+  save(SL_rsqDF, file = file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
+
+  save(RRI_rmseDF, file = file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
+  save(R80p_rmseDF, file = file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
+  save(YrYr_rmseDF, file = file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
+  save(SL_rmseDF, file = file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
+
+  save(RRI_mapeDF, file = file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
+  save(R80p_mapeDF, file = file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
+  save(YrYr_mapeDF, file = file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+  save(SL_mapeDF, file = file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
+
+  save(RRI_nTSDF, file = file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
+  save(R80p_nTSDF, file = file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
+  save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
+  save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+
+  save(RRI_intDF, file = file.path(ofolder, paste0(basename, '_RRI_int_' , evr, '.rda')))
+  save(R80p_intDF, file = file.path(ofolder, paste0(basename, '_R80p_int_' , evr, '.rda')))
+  save(YrYr_intDF, file = file.path(ofolder, paste0(basename, '_YrYr_int_' , evr, '.rda')))
+  save(SL_intDF, file = file.path(ofolder, paste0(basename, '_SL_int_' , evr, '.rda')))
+
+  save(RRI_slopeDF, file = file.path(ofolder, paste0(basename, '_RRI_slope_' , evr, '.rda')))
+  save(R80p_slopeDF, file = file.path(ofolder, paste0(basename, '_R80p_slope_' , evr, '.rda')))
+  save(YrYr_slopeDF, file = file.path(ofolder, paste0(basename, '_YrYr_slope_' , evr, '.rda')))
+  save(SL_slopeDF, file = file.path(ofolder, paste0(basename, '_SL_slope_' , evr, '.rda')))
+
+  save(RRI_normDF, file = file.path(ofolder, paste0(basename, '_RRI_norm_' , evr, '.rda')))
+  save(R80p_normDF, file = file.path(ofolder, paste0(basename, '_R80p_norm_' , evr, '.rda')))
+  save(YrYr_normDF, file = file.path(ofolder, paste0(basename, '_YrYr_norm_' , evr, '.rda')))
+  save(SL_normDF, file = file.path(ofolder, paste0(basename, '_SL_norm_' , evr, '.rda')))
+
+}
+
