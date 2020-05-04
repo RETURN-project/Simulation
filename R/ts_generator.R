@@ -13,8 +13,8 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   m <- -pert / (2 * thalf) # Slope of the transitory regime
   ttrans <- 2*thalf # Duration of the transitory regime
   y <- offset                             * (t < tpert) +
-       (offset + pert + m *(t - tpert))   * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
-       offset                             * (t > tpert + ttrans)
+    (offset + pert + m *(t - tpert))   * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
+    offset                             * (t > tpert + ttrans)
 
   y <- y + rnorm(length(t), sd = noise) # Add the noise
 
@@ -92,13 +92,13 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   # e.g: substitute(a + x, list(a = 2)) returns 2 + x
   # 2 + x is an object of class call, that must be converted to expression
   f <- as.expression(
-                      substitute(-r * x,
-                                 list(r = r))
-                    )
+    substitute(-r * x,
+               list(r = r))
+  )
   g <- as.expression(
-                     substitute(s,
-                                list(s = isd))
-                     )
+    substitute(s,
+               list(s = isd))
+  )
 
   # Solve
   sol <- sde::sde.sim(X0 = y0,
@@ -308,3 +308,180 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
   out
 }
 
+
+#' Create list of parameter values.
+#'
+#' @param sttngs: settings list defining the parameter set-up
+#'
+#' @return list of parameter settings
+#' @export
+#'
+setParamValues <- function(sttngs){
+  if(sttngs$general$parSetUp == 'avg'){
+    out <- set_avg_par(sttngs)
+  } else if(sttngs$general$parSetUp == 'dist'){
+    out <- set_dist_par(sttngs)
+  } else if(sttngs$general$parSetUp == 'comb'){
+    out <- set_combine_par(sttngs)
+  }
+  out
+}
+
+#' Get average parameter values. Helper function for the set_avg_par() function
+#'
+#' @param param parameter list containing the (i) 'type' = type of parameter, (ii) 'vals' = evaluated parameter values and (iii) 'obs' = the observed parameter values.
+#' @param nval number of values to be provided
+#'
+#' @return a vector containing nval parameter values
+#' @export
+#'
+get_avg_val <- function(param, nval){
+  # if observed values of the parameter are available (type = dist), return the mean of these observed values
+  if(param$type == 'dist'){
+    out <- rep(mean(param$obs, na.rm = T), nval)
+    # if only a range of reasonable values for the parameter are known (type = range), get the mean value of the range
+  }else if(param$type == 'range'){
+    out <- rep(mean(c(min(param$vals, na.rm = T), max(param$vals, na.rm = T))), nval)
+    # if the parameter only contains categorical values, randomly sample the categorical values
+  }else if(param$type == 'cat'){
+    out <- sample(param$vals,nval, replace = T)
+  }
+  out
+}
+
+#' Sample parameter values based on their distribution
+#'
+#' @param param parameter list containing the (i) 'type' = type of parameter, (ii) 'vals' = evaluated parameter values and (iii) 'obs' = the observed parameter values.
+#' @param nval number of values to be provided
+#'
+#' @return a vector containing nval parameter values
+#' @export
+#'
+get_dist_val <- function(param, nval){
+  # if observed values of the parameter are available (type = dist), sample values using the frequencies of the observed values
+  if(param$type == 'dist'){
+    h <- hist(param$obs,breaks = (seq(min(param$obs),max(param$obs), l = 100)))
+    out <- sample(h$mids, nval, replace = T, prob = h$counts)
+    # if only a range of reasonable values for the parameter are known (type = range), randomly sample observations within the range
+  }else if(param$type == 'range'){
+    if(min(param$vals, na.rm = T) == max(param$vals, na.rm = T)){
+      out <- rep(min(param$vals, na.rm = T), nval)
+    }else{
+      out <- sample(seq(min(param$vals, na.rm = T), max(param$vals, na.rm = T), l = 1000),nval, replace = T)
+    }
+    # if the parameter only contains categorical values, randomly sample these categorical values
+  }else if(param$type == 'cat'){
+    out <- sample(param$vals,nval, replace = T)
+  }
+  out
+}
+
+#' Set list of parameter values. Each evaluated parameter is stepwise altered over a predefined set of values. While evaluating parameter x, the other parameters are kept constant and equal to their mean value.
+#'
+#' @param sttngs settings file for the time series simulation set-up
+#'
+#' @return a list containing the parameter values for each evaluated parameter
+#' @export
+#'
+set_avg_par <- function(sttngs){
+  pars <- list()
+
+  for (i in 1:length(sttngs$general$eval)){#iterate over the parameters that need to be evaluated
+    vari <- sttngs$general$eval[i]# parameter that needs to be evaluated
+    varvali <- sttngs[[vari]]$vals# values of the parameter that needs to be evaluated
+
+
+    for(ii in 1:length(varvali)){# iterate over the values of the evaluated parameter
+      nTS <- sttngs$general$nTS# number of time series to be simulated per evaluated parameter value
+      pari <- list(nrep = rep(1,nTS),#number of time series to be simulated per parameter combination
+                   nyr = round(get_avg_val(sttngs$nyr,nTS)),# number of years to be simulated
+                   nobsYr = rep(sttngs$general$nobsYr,nTS),# number of observations per year to be simulated
+                   nDr = floor(get_avg_val(sttngs$nDr,nTS)),# number of drought years
+                   seasAv = rep(list(sttngs$general$seasAv),nTS),# seasonal average values
+                   seasAmp = get_avg_val(sttngs$seasAmp,nTS),# seasonal amplitude
+                   trAv = get_avg_val(sttngs$trAv,nTS),# offset
+                   remSd = get_avg_val(sttngs$remSd,nTS),# standard deviation of the remainder
+                   distMag = get_dist_val(sttngs$distMag,nTS),# magnitude of the disturbance
+                   distT = get_avg_val(sttngs$distT,nTS),# timing disturbance
+                   distRec = get_dist_val(sttngs$distRec,nTS),# recovery period after disturbance
+                   remcoef = sample(sttngs$general$remcoef,nTS, replace = T),# coefficients remainder model
+                   missVal = get_avg_val(sttngs$missVal,nTS),# fraction of missing values
+                   DistMissVal = get_avg_val(sttngs$DistMissVal,nTS),# distribution of missing values
+                   distType = get_avg_val(sttngs$distType,nTS)# type of recovery
+      )
+      pari[[vari]] <- rep(varvali[ii],nTS)
+      pars[[vari]][[as.character(varvali[ii])]] <- pari
+    }
+  }
+  pars
+}
+
+
+#' Set list of parameter values. Each evaluated parameter is stepwise altered over a predefined set of values. While evaluating parameter x, all combinations of predifined parameter values for all other parameters are made.
+#'
+#' @param sttngs settings file for the time series simulation set-up
+#'
+#' @return a list containing the parameter values for each evaluated parameter
+#' @export
+#'
+set_combine_par <- function(sttngs){
+  pars <- list()
+
+  for (i in 1:length(sttngs$general$eval)){#iterate over the parameters that need to be evaluated
+    vari <- sttngs$general$eval[i] # parameter to be evaluated
+    varvali <- sttngs[[vari]]$vals  # values of the parameter to be evaluated
+    vars <- names(sttngs)[names(sttngs) != 'general' & names(sttngs) != vari]# other parameters that should be combined
+
+    for(ii in 1:length(varvali)){# iterate over the values of the evaluated parameter
+      comb <- expand.grid(lapply(sttngs[vars], function(x){x$vals}))# combine all parameter values, except the evaluated one
+      comb[[vari]] <- rep(varvali[ii],length(comb[[1]]))# add value of parameter to be evaluated to the list
+      comb$nrep <- rep(1,length(comb[[1]])) # set the number of repetitions
+      comb$nobsYr <- rep(sttngs$general$nobsYr,length(comb[[1]])) # set the number of observations per year
+      comb$seasAv <- rep(list(sttngs$general$seasAv),length(comb[[1]]))# set the seasonality
+      comb$remcoef <- sample(sttngs$general$remcoef,length(comb[[1]]), replace = T)# set the coefficients of the remainder model
+
+      pars[[vari]][[as.character(varvali[ii])]] <- comb # add the parameter values to the parameter list
+    }
+  }
+  pars
+}
+
+#' Set list of parameter values. Each evaluated parameter is stepwise altered over a predefined set of values. While evaluating parameter x, the other parameters are sampled using their observed distribution.
+#'
+#' @param sttngs settings file for the time series simulation set-up
+#'
+#' @return a list containing the parameter values for each evaluated parameter
+#' @export
+#'
+set_dist_par <- function(sttngs){
+  pars <- list()
+
+  for (i in 1:length(sttngs$general$eval)){#iterate over the parameters that need to be evaluated
+    vari <- sttngs$general$eval[i]# parameter to be evaluated
+    varvali <- sttngs[[vari]]$vals# values of the parameter to be evaluated
+
+
+    for(ii in 1:length(varvali)){# iterate over the values of the evaluated parameter
+      nTS <- sttngs$general$nTS
+      pari <- list(nrep = rep(1,nTS),
+                   nyr = round(get_dist_val(sttngs$nyr,nTS)),
+                   nobsYr = rep(sttngs$general$nobsYr,nTS),
+                   nDr = floor(get_dist_val(sttngs$nDr,nTS)),
+                   seasAv = rep(list(sttngs$general$seasAv),nTS),
+                   seasAmp = get_dist_val(sttngs$seasAmp,nTS),
+                   trAv = get_dist_val(sttngs$trAv,nTS),
+                   remSd = get_dist_val(sttngs$remSd,nTS),
+                   distMag = get_dist_val(sttngs$distMag,nTS),
+                   distT = get_dist_val(sttngs$distT,nTS),
+                   distRec = get_dist_val(sttngs$distRec,nTS),
+                   remcoef = sample(sttngs$general$remcoef,nTS, replace = T),
+                   missVal = get_dist_val(sttngs$missVal,nTS),
+                   DistMissVal = get_dist_val(sttngs$DistMissVal,nTS),
+                   distType = get_dist_val(sttngs$distType,nTS)
+      )
+      pari[[vari]] <- rep(varvali[ii],nTS)
+      pars[[vari]][[as.character(varvali[ii])]] <- pari
+    }
+  }
+  pars
+}
