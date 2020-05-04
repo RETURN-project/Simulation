@@ -244,7 +244,7 @@ start_time <- Sys.time()
 set_fast_options()
 
 # run the sensitivity analysis
-pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet,  cl = cl)
+pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename,  cl = cl)
 
 stopCluster(cl)
 
