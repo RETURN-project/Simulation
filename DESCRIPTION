@@ -11,7 +11,7 @@ Description: What the package does (one paragraph).
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Remotes: bfast2/bfast@dev,
+Remotes: bfast2/bfast@master,
          bfast2/strucchange@devel
 Imports: bfast,
          forecast,
