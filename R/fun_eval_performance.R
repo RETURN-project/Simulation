@@ -6,12 +6,38 @@
 #' @return the R squared between the x and y variables
 #' @export
 rsq <- function(x, y) {
+  ind <- which(is.infinite(x) | is.infinite(y))
+  if (length(ind)>0){
+    x <- x[-ind]
+    y <- y[-ind]
+  }
   if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
     rs <- summary(lm(y~x))$r.squared
   }else(rs <- NA)
   rs
 }
 
+#' Intercept, slope of the linear model fit and Shapiro-Wilk normality test of the residuals
+#'
+#' @param x vector of x values
+#' @param y vector of y values
+#'
+#' @return the intercept and slope of the linear fit and p value of Shapiro-Wilk normality test
+#' @export
+linFit <- function(x, y) {
+  ind <- which(is.infinite(x) | is.infinite(y))
+  if (length(ind)>0){
+    x <- x[-ind]
+    y <- y[-ind]
+  }
+  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
+    mod <- lm(y~x)
+    coef <- summary(mod)$coefficients
+    tst <- shapiro.test(mod$residuals)#p-value > 0.05 implies that the distribution of the data is not significantly different from normal distribution
+    out <- c(coef[1,1], coef[2,1], tst$p.value)# intercept and slope
+  }else(out <- c(NA,NA,NA))
+  out
+}
 #' RMSE
 #'
 #' @param val vector of x values
@@ -84,5 +110,34 @@ calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
     lst[[names(meas)[sci]]] <- vls
   }
   lst
+}
+
+#' Plot results sensitivity analysis
+#'
+#' @param data data to be plotted, should be a dataframe with the following headers: Metric, Dense, Smooth, Period, Breaks, Seas, variable, value
+#' @param lbls legend labels
+#' @param xlbl title x axis
+#' @param ylbl title y axis
+#' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
+#'
+#' @return ggplot object
+#' @export
+#'
+plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
+  ggplot(data, aes(variable,value,color=interaction(Smooth,Dense,Breaks, Seas), group = interaction(Smooth,Dense,Breaks, Seas))) +
+    geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+    scale_color_manual('Preprocessing',labels=lbls, values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+
+    facet_grid(vars(Metric), vars(Period), scales = scales)+
+    xlab(xlbl) +
+    ylab(ylbl)+
+    theme(axis.text.x = element_text(color = "grey50", size = 20),
+          axis.text.y = element_text(color = "grey50", size = 20),
+          axis.title.x = element_text(color = "grey20", size = 25),
+          axis.title.y = element_text(color = "grey20", size = 25),
+          plot.title = element_text(size=25),
+          legend.title = element_text(size=25),
+          legend.text = element_text(color = "grey50",size=25),
+          strip.text.x = element_text(size = 20),
+          strip.text.y = element_text(size = 20,color = "grey20"))
 }
 
