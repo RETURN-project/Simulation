@@ -1,0 +1,382 @@
+---
+title: "Prototype of benchmark study"
+author: "Wanda De Keersmaecker"
+date: ""
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Prototype of benchmark study}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = F,
+                      fig.width=18,
+                      fig.height=10)#
+
+# Load libraries
+library(devtools)
+library(BenchmarkRecovery)
+library(zoo)
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(profvis)
+library(parallel)
+library(pbapply)
+library(bfast)
+library(strucchange)
+```
+
+# Extract time series characteristics from sampled time series
+The following characteristics are derived from the decomposed time series:
+
+* fraction of missing values
+* seasonal amplitude (one value for input each time series)
+* average seasonal pattern
+* offset 
+* standard deviation of the remainder component (one value per input time series)
+* fitted ARMA model in the remainder component (one model per input time series)
+```{r}
+#profvis({
+# ------------------------------------------------
+# inputs
+ifolder <- '../data/' #folder where input data is located
+ofolder <-'../data/' # folder where outputs will be written
+basename <- 'toyset'# name of the input dataset (contains sampled satellite time series)
+nyr <- 18 # number of years in observation period
+nobsYr <- 365 # number of observations per year
+ncores <- 3 # number of cores used for parallel computing
+
+ifileVI <- paste0(basename, '.rda')
+dfVi <- loadRData(file = file.path(ifolder, ifileVI))
+
+# ------------------------------------------------
+# First decompose time series into seasonality, trend and remainder:
+tmp <- decompTSbfast(dfVi, nyr, nobsYr)
+dataVISeasbf <-  tmp[[1]]# sesonality (fitted harmonic function)
+dataVIRembf <- tmp[[2]]# remainder
+dataVITrbf <- tmp[[3]]# trend (linear trend without break)
+dataVISeasCoef <- tmp[[4]]# coefficients of fitted harmonic functions 
+
+# ------------------------------------------------
+# Then, derive the characteristics:
+
+tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2)# fraction missing values
+
+seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # seasonal amplitude for each pixel
+seasS <- dataVISeasbf[dataVISeasbf[,1]<0,]#average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
+seasVImean <- colMeans(as.matrix(seasS[,-c(1,2)]))
+
+TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T)# offset 
+
+Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T)# SD of remainder per pixel
+Rem_VIcoef <- list()# ARMA model - characterization of the remainder dynamics per pixel
+for(i in 1:dim(dataVIRembf)[1]){
+  Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
+}
+# })
+```
+
+```{r plot, echo=FALSE}
+# Plot the time series
+# Decomposition
+
+# Example time series
+datz <- as.numeric(dfVi[10,-c(1,2)])
+tmz <- as.Date(names(dfVi)[-c(1,2)])
+tsz <- zoo(datz[is.na(datz)==F],tmz[is.na(datz)==F])
+
+# Example decomposition time series
+remz <- as.numeric(dataVIRembf[10,-c(1,2)])
+tsrz <- zoo(remz[is.na(remz)==F],tmz[is.na(remz)==F])
+par(mar=c(2,2,2,1))
+par(fig=c(0,1,0.66,1))
+plot(tsz, type = 'o', main = 'Example NBR time series and trend',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+lines(zoo(as.numeric(dataVITrbf[10,-c(1,2)]),tmz), col = 'red')
+par(fig=c(0,1,0.33,0.66), new=TRUE)
+plot(zoo(as.numeric(dataVISeasbf[10,-c(1,2)]),tmz), type = 'l', main = 'Seasonal',
+     xlab = '', ylab = 'NBR [-]', lwd = 2)
+par(fig=c(0,1,0,0.33), new=TRUE)
+plot(tsrz, type = 'o', main = 'Remainder',
+     xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
+
+# all seasonal cycles 
+plot(zoo(t(dataVISeasbf[,-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of sampled pixels',
+     xlab = 'Time', ylab = 'NBR [-]')
+
+# seasonal cylce Southern hemisphere and mean seasonal cycle
+plot(zoo(t(dataVISeasbf[which(dataVISeasbf[,1]<0),-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of pixels in Southern hemisphere and mean seasonal',
+     xlab = 'Time', ylab = 'NBR [-]')
+lines(as.Date(names(seasVImean)), seasVImean, type = 'l', lwd = 2)
+
+
+# Amplitude seasonality
+hist(seasVImax, main = 'Amplitude seasonality', xlab = 'Amplitude [-]')
+mx <- mean(seasVImax)
+abline(v = mx, col = "red", lwd = 2)
+
+
+# missing values
+hist(tsVIMissVal, main = 'Fraction missing values (daily temporal resolution)', xlab = 'Fraction missing values [-]')
+mx <- mean(tsVIMissVal)
+abline(v = mx, col = "red", lwd = 2)
+
+# standard deviation remainder
+hist(Rem_VIsd, main = 'Standard deviation remainder', xlab = 'Standard deviation remainder [-]')
+mx <- mean(Rem_VIsd)
+abline(v = mx, col = "red", lwd = 2)
+
+```
+
+# Simulate time series, measure recovery and evaluate performance
+Based on the characteristics of the measured time series, time series are simulated.
+
+## Define simulation settings 
+First, the simulation settings are defined in a settings list: 
+
+* __seasAmp__: seasonal amplitude
+* __missVal__: fraction of missing values in time series
+* __remSd__: standard deviation of the remainder
+* __nyr__: time series length (number of years)
+* __distMag__: disturbance magnitude, should be a negative value to simulate a drop
+* __distT__: timing disturbance (disturbance year)
+* __distRec__: recovery half time after disturbance (number of observations)
+* __nDr__: number of simulated droughts 
+* __distType__: Type of recovery (piecewise, exponential or realistic)
+* __DistMissVal__: defines how the introduced missing values should be distributed: random or at an equal interval
+* __trAv__: offset
+* __eval__: the parameters that should be evaluated
+* __nTS__: number of time series simulated per value of the evaluated parameter
+* __nobsYr__: number of observations simulated per year (this should equal the frequency of the sampled time series)
+* __seasAv__: represents the seasonal pattern
+* __remcoef__: list of coefficients for the model of the remainder components
+* __parSetUp__: the parameter values selection approach (avg, dist, or comb)
+
+For each of these parameters, the type is defined. There are three main parameter types: *dist*, *range*, and *cat*. For the *dist* parameters, parameter values that are observed from sampled time series are available. For *range* parameters no observed values are available, but an expected range of their values can be set. Finally, the *cat* parameters are categoric.
+
+Next to the type of the parameter, a set of parameter values (*vals*) need to be defined. If the sensitivity of the recovery indicators to the parameter is being evaluated, the performance of the recovery indicators is evaluated with respect to each of these parameter values. For *dist* parameters, the observed parameter values (*obs*) need to be additionally provided.
+
+While evaluating the sensitivity to one specific parameter, the values of all other parameters also need to be set. Three approaches can be used to achieve this. First, the *avg* approach sets the parameters to their average value. This equals the mean value of the distribution of observed values of *dist* parameters, the mean value of the range of values (given by *vals*) for *range* parameters and a randomly selected value (selected from the values give by *vals*) for *cat* parameters. Second, the *dist* approach selects values for the parameters given by the likelihood of their occurrence. The likelihood is defined by the histogram of observed values for *dist* parameters and a random selection of values is made for *range* and *cat* parameters. Third, the *comb* approach defines all combinations of evaluated values for each parameter (as defined in *vals*).
+
+
+```{r}
+#-------------------------------------------------
+#  settings  simulation
+STnobsYr <- 365
+Vqntl <- c( .05, .275, .5, .725, .95)#c( .05, .25, .5, .75, .95)#c( .5)# c( .05, .25, .5, .75)# set of quantiles used to derive realistic values (for number of 
+
+sttngs <- list()
+sttngs$'seasAmp' <- list(type = 'dist', vals = quantile(seasVImax, Vqntl), obs = seasVImax)
+sttngs$'missVal' <- list(type = 'dist',  vals = quantile(tsVIMissVal, Vqntl), obs = tsVIMissVal)
+sttngs$'remSd' <- list(type = 'dist',  vals = quantile(Rem_VIsd, Vqntl), obs = Rem_VIsd)
+sttngs$'nyr' <- list(type = 'range', vals = c(20,36))#seq(6,36, by = 6)
+sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.2,0.3,0.4,0.5))
+sttngs$'distT' <- list(type = 'range', vals =10)#seq(3,33, by = 6)
+sttngs$'distRec' <- list(type = 'range', vals = seq(0.5,6.5,by=1.5)*STnobsYr) #seq(0.5,6.5,by=0.5)
+sttngs$'nDr' <- list(type = 'range',  vals = c(0))
+sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'))
+sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random')
+sttngs$'trAv' <- list(type = 'range', vals = TrVImean)
+sttngs$'general' <- list(
+  eval = c('distMag', 'seasAmp'),
+  nTS = 10,
+  nobsYr = STnobsYr,
+  seasAv = seasVImean,
+  remcoef = Rem_VIcoef,
+  parSetUp = 'avg')#avg dist, comb
+
+pars <- setParamValues(sttngs)
+
+# remove redundant variables
+rm(list=setdiff(ls(), c("sttngs",'ifolder', 'ofolder', 'basename', 'ncores', 'pars')))
+save(sttngs, file = file.path(ofolder, paste0(basename,  '_simTS_settings.rda')))
+save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
+
+```
+
+The following inputs are needed to calculate the recovery indicators:
+
+__funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters.
+
++ *freq*:  'dense' or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual', the time series are converted to annual frequency.
++ *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
++ *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
++ *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
++ *nDist*: in case *shortDenseTS* is TRUE: the number of months after the disturbance used to derive the value during the disturbance 
++ *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
++ *h*: in case *input* equals 'segmented', the *h* value is used in the segmentation algorithm to define the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment
++ *breaks*: in case *input* equals 'segmented', the criterium given by *breaks* is used in the segmentation algorithm to define the optimal number of segments. Can be set to 'BIC' or 'LWZ'
++ *seas*: in case *input* equals 'segmented', *seas* denotes whether a seasonal term needs to be used in the segmentation algorithm 
+
+
+```{r}
+# recovery settings
+funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
+               'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),# settings for the recovery indicators
+               'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+               'nPre' = c(2,2,2,2,2,2,2),
+               'nDist' = c(12,1,1,1,12,12,12),
+               'nPostMin' = c(4,0,0,0,4,4,4),
+               'nPostMax' = c(6,1,1,1,6,6,6),
+               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15),
+               'breaks' = rep('BIC',7),
+               'seas' = c(rep(T,7)))
+
+save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
+
+```
+
+The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
+```{r}
+
+# Calculate the number of cores
+no_cores <- detectCores() - 1
+ 
+# Initiate cluster
+cl <- makeCluster(no_cores)
+
+# start clock
+start_time <- Sys.time()
+set_fast_options()
+
+# run the sensitivity analysis
+pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet,  cl = cl)
+
+stopCluster(cl)
+
+# stop clock
+end_time <- Sys.time()
+tot_time <- end_time - start_time
+print(end_time - start_time)
+
+```
+
+
+# Plot the performance indicators
+```{r, include=F}
+caseList <- c( 'distMag')# evaluated time series characteristics for which a plot needs to be made
+
+
+simFullName  <- list('Disturbance magnitude',
+                     'Number of droughts',
+                     'Time series length',
+                     'Seasonal amplitude',
+                     'SD remainder',
+                     'Disturbance timing',
+                     'Recovery period [years]',
+                     'Missing values')
+names(simFullName) <- c('distMag',
+                        'nDr', 
+                        'len',
+                        'seasAmp',
+                        'remSd',
+                        'distT',
+                        'distRec',
+                        'missVal')
+
+for(vr in 1:length(caseList)){
+  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
+  # setvr <- sttngs[[evr]]# settings of simulation
+  
+  RRI_rsq <- loadRData(file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
+  R80p_rsq <- loadRData(file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
+  YrYr_rsq <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+  SL_rsq <- loadRData(file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
+  
+  RRI_rmse <- loadRData(file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
+  R80p_rmse <- loadRData(file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
+  YrYr_rmse <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
+  SL_rmse <- loadRData(file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
+  
+  RRI_mape <- loadRData(file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
+  R80p_mape <- loadRData(file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
+  YrYr_mape <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+  SL_mape <- loadRData(file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
+  
+  RRI_nTS <- loadRData(file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
+  R80p_nTS <- loadRData(file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
+  YrYr_nTS <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
+  SL_nTS <- loadRData(file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+  
+  RRI_slope <- loadRData(file.path(ofolder, paste0(basename, '_RRI_slope_' , evr, '.rda')))
+  R80p_slope <- loadRData(file.path(ofolder, paste0(basename, '_R80p_slope_' , evr, '.rda')))
+  YrYr_slope <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_slope_' , evr, '.rda')))
+  SL_slope <- loadRData(file.path(ofolder, paste0(basename, '_SL_slope_' , evr, '.rda')))
+  
+  RRI_norm <- loadRData(file.path(ofolder, paste0(basename, '_RRI_norm_' , evr, '.rda')))
+  R80p_norm <- loadRData(file.path(ofolder, paste0(basename, '_R80p_norm_' , evr, '.rda')))
+  YrYr_norm <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_norm_' , evr, '.rda')))
+  SL_norm <- loadRData(file.path(ofolder, paste0(basename, '_SL_norm_' , evr, '.rda')))
+  
+  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq, SL_rsq))
+  tot_rsq$variable <-mapvalues(tot_rsq$variable, levels(tot_rsq$variable), round(as.numeric(levels(tot_rsq$variable)),digits = 3))
+  tot_rmse <- melt(rbind(RRI_rmse, R80p_rmse, YrYr_rmse, SL_rmse))
+  tot_rmse$variable <-mapvalues(tot_rmse$variable, levels(tot_rmse$variable), round(as.numeric(levels(tot_rmse$variable)),digits = 3))
+  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape, SL_mape))
+  tot_mape$variable <-mapvalues(tot_mape$variable, levels(tot_mape$variable), round(as.numeric(levels(tot_mape$variable)),digits = 3))
+  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS, SL_nTS))
+  tot_nTS$variable <-mapvalues(tot_nTS$variable, levels(tot_nTS$variable), round(as.numeric(levels(tot_nTS$variable)),digits = 3))
+  tot_slope <- melt(rbind(RRI_slope, R80p_slope, YrYr_slope, SL_slope))
+  tot_slope$variable <-mapvalues(tot_slope$variable, levels(tot_slope$variable), round(as.numeric(levels(tot_slope$variable)),digits = 3))
+  tot_norm <- melt(rbind(RRI_norm, R80p_norm, YrYr_norm, SL_norm))
+  tot_norm$variable <-mapvalues(tot_norm$variable, levels(tot_norm$variable), round(as.numeric(levels(tot_norm$variable)),digits = 3))
+  
+  lbls <- c("raw, annual", 'raw, dense', "segmented, dense", 'smooth, dense')
+  sname <- caseList[[vr]]
+  xlbl <- simFullName[[sname]]
+  # plot R2
+  data <- tot_rsq
+  ylbl <- 'R²'
+  pltR2 <- plotSens(data, lbls, xlbl, ylbl, scales = 'fixed')
+  png('../data/Rsq.png',width = 1350,height =750 )
+  print(pltR2)
+  dev.off()
+  
+  # plot RMSE
+  data <- tot_rmse
+  ylbl <- 'RMSE'
+  pltRMSE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
+  png('../data/RMSE.png',width = 1350,height =750 )
+  print(pltRMSE)
+  dev.off()
+   # plot MAPE
+  data <- tot_mape
+  ylbl <- 'MAPE'
+  pltMAPE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
+  png('../data/MAPE.png',width = 1350,height =750 )
+  print(pltMAPE)
+  dev.off()
+   # plot fraction of time series processed
+  data <- tot_nTS
+  ylbl <- 'Fraction'
+  pltnTS <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
+  png('../data/nTS.png',width = 1350,height =750 )
+  print(pltnTS)
+  dev.off()
+  # plot slope
+  data <- tot_slope
+  ylbl <- 'Slope'
+  pltslope <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
+  png('../data/Slope.png',width = 1350,height =750 )
+  print(pltslope)
+  dev.off()
+  # plot normality test
+  data <- tot_norm
+  ylbl <- 'P value'
+  pltnorm <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
+  png('../data/norm.png',width = 1350,height =750 )
+  print(pltnorm)
+  dev.off()
+  
+  print(pltR2)
+  print(pltRMSE)
+  print(pltMAPE)
+  print(pltnTS)
+  print(pltslope)
+  print(pltnorm)
+}
+```
