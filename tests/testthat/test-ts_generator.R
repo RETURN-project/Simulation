@@ -138,3 +138,99 @@ test_that('simulation case',{
   expect_equal(apply(tsi$Remainder,1,sd), rep(remSd,nrep))# standard deviation of remainder
   expect_equal(colSums(apply(tsi$timeSeries,1,is.na))/(nyr*nobsYr), rep(mval,nrep))# fraction of missing values
 })
+
+test_that('Average parameter generation',{
+  # generate a settings file
+  set.seed(197)
+  Vqntl <- c( .05, .275, .5, .725, .95)
+  seasVImax <- rnorm(100)
+  tsVIMissVal <- rnorm(100)
+  Rem_VIsd <- rnorm(100)
+  sttngs <- list()
+  sttngs$'seasAmp' <- list(type = 'dist', vals = quantile(seasVImax, Vqntl), obs = seasVImax)
+  sttngs$'missVal' <- list(type = 'dist',  vals = quantile(tsVIMissVal, Vqntl), obs = tsVIMissVal)
+  sttngs$'remSd' <- list(type = 'dist',  vals = quantile(Rem_VIsd, Vqntl), obs = Rem_VIsd)
+  sttngs$'nyr' <- list(type = 'range', vals = c(20,36))
+  sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.2,0.3,0.4,0.5))
+  sttngs$'distT' <- list(type = 'range', vals =10)
+  sttngs$'distRec' <- list(type = 'range', vals = seq(0.5,6.5,by=1.5)*6)
+  sttngs$'nDr' <- list(type = 'range',  vals = c(0))
+  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'))
+  sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random')
+  sttngs$'trAv' <- list(type = 'range', vals = 0.7)
+  sttngs$'general' <- list(
+    eval = c('distMag', 'seasAmp'),
+    nTS = 2,
+    nobsYr = 6,
+    seasAv = c(1,2,3,4,5,6),
+    remcoef = list(10,20,30),
+    parSetUp = 'avg')#avg dist, comb
+
+  # derive parameters using the settings file
+  pars <- setParamValues(sttngs)
+
+  # tests
+  expect_equal(length(pars),2)# 2 evaluated parameters
+  expect_equal(pars$distMag$`-0.1`$nrep,c(1,1))
+  expect_equal(pars$distMag$`-0.1`$nyr,rep(mean(c(20,36)),2))
+  expect_equal(pars$distMag$`-0.1`$nobsYr,rep(6,2))
+  expect_equal(pars$distMag$`-0.1`$nDr,rep(0,2))
+  expect_equal(pars$distMag$`-0.1`$seasAv[[1]],c(1:6))
+  expect_equal(pars$distMag$`-0.1`$seasAmp,rep(mean(seasVImax),2), tolerance = 1e-5)
+  expect_equal(pars$distMag$`-0.1`$trAv,rep(0.7,2))
+  expect_equal(pars$distMag$`-0.1`$remSd,rep(mean(Rem_VIsd),2))
+  expect_equal(pars$distMag$`-0.1`$distMag,rep(-0.1,2))
+  expect_equal(pars$distMag$`-0.1`$distT,rep(10,2))
+  expect_equal(pars$distMag$`-0.1`$missVal,rep(mean(tsVIMissVal),2))
+  expect_equal(pars$distMag$`-0.1`$DistMissVal,rep('random',2))
+  expect_equal(pars$distMag$`-0.1`$distType,rep('piecewise',2))
+
+})
+
+test_that('Combination parameter generation',{
+  # generate a settings file
+  set.seed(197)
+  Vqntl <- c( .5)
+  seasVImax <- rnorm(100)
+  tsVIMissVal <- rnorm(100)
+  Rem_VIsd <- rnorm(100)
+  sttngs <- list()
+  sttngs$'seasAmp' <- list(type = 'dist', vals = quantile(seasVImax, Vqntl), obs = seasVImax)
+  sttngs$'missVal' <- list(type = 'dist',  vals = quantile(tsVIMissVal, Vqntl), obs = tsVIMissVal)
+  sttngs$'remSd' <- list(type = 'dist',  vals = quantile(Rem_VIsd, Vqntl), obs = Rem_VIsd)
+  sttngs$'nyr' <- list(type = 'range', vals = c(20,25))
+  sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.5))
+  sttngs$'distT' <- list(type = 'range', vals =10)
+  sttngs$'distRec' <- list(type = 'range', vals = c(0.5,6.5)*6)
+  sttngs$'nDr' <- list(type = 'range',  vals = c(0))
+  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'))
+  sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random')
+  sttngs$'trAv' <- list(type = 'range', vals = 0.7)
+  sttngs$'general' <- list(
+    eval = c('distMag', 'seasAmp'),
+    nTS = 2,
+    nobsYr = 6,
+    seasAv = c(1,2,3,4,5,6),
+    remcoef = list(10,20,30),
+    parSetUp = 'comb')#avg dist, comb
+
+  # derive parameters using the settings file
+  pars <- setParamValues(sttngs)
+
+  # tests
+  expect_equal(length(pars),2)# 2 evaluated parameters
+  expect_equal(pars$distMag$`-0.1`$nrep,rep(1,4))
+  expect_equal(pars$distMag$`-0.1`$nyr,rep(c(20,25),2))
+  expect_equal(pars$distMag$`-0.1`$nobsYr,rep(6,4))
+  expect_equal(pars$distMag$`-0.1`$nDr,rep(0,4))
+  expect_equal(pars$distMag$`-0.1`$seasAv[[1]],c(1:6))
+  expect_equal(pars$distMag$`-0.1`$seasAmp,rep(quantile(seasVImax, .5),4), tolerance = 1e-5)
+  expect_equal(pars$distMag$`-0.1`$trAv,rep(0.7,4))
+  expect_equal(pars$distMag$`-0.1`$remSd,rep(quantile(Rem_VIsd,.5),4))
+  expect_equal(pars$distMag$`-0.1`$distMag,rep(-0.1,4))
+  expect_equal(pars$distMag$`-0.1`$distT,rep(10,4))
+  expect_equal(pars$distMag$`-0.1`$missVal,rep(quantile(tsVIMissVal,.5),4))
+  expect_equal(pars$distMag$`-0.1`$DistMissVal,as.factor(rep('random',4)))
+  expect_equal(pars$distMag$`-0.1`$distType,as.factor(rep('piecewise',4)))
+
+})

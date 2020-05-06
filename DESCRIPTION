@@ -11,7 +11,7 @@ Description: What the package does (one paragraph).
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Remotes: bfast2/bfast@dev,
+Remotes: bfast2/bfast@master,
          bfast2/strucchange@devel
 Imports: bfast,
          forecast,
@@ -28,7 +28,8 @@ Suggests: imputeTS,
           testthat,
           knitr,
           rmarkdown,
-          profvis,
-          doParallel
+          profvis,          
+          pbapply,
+          parallel
 RoxygenNote: 7.1.0
 VignetteBuilder: knitr
