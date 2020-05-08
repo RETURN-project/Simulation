@@ -25,23 +25,29 @@ library(BenchmarkRecovery)
 ```{r simulate}
 # Set the problem
 ## Set the times
-ts <- seq(0, 15, by = 0.025)
+ts <- seq(0, 100, by = 0.025)
 
 ## Set the parameters (the same for all)
 offset <- 0
 pert <- 5
 tpert <- 0
 thalf <- 3
-noise <- 0.05
+noise <- 0.1
 
-## The 'realistic' time series contains an extra parameter, controlling the 'dynamic' noise
-sigma <- 0.1
+# The 'realistic' time series contains an extra parameter, controlling the 'dynamic' noise
+# Choosing noise = 0 and sigma defined as below, we have the same standard deviations for the
+# three time series (if they are long enough)
+sigma <- noise * sqrt(2 * log(2) / thalf)
 
 # Generate the time series
 ys_p <- piecewise(ts, offset, pert, tpert, thalf, noise)
 ys_e <- exponential(ts, offset, pert, tpert, thalf, noise)
-ys_r <- realistic(ts, offset, pert, tpert, thalf, noise, sigma)
+ys_r <- realistic(ts, offset, pert, tpert, thalf, 0.00, sigma)
 ```
+
+### Plots
+
+#### Complete time series
 
 ```{r plot, echo=FALSE}
 # Plot the time series
@@ -50,4 +56,33 @@ lines(ts, ys_e, col = 'red')
 lines(ts, ys_r, col = 'blue')
 legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
        col = c('black', 'red', 'blue'), lty = 1, cex = 1)
+```
+
+#### Detail (transient)
+
+```{r plot-transient, echo=FALSE}
+# Plot the time series
+plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state', xlim = c(0, 7*thalf))
+lines(ts, ys_e, col = 'red')
+lines(ts, ys_r, col = 'blue')
+legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
+       col = c('black', 'red', 'blue'), lty = 1, cex = 1)
+```
+
+#### Detail (asymptotics / long term dynamics)
+
+```{r plot-asymptotic, echo=FALSE}
+# Plot the time series
+plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state', xlim = c(0.5*max(ts), max(ts)), ylim = c(-4*noise, 4*noise))
+lines(ts, ys_e, col = 'red')
+lines(ts, ys_r, col = 'blue')
+legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
+       col = c('black', 'red', 'blue'), lty = 1, cex = 1)
+```
+
+### Compare standard deviations
+
+```{r}
+sds <- c(sd(ys_p), sd(ys_e), sd(ys_r))
+print(sds)
 ```
