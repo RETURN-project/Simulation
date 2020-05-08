@@ -36,7 +36,9 @@ noise <- 0.1
 
 # The 'realistic' time series contains an extra parameter, controlling the 'dynamic' noise
 # Choosing noise = 0 and sigma defined as below, we have the same standard deviations for the
-# three time series (if they are long enough)
+# three time series (if they are long enough).
+#
+# Reference: https://math.stackexchange.com/questions/2558659/expectation-and-variance-of-stochastic-differential-equations
 sigma <- noise * sqrt(2 * log(2) / thalf)
 
 # Generate the time series
