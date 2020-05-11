@@ -30,7 +30,7 @@ ts <- seq(0, 15, by = 0.025)
 ## Set the parameters (the same for all)
 offset <- 0
 pert <- 5
-tpert <- 0
+tpert <- 5
 thalf <- 3
 noise <- 0.05
 

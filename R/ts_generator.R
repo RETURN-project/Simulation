@@ -13,8 +13,8 @@ piecewise <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   m <- -pert / (2 * thalf) # Slope of the transitory regime
   ttrans <- 2*thalf # Duration of the transitory regime
   y <- offset                             * (t < tpert) +
-    (offset + pert + m *(t - tpert))   * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
-    offset                             * (t > tpert + ttrans)
+      (offset + pert + m *(t - tpert))    * (t >= tpert) * (t <= tpert + ttrans) + # Transitory regime
+       offset                             * (t > tpert + ttrans)
 
   y <- y + rnorm(length(t), sd = noise) # Add the noise
 
@@ -63,11 +63,6 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @export
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, sigma = 0) {
 
-  # Avoid wrong inputs
-  # The current implementation doesn't use any tpert different than 0
-  # TODO: implement this functionality
-  if(tpert != 0) { stop("Currently tpert different than 0 is not supported by this method") }
-
   # Translate parameters to the language of differential equations
   y0 <- pert # The perturbation represents the initial condition
   r <- log(2)/thalf # Translate the half-life to a multiplicative constant
@@ -103,6 +98,18 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, 
                       sigma = g,
                       sigma.x = 0.0,
                       method = 'euler')
+
+
+  # Shift the time series (only if tpert is not zero)
+  if(tpert != 0) {
+    ts <- time(sol) # Store the times
+    i <- min(which(ts >= tpert)) # Index corresponding to tpert
+    sol <- lag(sol, -i + 1) # Displace the time series, so it begins at tpert
+    fill <- ts(rep(0.0, i), frequency = frequency(sol), start = t[1], end = t[i-1]) # Fill with zeros before tpert
+    fill <- fill + rnorm(length(fill), sd = sigma) #
+    sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill)) # Paste one after the other
+    sol <- head(sol, length(sol) - length(fill)) # Trim the tail, so the displaced time series is equal in size to the original
+  }
 
   # Extract the state only (so the output has the same structure as in piecewise and exponential)
   sol <- as.data.frame(sol)
