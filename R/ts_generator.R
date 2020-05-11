@@ -81,8 +81,8 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, 
   # e.g: substitute(a + x, list(a = 2)) returns 2 + x
   # 2 + x is an object of class call, that must be converted to expression
   f <- as.expression(
-    substitute(-r * x,
-               list(r = r))
+                     substitute(-r * x,
+                                list(r = r))
   )
   g <- as.expression(
                      substitute(s,
