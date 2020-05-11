@@ -43,6 +43,7 @@ test_that("Realistic decay (stochastic)", {
 
   ts <- seq(0, 1000, by = 0.01)
   offset <- 2
+  tpert <- 50
   pert <- 5
   thalf <- 1
 
@@ -52,7 +53,7 @@ test_that("Realistic decay (stochastic)", {
   # i.e: such a sigma creates a time series with sd_expected (provided t_0 = 0 t_end = inf)
   # More info: https://math.stackexchange.com/questions/2558659/expectation-and-variance-of-stochastic-differential-equations
 
-  ys_r <- realistic(ts, offset = offset, pert = pert, thalf = thalf, noise = 0, sigma = sigma)
+  ys_r <- realistic(ts, offset = offset, pert = pert, tpert = tpert, thalf = thalf, noise = 0, sigma = sigma)
   sd_measured <- sd(ys_r)
 
   expect_equal(sd_measured, sd_expected, tolerance = 0.1)
