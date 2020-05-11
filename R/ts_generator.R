@@ -102,13 +102,20 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, 
 
   # Shift the time series (only if tpert is not zero)
   if(tpert != 0) {
-    ts <- time(sol) # Store the times
-    i <- min(which(ts >= tpert)) # Index corresponding to tpert
+    # Shift the original time series
+    ts <- time(sol) # Store the original times
+    i <- min(which(ts >= tpert)) # Find the index corresponding to tpert
     sol <- lag(sol, -i + 1) # Displace the time series, so it begins at tpert
-    fill <- ts(rep(0.0, i), frequency = frequency(sol), start = t[1], end = t[i-1]) # Fill with zeros before tpert
-    fill <- fill + rnorm(length(fill), sd = sigma) #
-    sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill)) # Paste one after the other
-    sol <- head(sol, length(sol) - length(fill)) # Trim the tail, so the displaced time series is equal in size to the original
+
+    # Create the time series before tpert (only dynamic noise around equilibrium)
+    tfill <- seq(t[1], t[i-1], by = 1 / frequency(sol))
+    fill <- ts(realistic(tfill, sigma = sigma), start = t[1], end = t[i-1], frequency = frequency(sol))
+
+    # Paste both time series together
+    sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill))
+
+    # Trim the tail, so the displaced time series is equal in size to the original
+    sol <- head(sol, length(sol) - length(fill))
   }
 
   # Extract the state only (so the output has the same structure as in piecewise and exponential)

@@ -30,7 +30,7 @@ ts <- seq(0, 100, by = 0.025)
 ## Set the parameters (the same for all)
 offset <- 0
 pert <- 5
-tpert <- 5
+tpert <- 15
 thalf <- 3
 noise <- 0.1
 
@@ -60,11 +60,22 @@ legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
        col = c('black', 'red', 'blue'), lty = 1, cex = 1)
 ```
 
+#### Detail (perturbation)
+
+```{r plot-pert, echo=FALSE}
+# Plot the time series
+plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state', xlim = c(tpert - thalf, tpert + thalf))
+lines(ts, ys_e, col = 'red')
+lines(ts, ys_r, col = 'blue')
+legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
+       col = c('black', 'red', 'blue'), lty = 1, cex = 1)
+```
+
 #### Detail (transient)
 
 ```{r plot-transient, echo=FALSE}
 # Plot the time series
-plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state', xlim = c(0, 7*thalf))
+plot(ts, ys_p, 'l', col = 'black', xlab = 'time', ylab = 'state', xlim = c(tpert, tpert + 7*thalf))
 lines(ts, ys_e, col = 'red')
 lines(ts, ys_r, col = 'blue')
 legend('topright', legend = c('piecewise', 'exponential', 'realistic'),
