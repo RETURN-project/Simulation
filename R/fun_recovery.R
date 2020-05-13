@@ -94,7 +94,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
   # Convert the time series object into a dataframe, needed for the breakpoints function
     datapp <- bfastpp(tsi, order = 1, lag = NULL, slag = NULL,
                   na.action = na.omit, stl = 'none')
-    nreg <- switch(seas, 5, 2)
+    nreg <- switch(seas+1, 2, 5)
     # Test if enough observations are available to use time series segmentation
     if(round(length(tsio[is.na(tsio)==F]) * h) > nreg){
       # set_fast_options()

@@ -11,7 +11,7 @@ rsq <- function(x, y) {
     x <- x[-ind]
     y <- y[-ind]
   }
-  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
+  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
     rs <- summary(lm(y~x))$r.squared
   }else(rs <- NA)
   rs
@@ -30,7 +30,7 @@ linFit <- function(x, y) {
     x <- x[-ind]
     y <- y[-ind]
   }
-  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
+  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
     mod <- lm(y~x)
     coef <- summary(mod)$coefficients
     tst <- shapiro.test(mod$residuals)#p-value > 0.05 implies that the distribution of the data is not significantly different from normal distribution
