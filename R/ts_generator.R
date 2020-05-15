@@ -49,6 +49,7 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #'
 #' 1. The deterministic dynamics are given by an exponential decay with the given half life
 #' 2. The stochastic dynamics have the given infinitesimal standard deviation
+#' 3. Gaussian noise is added to the final time series to simulate measurement errors
 #'
 #' @param t Times to simulate
 #' @param offset Offset
@@ -56,10 +57,11 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @param tpert Perturbation timing
 #' @param thalf Perturbation half-life
 #' @param noise Strength of the additive white noise (standard deviation)
+#' @param sigma Strength of the stochastic term in the differential equation (infinitesimal standard deviation)
 #'
 #' @return The time series
 #' @export
-realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
+realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, sigma = 0) {
 
   # Avoid wrong inputs
   # The current implementation doesn't use any tpert different than 0
@@ -69,14 +71,6 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   # Translate parameters to the language of differential equations
   y0 <- pert # The perturbation represents the initial condition
   r <- log(2)/thalf # Translate the half-life to a multiplicative constant
-
-  # Scale the noise
-  # We want to interpret the parameters in piecewise, exponential and realistic uniformly.
-  # Parameter noise is of course no exception. In order to make sure that the standard deviation
-  # of the resulting time series is (roughly) equal to the parameter noise, we need to rescale
-  # the infinitesimal standard deviation term used in the stochastic differential equation
-  tStep <- max(diff(t)) # Numerical time step
-  isd <- noise/sqrt(tStep) # Infinitesimal standard deviation
 
   # Pose the differential equation dy = f(y,t) dt + g(y,t) dW
   #
@@ -96,9 +90,10 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
                list(r = r))
   )
   g <- as.expression(
-    substitute(s,
-               list(s = isd))
-  )
+                     substitute(s,
+                                list(s = sigma))
+                     )
+
 
   # Solve
   sol <- sde::sde.sim(X0 = y0,
@@ -113,8 +108,8 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
   sol <- as.data.frame(sol)
   y <- as.numeric(sol$x)
 
-  # Don't forget to add the offset
-  y <- y + offset
+  # Don't forget to add the noise and the offset
+  y <- y + rnorm(length(t), sd = noise) + offset
 
   return(y)
 }
