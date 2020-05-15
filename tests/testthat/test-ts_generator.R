@@ -79,7 +79,6 @@ test_that("Disturbance simulation",{
 })
 
 test_that("Time series simulation",{
-  #source('../R/fun_simulate.R')
 
   nyr <- 5 # number of years
   nobsyr <- 12 # number of observations per year
@@ -89,28 +88,26 @@ test_that("Time series simulation",{
   seasAmp <- 3 # seasonal amplitude
   trAv <- 5 # offset
   remSd <- 2 # standard deviation remainder
-  remMod <- list(order1 = 0, order2 = 0, order3 = 0) # model remainder series
   distMag <- -6 # disturbance magnitude
   distT <- 27 # disturbance timing (observation number)
   distRec <- 25/2 # recovery half time (number of observations)
 
   # simulate time series
-  tsi <- simulTS(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod,
+  tsi <- simulTS(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd,
                  distMag, distT, distRec, distType = 'piecewise')
 
-  expect_equal(tMiss,which(is.na(tsi[[2]][,5])))# missing values
-  expect_equal((nyr*nobsyr),length(tsi[[2]][,5]))# number of observations
+  expect_equal(tMiss,which(is.na(tsi[[2]][,4])))# missing values
+  expect_equal((nyr*nobsyr),length(tsi[[2]][,4]))# number of observations
   expect_equal((seasAv[1:nobsyr])/(max(seasAv[1:nobsyr]))*seasAmp,tsi[[2]][1:nobsyr,1])# seasonal pattern
   expect_equal(seasAmp,max(tsi[[2]][,1]))# seasonal amplitude
-  expect_equal(remSd,sd(tsi[[2]][,3]))# standard deviation remainder
-  expect_equal(trAv,as.numeric(tsi[[2]][1,2]))# offset
-  expect_equal(distMag,min(tsi[[2]][,4]))# magnitude disturbance
-  expect_equal(distT,which(tsi[[2]][,4] == min(tsi[[2]][,4])))# timing disturbance
-  expect_equal(distRec,length(which(tsi[[2]][,4] < 0)), tolerance = 1)# recovery period
+  expect_equal(remSd,sd(tsi[[2]][,2]-tsi[[2]][,3]), tolerance = 1e-1)# standard deviation remainder
+  expect_equal(trAv,as.numeric(tsi[[2]][1,3]))# offset
+  expect_equal(trAv + distMag,min(tsi[[2]][,3]))# magnitude disturbance
+  expect_equal(distT,which(tsi[[2]][,3] == min(tsi[[2]][,3])))# timing disturbance
+  expect_equal(distRec,length(which(tsi[[2]][,3] < tsi[[2]][1,3])), tolerance = 1)# recovery period
 })
 
 test_that('simulation case',{
-  #source('../R/fun_simulate.R')
   # simulation settings
   nrep <- 5 # number of repetitions
   nyr <- 5 # number of years
@@ -122,20 +119,19 @@ test_that('simulation case',{
   seasAmp <- 3 # seasonal amplitude
   trAv <- 5 # offset
   remSd <- 2 # standard deviation remainder
-  remcoef <- list(list(order1 = 0, order2 = 0, order3 = 0),list(order1 = 0, order2 = 0, order3 = 0)) # model remainder series
   distMaglim <- c(-6,-6) # disturbance magnitude
   distTy <- 1 # disturbance timing (year)
   distReclim <- c(25/2,25/2) # recovery half time (number of observations)
 
   # simulate set of time series
   tsi <- simulCase(nrep, nyr, nobsYr, nDr,seasAv,seasAmp,
-                   trAv, remSd,distMaglim,distTy,distReclim, remcoef, mval, mvaldist, distType = 'piecewise')
+                   trAv, remSd,distMaglim,distTy,distReclim,  mval, mvaldist, distType = 'piecewise')
 
   # tests
   expect_equal(nrep,dim(tsi$timeSeries)[1])# number of repetitions
   expect_equal((nyr*nobsYr),dim(tsi$timeSeries)[2])# number of repetitions
-  expect_equal(apply(tsi$Disturbance, 1, min), rep(distMaglim[1],nrep))# disturbance magnitude
-  expect_equal(apply(tsi$Remainder,1,sd), rep(remSd,nrep))# standard deviation of remainder
+  expect_equal(apply(tsi$Truth, 1, min), rep(trAv + distMaglim[1],nrep))# disturbance magnitude
+  expect_equal(apply((tsi$Disturbance - tsi$Truth),1,sd), rep(remSd,nrep), tolerance = 1e-1)# standard deviation of remainder
   expect_equal(colSums(apply(tsi$timeSeries,1,is.na))/(nyr*nobsYr), rep(mval,nrep))# fraction of missing values
 })
 
@@ -234,3 +230,57 @@ test_that('Combination parameter generation',{
   expect_equal(pars$distMag$`-0.1`$distType,as.factor(rep('piecewise',4)))
 
 })
+
+test_that('Interval parameter generation',{
+  # generate a settings file
+  set.seed(197)
+  Vqntl <- c( .05, .25, .4, .6, .75, .95)
+  seasVImax <- rnorm(100)
+  tsVIMissVal <- rnorm(100)
+  Rem_VIsd <- rnorm(100)
+  sttngs <- list()
+  sttngs$'seasAmp' <- list(type = 'dist', vals = quantile(seasVImax, Vqntl), obs = seasVImax)
+  sttngs$'missVal' <- list(type = 'dist',  vals = quantile(tsVIMissVal, Vqntl), obs = tsVIMissVal)
+  sttngs$'remSd' <- list(type = 'dist',  vals = quantile(Rem_VIsd, Vqntl), obs = Rem_VIsd)
+  sttngs$'nyr' <- list(type = 'range', vals = c(20,25))
+  sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.5))
+  sttngs$'distT' <- list(type = 'range', vals =10)
+  sttngs$'distRec' <- list(type = 'range', vals = c(0.5,6.5)*6)
+  sttngs$'nDr' <- list(type = 'range',  vals = c(0))
+  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'))
+  sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random')
+  sttngs$'trAv' <- list(type = 'range', vals = 0.7)
+  sttngs$'general' <- list(
+    eval = c('distMag', 'seasAmp'),
+    nTS = 2,
+    nobsYr = 6,
+    seasAv = c(1,2,3,4,5,6),
+    remcoef = list(10,20,30),
+    parSetUp = 'int')
+
+  # derive parameters using the settings file
+  pars <- setParamValues(sttngs)
+
+  # tests
+  expect_equal(length(pars),2)# 2 evaluated parameters
+  expect_equal(pars$distMag$`-0.1`$nrep,rep(1,2))
+  expect_equal(pars$distMag$`-0.1`$nyr>=19,rep(T,2))
+  expect_equal(pars$distMag$`-0.1`$nyr<=26,rep(T,2))
+  expect_equal(pars$distMag$`-0.1`$nobsYr,rep(6,2))
+  expect_equal(pars$distMag$`-0.1`$nDr,rep(0,2))
+  expect_equal(pars$distMag$`-0.1`$seasAv[[1]],c(1:6))
+  expect_equal(min(pars$distMag$`-0.1`$seasAmp)>= as.numeric(quantile(seasVImax, .4)),T, tolerance = 1e-5)
+  expect_equal(min(pars$distMag$`-0.1`$seasAmp)<= as.numeric(quantile(seasVImax, .6)),T, tolerance = 1e-5)
+  expect_equal(pars$distMag$`-0.1`$trAv,rep(0.7,2))
+  expect_equal(min(pars$distMag$`-0.1`$remSd)>= as.numeric(quantile(Rem_VIsd, .4)),T, tolerance = 1e-5)
+  expect_equal(min(pars$distMag$`-0.1`$remSd)<= as.numeric(quantile(Rem_VIsd, .6)),T, tolerance = 1e-5)
+  expect_equal(min(pars$distMag$`-0.1`$distMag) >= -0.5,T, tolerance = 1e-5)
+  expect_equal(min(pars$distMag$`-0.1`$distMag) <= -0.1,T, tolerance = 1e-5)
+  expect_equal(pars$distMag$`-0.1`$distT,rep(10,2))
+  expect_equal(min(pars$distMag$`-0.1`$missVal)>= as.numeric(quantile(tsVIMissVal, .4)),T, tolerance = 1e-5)
+  expect_equal(min(pars$distMag$`-0.1`$missVal)<= as.numeric(quantile(tsVIMissVal, .6)),T, tolerance = 1e-5)
+  expect_equal(pars$distMag$`-0.1`$DistMissVal,(rep('random',2)))
+  expect_equal(pars$distMag$`-0.1`$distType,(rep('piecewise',2)))
+
+})
+

@@ -137,7 +137,7 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
 #'
 #' @return  a list containign the years for which a drought was introduced and a time series object, containing the simulated seasonality, trend, remainder, disturbance, and the sum of these components.
 #' @export
-simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMod, distMag, distT, distRec, distType){
+simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, distMag, distT, distRec, distType){
   #-------------------------------------------------
   # simulate seasonality
   simSeas <- rep(as.numeric(seasAv[1:(nobsyr*2)]), times=ceiling(nyr/2))
@@ -150,7 +150,6 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
   if (nDr==0){ydr <- 0}
   if (nDr > 0){
     ydr <- sample(1:(nyr-1), nDr)
-    #print(ydr)
     for (i in 1:length(ydr)){
       offs <- which(simSeas[1:nobsyr]==min(simSeas[1:nobsyr], na.rm=T))
       strt <- offs[1] + ((ydr[i]-1) * nobsyr)
@@ -159,35 +158,32 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
     }
   }
 
-  #-------------------------------------------------
-  # simulate offset
-  simTr <- rep(trAv, times=(nyr*nobsyr))
-
-  #-------------------------------------------------
-  # simulate remainder
-  simRem <- arima.sim(model = remMod, n = nobsyr*nyr, sd = remSd)
-  simRem <- (simRem - mean(simRem))# zero mean
-  simRem <- simRem/sd(simRem)*remSd # set standard deviation
-
-  #-------------------------------------------------
-  # simulate disturbance
+    #-------------------------------------------------
+  # simulate disturbance-recovery
 
   if(distType == 'piecewise'){
-    simDist <- piecewise(1:(nobsyr*nyr), pert=distMag, tpert = distT, thalf = distRec)
+    simDist <- piecewise(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = remSd)#disturbance with noise component
+    simTruth <- piecewise(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = 0)# disturbance without noise compontent = truth
   }
 
   if(distType == 'exponential'){
-    simDist <- exponential(1:(nobsyr*nyr), pert=distMag, tpert = distT, thalf = distRec)
+    simDist <- exponential(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = remSd)
+    simTruth <- exponential(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = 0)
+  }
+
+  if(distType == 'diffEq'){
+    simDist <- realistic(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = remSd)
+    simTruth <- realistic(1:(nobsyr*nyr), offset = trAv, pert=distMag, tpert = distT, thalf = distRec, noise = 0)
   }
 
   #-------------------------------------------------
   # Sum components
-  simTS <-simSeas+simTr+simRem+simDist
+  simTS <-simSeas+simDist
   # set missing values
   if (is.na(tMiss[1])==F){
     simTS[tMiss] <- NA
   }
-  list(ydr, ts(t(rbind(simSeas, simTr, simRem, simDist, simTS)), frequency = nobsyr))
+  list(ydr, ts(t(rbind(simSeas, simDist, simTruth, simTS)), frequency = nobsyr))
 }
 
 
@@ -212,15 +208,14 @@ simulTS <- function(nyr, nobsyr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remMo
 #' @return a list with the simulated time series, offest, seasonality, remainder, disturbance component and parameters used for the simulation. The time series (components) are stored as matrix where each row is a time series and the columns are associated with the observation numbers.
 #' @export
 simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
-                      trAv, remSd, distMaglim, distTy, distReclim, remcoef, mval, mvaldist, distType){
+                      trAv, remSd, distMaglim, distTy, distReclim, mval, mvaldist, distType){
   # matrices to store the time series
   TSsim <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # time series
-  TSsimTr <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # trend
   TSsimSeas <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # seasonality
-  TSsimRem <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # remainder
-  TSsimDist <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # disturbance
+  TSsimTruth <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # disturbance without noise
+  TSsimDist <- matrix(NA, nrow=nrep, ncol=(nyr*nobsYr)) # disturbance with noise
   # variables to store settings
-  m_remcoef <- list() # ARMA model of remainders
+  # m_remcoef <- list() # ARMA model of remainders
   m_year_dr <- list() # drought year(s)
   m_nyr <- matrix(NA, nrow = nrep, ncol = 1)
   m_nobsYr <- matrix(NA, nrow = nrep, ncol = 1)
@@ -237,7 +232,7 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
 
   for (ii in 1:nrep){
     # randomly select a remainder model
-    modi <- sample((1:length(remcoef)), 1)
+    # modi <- sample((1:length(remcoef)), 1)
     # randomly select a disturbance magnitude within the given limits
     if(distMaglim[1]==distMaglim[2]){
       distMag <- distMaglim[1]
@@ -261,15 +256,15 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
       }
     }
     # simulate time series
-    sts <- simulTS(nyr, nobsYr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, remcoef[[modi]], distMag, distT, distRec, distType)
+    sts <- simulTS(nyr, nobsYr, tMiss, nDr, seasAv, seasAmp, trAv, remSd, distMag, distT, distRec, distType)
+
     # store simulated time series
-    TSsim[ii,] <- sts[[2]][,5]
-    TSsimTr[ii,] <- sts[[2]][,2]
+    TSsim[ii,] <- sts[[2]][,4]
     TSsimSeas[ii,] <- sts[[2]][,1]
-    TSsimRem[ii,] <- sts[[2]][,3]
-    TSsimDist[ii,] <- sts[[2]][,4]
+    TSsimTruth[ii,] <- sts[[2]][,3]
+    TSsimDist[ii,] <- sts[[2]][,2]
     # store selected parameters
-    m_remcoef[[ii]] <-  remcoef[[modi]]
+    # m_remcoef[[ii]] <-  remcoef[[modi]]
     m_year_dr[[ii]] <- sts[[1]]
     m_nyr[ii] <- nyr
     m_nobsYr[ii] <- nobsYr
@@ -282,7 +277,7 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
     m_distRec[ii] <- distRec
     m_distType[ii] <- distType
     m_mVal[ii] <- mval
-    rm(modi, distT, sts)
+    rm(distT, sts)
   }
 
   # Dataframe selected parameters
@@ -301,10 +296,10 @@ simulCase <- function(nrep, nyr, nobsYr, nDr, seasAv, seasAmp,
                          "seas_amp", "trend_av", 'rem_sd',
                          'dist_magn', 'dist_time', 'dist_rec', 'dist_type', 'miss_val')
   TSsimParam$year_drought <- m_year_dr
-  TSsimParam$rem_coef <- m_remcoef
+  # TSsimParam$rem_coef <- m_remcoef
 
-  out <- list( TSsim, TSsimTr, TSsimSeas, TSsimRem, TSsimDist, TSsimParam)
-  names(out) <- c('timeSeries', 'Trend', 'Seasonality', 'Remainder', 'Disturbance', 'Parameters')
+  out <- list( TSsim, TSsimSeas, TSsimTruth, TSsimDist, TSsimParam)
+  names(out) <- c('timeSeries', 'Seasonality', 'Truth', 'Disturbance', 'Parameters')
   out
 }
 
@@ -323,6 +318,8 @@ setParamValues <- function(sttngs){
     out <- set_dist_par(sttngs)
   } else if(sttngs$general$parSetUp == 'comb'){
     out <- set_combine_par(sttngs)
+  }else if(sttngs$general$parSetUp == 'int'){
+    out <- set_interval_par(sttngs)
   }
   out
 }
@@ -367,7 +364,7 @@ get_dist_val <- function(param, nval){
     if(min(param$vals, na.rm = T) == max(param$vals, na.rm = T)){
       out <- rep(min(param$vals, na.rm = T), nval)
     }else{
-      out <- sample(seq(min(param$vals, na.rm = T), max(param$vals, na.rm = T), l = 1000),nval, replace = T)
+      out <- sample(seq(min(param$vals, na.rm = T), max(param$vals, na.rm = T), l = 100000),nval, replace = T)
     }
     # if the parameter only contains categorical values, randomly sample these categorical values
   }else if(param$type == 'cat'){
@@ -404,7 +401,6 @@ set_avg_par <- function(sttngs){
                    distMag = get_dist_val(sttngs$distMag,nTS),# magnitude of the disturbance
                    distT = get_avg_val(sttngs$distT,nTS),# timing disturbance
                    distRec = get_dist_val(sttngs$distRec,nTS),# recovery period after disturbance
-                   remcoef = sample(sttngs$general$remcoef,nTS, replace = T),# coefficients remainder model
                    missVal = get_avg_val(sttngs$missVal,nTS),# fraction of missing values
                    DistMissVal = get_avg_val(sttngs$DistMissVal,nTS),# distribution of missing values
                    distType = get_avg_val(sttngs$distType,nTS)# type of recovery
@@ -438,7 +434,6 @@ set_combine_par <- function(sttngs){
       comb$nrep <- rep(1,length(comb[[1]])) # set the number of repetitions
       comb$nobsYr <- rep(sttngs$general$nobsYr,length(comb[[1]])) # set the number of observations per year
       comb$seasAv <- rep(list(sttngs$general$seasAv),length(comb[[1]]))# set the seasonality
-      comb$remcoef <- sample(sttngs$general$remcoef,length(comb[[1]]), replace = T)# set the coefficients of the remainder model
 
       pars[[vari]][[as.character(varvali[ii])]] <- comb # add the parameter values to the parameter list
     }
@@ -474,7 +469,6 @@ set_dist_par <- function(sttngs){
                    distMag = get_dist_val(sttngs$distMag,nTS),
                    distT = get_dist_val(sttngs$distT,nTS),
                    distRec = get_dist_val(sttngs$distRec,nTS),
-                   remcoef = sample(sttngs$general$remcoef,nTS, replace = T),
                    missVal = get_dist_val(sttngs$missVal,nTS),
                    DistMissVal = get_dist_val(sttngs$DistMissVal,nTS),
                    distType = get_dist_val(sttngs$distType,nTS)
@@ -485,3 +479,79 @@ set_dist_par <- function(sttngs){
   }
   pars
 }
+
+#' Set list of parameter values. Each evaluated parameter is stepwise altered over multiple intervals. While evaluating parameter x, the other parameters are sampled.
+#'
+#' @param sttngs settings file for the time series simulation set-up
+#'
+#' @return a list containing the parameter values for each evaluated parameter
+#' @export
+#'
+set_interval_par <- function(sttngs){
+  pars <- list()
+
+  for (i in 1:length(sttngs$general$eval)){#iterate over the parameters that need to be evaluated
+    vari <- sttngs$general$eval[i]# parameter that needs to be evaluated
+    varvali <- sttngs[[vari]]$vals# values of the parameter that needs to be evaluated
+    if(sttngs[[vari]]$type == 'dist'){
+      varvali <- matrix(varvali,nrow=2,ncol=length(varvali)/2)
+      len <- length(varvali)/2
+    } else{len <- length(varvali)}
+
+    for(ii in 1:len){# iterate over the values of the evaluated parameter
+      nTS <- sttngs$general$nTS# number of time series to be simulated per evaluated parameter value
+      pari <- list(nrep = rep(1,nTS),#number of time series to be simulated per parameter combination
+                   nyr = round(get_avg_val(sttngs$nyr,nTS)),# number of years to be simulated
+                   nobsYr = rep(sttngs$general$nobsYr,nTS),# number of observations per year to be simulated
+                   nDr = floor(get_avg_val(sttngs$nDr,nTS)),# number of drought years
+                   seasAv = rep(list(sttngs$general$seasAv),nTS),# seasonal average values
+                   seasAmp = get_avg_val(sttngs$seasAmp,nTS),# seasonal amplitude
+                   trAv = get_avg_val(sttngs$trAv,nTS),# offset
+                   remSd = get_avg_val(sttngs$remSd,nTS),# standard deviation of the remainder
+                   distMag = get_dist_val(sttngs$distMag,nTS),# magnitude of the disturbance
+                   distT = get_dist_val(sttngs$distT,nTS),# timing disturbance
+                   distRec = get_dist_val(sttngs$distRec,nTS),# recovery period after disturbance
+                   missVal = get_avg_val(sttngs$missVal,nTS),# fraction of missing values
+                   DistMissVal = get_avg_val(sttngs$DistMissVal,nTS),# distribution of missing values
+                   distType = get_avg_val(sttngs$distType,nTS)# type of recovery
+                   )
+      if (sttngs[[vari]]$type == 'dist'){
+        pari[[vari]] <- sample(seq(min(varvali[,ii], na.rm = T), max(varvali[,ii], na.rm = T), l = 100000),nTS, replace = T)
+        pars[[vari]][[as.character(mean(varvali[,ii]))]] <- pari
+      }
+      else{
+        pari[[vari]] <- rep(varvali[ii],nTS)
+        pars[[vari]][[as.character(varvali[ii])]] <- pari
+      }
+    }
+  }
+  pars
+}
+
+#' #' #' Sample parameter values over an interval
+#' #'
+#' #' @param param parameter list containing the (i) 'type' = type of parameter, (ii) 'vals' = evaluated parameter values and (iii) 'obs' = the observed parameter values.
+#' #' @param nval number of values to be provided
+#' #'
+#' #' @return a vector containing nval parameter values
+#' #' @export
+#' #'
+#' get_int_val <- function(param, nval){
+#'   # if observed values of the parameter are available (type = dist), sample values using the frequencies of the observed values
+#'   if(param$type == 'dist'){
+#'     vals <- matrix(param$vals,nrow=2,ncol=length(param$vals)/2)
+#'     vals <- vals[,ceiling((1+dim(vals)[2])/2)]
+#'     out <- sample(seq(min(vals, na.rm = T), max(vals, na.rm = T), l = 100000),nval, replace = T)
+#'     # if only a range of reasonable values for the parameter are known (type = range), randomly sample observations within the range
+#'   }else if(param$type == 'range'){
+#'     if(min(param$vals, na.rm = T) == max(param$vals, na.rm = T)){
+#'       out <- rep(min(param$vals, na.rm = T), nval)
+#'     }else{
+#'       out <- sample(seq(min(param$vals, na.rm = T), max(param$vals, na.rm = T), l = 100000),nval, replace = T)
+#'     }
+#'     # if the parameter only contains categorical values, randomly sample these categorical values
+#'   }else if(param$type == 'cat'){
+#'     out <- sample(param$vals,nval, replace = T)
+#'   }
+#'   out
+#' }
