@@ -185,33 +185,21 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
   RRI_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
   RRI_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
   RRI_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_int <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
 
   R80p_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
   R80p_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
   R80p_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
   R80p_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_int <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
 
   YrYr_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
   YrYr_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
   YrYr_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
   YrYr_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_int <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
 
   SL_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
   SL_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
   SL_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
   SL_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
-  SL_int <- matrix(NA,length(parvr), length(funSet[[1]]))
-  SL_slope <- matrix(NA,length(parvr), length(funSet[[1]]))
-  SL_norm <- matrix(NA,length(parvr), length(funSet[[1]]))
 
 
   # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
@@ -229,16 +217,16 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
     # iterate over the parameter settings and simulate each time a time series
     for (pari in 1: length(parvr[[1]][[1]])){
       # simulate time series for a parameter combination
-      sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[pari]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$remcoef[pari], parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
+      sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[pari]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
 
       # iterate over the recovery indicator settings
       for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
         tsi <- sc[[1]][1,]
-        tsseas <-sc[[3]][1,]
-        obspyr <- sc[[6]][1,]$obs_per_year
-        tdist <- sc[[6]][1,]$dist_time
-        tsref <- sc[[2]][1,] + sc[[5]][1,]
-        nobs <- (sc[[6]][1,]$number_yrs)* obspyr
+        tsseas <-sc[[2]][1,]
+        obspyr <- sc[[5]][1,]$obs_per_year
+        tdist <- sc[[5]][1,]$dist_time
+        tsref <- sc[[3]][1,]
+        nobs <- (sc[[5]][1,]$number_yrs)* obspyr
         tm <- 1:nobs
 
         inp <- funSet$input[rset]
@@ -327,24 +315,6 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
     R80p_nTS[i,] <- apply(m_R80pi, 1, function(x){sum(is.na(x)==F)/length(x)})
     YrYr_nTS[i,] <- apply(m_YrYri, 1, function(x){sum(is.na(x)==F)/length(x)})
     SL_nTS[i,] <- apply(m_SLi, 1, function(x){sum(is.na(x)==F)/length(x)})
-
-    # intercept
-    RRI_int[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[1,]
-    R80p_int[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[1,]
-    YrYr_int[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[1,]
-    SL_int[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[1,]
-
-    # slope
-    RRI_slope[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[2,]
-    R80p_slope[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[2,]
-    YrYr_slope[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[2,]
-    SL_slope[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[2,]
-
-    # Shapiro-Wilk normality test
-    RRI_norm[i,] <- sapply(1:dim(s_RRIi)[1], function(it) linFit(s_RRIi[it,], m_RRIi[it,]))[3,]
-    R80p_norm[i,] <- sapply(1:dim(s_R80pi)[1], function(it) linFit(s_R80pi[it,], m_R80pi[it,]))[3,]
-    YrYr_norm[i,] <- sapply(1:dim(s_YrYri)[1], function(it) linFit(s_YrYri[it,], m_YrYri[it,]))[3,]
-    SL_norm[i,] <- sapply(1:dim(s_SLi)[1], function(it) linFit(s_SLi[it,], m_SLi[it,]))[3,]
   }
 
   RRI_rsqDF <- toDF(RRI_rsq, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
@@ -367,20 +337,6 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
   YrYr_nTSDF <- toDF(YrYr_nTS, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
   SL_nTSDF <- toDF(SL_nTS, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
 
-  RRI_intDF <- toDF(RRI_int, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  R80p_intDF <- toDF(R80p_int, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  YrYr_intDF <- toDF(YrYr_int, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  SL_intDF <- toDF(SL_int, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-
-  RRI_slopeDF <- toDF(RRI_slope, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  R80p_slopeDF <- toDF(R80p_slope, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  YrYr_slopeDF <- toDF(YrYr_slope, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  SL_slopeDF <- toDF(SL_slope, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-
-  RRI_normDF <- toDF(RRI_norm, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  R80p_normDF <- toDF(R80p_norm, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  YrYr_normDF <- toDF(YrYr_norm, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
-  SL_normDF <- toDF(SL_norm, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nDist, funSet$breaks, funSet$seas)
 
   # export the performance indicators
   save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
@@ -403,20 +359,6 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
   save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
   save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
 
-  save(RRI_intDF, file = file.path(ofolder, paste0(basename, '_RRI_int_' , evr, '.rda')))
-  save(R80p_intDF, file = file.path(ofolder, paste0(basename, '_R80p_int_' , evr, '.rda')))
-  save(YrYr_intDF, file = file.path(ofolder, paste0(basename, '_YrYr_int_' , evr, '.rda')))
-  save(SL_intDF, file = file.path(ofolder, paste0(basename, '_SL_int_' , evr, '.rda')))
-
-  save(RRI_slopeDF, file = file.path(ofolder, paste0(basename, '_RRI_slope_' , evr, '.rda')))
-  save(R80p_slopeDF, file = file.path(ofolder, paste0(basename, '_R80p_slope_' , evr, '.rda')))
-  save(YrYr_slopeDF, file = file.path(ofolder, paste0(basename, '_YrYr_slope_' , evr, '.rda')))
-  save(SL_slopeDF, file = file.path(ofolder, paste0(basename, '_SL_slope_' , evr, '.rda')))
-
-  save(RRI_normDF, file = file.path(ofolder, paste0(basename, '_RRI_norm_' , evr, '.rda')))
-  save(R80p_normDF, file = file.path(ofolder, paste0(basename, '_R80p_norm_' , evr, '.rda')))
-  save(YrYr_normDF, file = file.path(ofolder, paste0(basename, '_YrYr_norm_' , evr, '.rda')))
-  save(SL_normDF, file = file.path(ofolder, paste0(basename, '_SL_norm_' , evr, '.rda')))
 
 }
 

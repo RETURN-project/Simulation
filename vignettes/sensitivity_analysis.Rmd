@@ -43,12 +43,11 @@ The following characteristics are derived from the decomposed time series:
 #profvis({
 # ------------------------------------------------
 # inputs
-ifolder <- '../data/' #folder where input data is located
-ofolder <-'../data/' # folder where outputs will be written
-basename <- 'toyset'# name of the input dataset (contains sampled satellite time series)
+ifolder <- 'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'#'../data/' #folder where input data is located
+ofolder <-'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Avg_exp_1000\\'#'../data/' # folder where outputs will be written
+basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'#'toyset'# name of the input dataset (contains sampled satellite time series)
 nyr <- 18 # number of years in observation period
 nobsYr <- 365 # number of observations per year
-ncores <- 3 # number of cores used for parallel computing
 
 ifileVI <- paste0(basename, '.rda')
 dfVi <- loadRData(file = file.path(ifolder, ifileVI))
@@ -173,17 +172,17 @@ sttngs <- list()
 sttngs$'seasAmp' <- list(type = 'dist', vals = quantile(seasVImax, Vqntl), obs = seasVImax)
 sttngs$'missVal' <- list(type = 'dist',  vals = quantile(tsVIMissVal, Vqntl), obs = tsVIMissVal)
 sttngs$'remSd' <- list(type = 'dist',  vals = quantile(Rem_VIsd, Vqntl), obs = Rem_VIsd)
-sttngs$'nyr' <- list(type = 'range', vals = c(20,36))#seq(6,36, by = 6)
+sttngs$'nyr' <- list(type = 'range', vals = c(20))#seq(6,36, by = 6)
 sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.2,0.3,0.4,0.5))
-sttngs$'distT' <- list(type = 'range', vals =10)#seq(3,33, by = 6)
+sttngs$'distT' <- list(type = 'range', vals = seq(3,13, by = 2))#seq(3,33, by = 6)
 sttngs$'distRec' <- list(type = 'range', vals = seq(0.5,6.5,by=1.5)*STnobsYr) #seq(0.5,6.5,by=0.5)
 sttngs$'nDr' <- list(type = 'range',  vals = c(0))
-sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'))
+sttngs$'distType' <- list(type = 'cat',  vals = c('exponential'))#piecewise
 sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random')
 sttngs$'trAv' <- list(type = 'range', vals = TrVImean)
 sttngs$'general' <- list(
-  eval = c('distMag', 'seasAmp'),
-  nTS = 10,
+  eval = c('distMag', 'seasAmp', 'remSd'),#, 'distT','distRec', 'missVal' 'distMag', 'seasAmp', 'remSd'
+  nTS = 1000,
   nobsYr = STnobsYr,
   seasAv = seasVImean,
   remcoef = Rem_VIcoef,
@@ -244,7 +243,9 @@ start_time <- Sys.time()
 set_fast_options()
 
 # run the sensitivity analysis
-pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet,  cl = cl)
+clusterEvalQ(cl, .libPaths(c("C:\\Users\\keers001\\OneDrive - WageningenUR\\R", .libPaths()[2])))
+# clusterEvalQ(cl, library(BenchmarkRecovery))
+pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename, cl = cl)
 
 stopCluster(cl)
 
@@ -332,7 +333,7 @@ for(vr in 1:length(caseList)){
   data <- tot_rsq
   ylbl <- 'R²'
   pltR2 <- plotSens(data, lbls, xlbl, ylbl, scales = 'fixed')
-  png('../data/Rsq.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_Rsq_',evr,'.png')),width = 1350,height =750 )
   print(pltR2)
   dev.off()
   
@@ -340,35 +341,35 @@ for(vr in 1:length(caseList)){
   data <- tot_rmse
   ylbl <- 'RMSE'
   pltRMSE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png('../data/RMSE.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_RMSE_',evr,'.png')),width = 1350,height =750 )
   print(pltRMSE)
   dev.off()
    # plot MAPE
   data <- tot_mape
   ylbl <- 'MAPE'
   pltMAPE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png('../data/MAPE.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_MAPE_',evr,'.png')),width = 1350,height =750 )
   print(pltMAPE)
   dev.off()
    # plot fraction of time series processed
   data <- tot_nTS
   ylbl <- 'Fraction'
   pltnTS <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png('../data/nTS.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_nTS_',evr,'.png')),width = 1350,height =750 )
   print(pltnTS)
   dev.off()
   # plot slope
   data <- tot_slope
   ylbl <- 'Slope'
   pltslope <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png('../data/Slope.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_Slope_',evr,'.png')),width = 1350,height =750 )
   print(pltslope)
   dev.off()
   # plot normality test
   data <- tot_norm
   ylbl <- 'P value'
   pltnorm <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png('../data/norm.png',width = 1350,height =750 )
+  png(file.path(ofolder, paste0(basename, '_norm_',evr,'.png')),width = 1350,height =750 )
   print(pltnorm)
   dev.off()
   
