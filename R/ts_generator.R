@@ -56,16 +56,18 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @param pert Perturbation intensity (signed)
 #' @param tpert Perturbation timing
 #' @param thalf Perturbation half-life
-#' @param noise Strength of the additive white noise (standard deviation)
-#' @param sigma Strength of the stochastic term in the differential equation (infinitesimal standard deviation)
+#' @param noise Strength of the stochastic term in the differential equation (standard deviation of the integrated time series)
 #'
 #' @return The time series
 #' @export
-realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, sigma = 0) {
+realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
 
   # Translate parameters to the language of differential equations
   y0 <- pert # The perturbation represents the initial condition
   r <- log(2)/thalf # Translate the half-life to a multiplicative constant
+  sigma <- noise * sqrt(2 * log(2) / thalf) # Infinitesimal standard deviation
+  # The infinitesimal standard deviation `sigma` yields a standard deviation of magnitude `noise` after integration
+  # Reference: https://math.stackexchange.com/questions/2558659/expectation-and-variance-of-stochastic-differential-equations
 
   # Pose the differential equation dy = f(y,t) dt + g(y,t) dW
   #
@@ -109,7 +111,7 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, 
 
     # Create the time series before tpert (only dynamic noise around equilibrium)
     tfill <- seq(t[1], t[i-1], by = 1 / frequency(sol))
-    fill <- ts(realistic(tfill, sigma = sigma), start = t[1], end = t[i-1], frequency = frequency(sol))
+    fill <- ts(realistic(tfill, noise = noise), start = t[1], end = t[i-1], frequency = frequency(sol))
 
     # Paste both time series together
     sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill))
@@ -122,8 +124,8 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0, 
   sol <- as.data.frame(sol)
   y <- as.numeric(sol$x)
 
-  # Don't forget to add the noise and the offset
-  y <- y + rnorm(length(t), sd = noise) + offset
+  # Don't forget to add the offset
+  y <- y + offset
 
   return(y)
 }
