@@ -48,12 +48,8 @@ test_that("Realistic decay (stochastic)", {
   thalf <- 1
 
   sd_expected <- 0.7 # Desired sd for the generated time series
-  sigma <- sd_expected * sqrt(2 * log(2) / thalf)
-  # The assignation above uses the relationship between infinitesimal (sigma) and asymptotic (measured) standard deviation.
-  # i.e: such a sigma creates a time series with sd_expected (provided t_0 = 0 t_end = inf)
-  # More info: https://math.stackexchange.com/questions/2558659/expectation-and-variance-of-stochastic-differential-equations
 
-  ys_r <- realistic(ts, offset = offset, pert = pert, tpert = tpert, thalf = thalf, noise = 0, sigma = sigma)
+  ys_r <- realistic(ts, offset = offset, pert = pert, tpert = tpert, thalf = thalf, noise = sd_expected)
   sd_measured <- sd(ys_r)
 
   expect_equal(sd_measured, sd_expected, tolerance = 0.1)
