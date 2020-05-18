@@ -24,6 +24,6 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
   # returns a linearly interpolated value
   V <- approxfun(x = ts, y = ys)
 
-  # The result is the mean slope between t = 0 and t = deltat
-  return( (V(tpert + deltat) - V(tpert)) / deltat )
+  # The result is the mean slope between t = tpert and t = deltat
+  return((V(tpert + deltat) - V(tpert)) / deltat)
 }
