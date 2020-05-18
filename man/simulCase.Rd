@@ -16,7 +16,6 @@ simulCase(
   distMaglim,
   distTy,
   distReclim,
-  remcoef,
   mval,
   mvaldist,
   distType
@@ -45,13 +44,13 @@ simulCase(
 
 \item{distReclim}{limits of the halftime period of the recovery [number of observations], should be a vector with the minimum and maximum value. If the minimum equals the maximum value, the recovery period is fixed for each simulated time series (and equal to the minimum value). When the minimum value does not equal the maximum value, a recovery period is randomly chosen in the given interval for each simulated time series.}
 
-\item{remcoef}{list of ARMA models of remainder component. For each simulated time series, a remainder model is randomly chosen from the list.}
-
 \item{mval}{number of missing values to be introduced. If mval equals NA, no missing values are introduced. For missing values with a random interval (see mvaldist), this should equal the fraction of missing values (mval equal to 0.1 will result in an NA value for 10 percent of the time series). For missing values having a regular interval, every mval observations one value is kept (eg for a daily time series, a mval equal to 5 will result in one observation every 5 days).}
 
 \item{mvaldist}{the distribution of the missing values. Should equal 'random'or 'interval'.}
 
 \item{distType}{the type of disturbance. piecewise refers to a linear decay function, while exponential refers to an exponential decay}
+
+\item{remcoef}{list of ARMA models of remainder component. For each simulated time series, a remainder model is randomly chosen from the list.}
 }
 \value{
 a list with the simulated time series, offest, seasonality, remainder, disturbance component and parameters used for the simulation. The time series (components) are stored as matrix where each row is a time series and the columns are associated with the observation numbers.

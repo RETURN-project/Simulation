@@ -11,7 +11,7 @@ rsq <- function(x, y) {
     x <- x[-ind]
     y <- y[-ind]
   }
-  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
+  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
     rs <- summary(lm(y~x))$r.squared
   }else(rs <- NA)
   rs
@@ -30,7 +30,7 @@ linFit <- function(x, y) {
     x <- x[-ind]
     y <- y[-ind]
   }
-  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3)){
+  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
     mod <- lm(y~x)
     coef <- summary(mod)$coefficients
     tst <- shapiro.test(mod$residuals)#p-value > 0.05 implies that the distribution of the data is not significantly different from normal distribution
@@ -141,3 +141,30 @@ plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
           strip.text.y = element_text(size = 20,color = "grey20"))
 }
 
+#' Plot results sensitivity analysis for the environmental parameters
+#'
+#' @param data data to be plotted, should be a dataframe with the following headers: Metric, Dense, Smooth, Period, Breaks, Seas, variable, value, param
+#' @param xlbl title x axis
+#' @param ylbl title y axis
+#' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
+#'
+#' @return ggplot object
+#' @export
+#'
+plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
+  ggplot(data, aes(variable,value,color=interaction(param), group = param)) +
+    geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+    scale_color_manual('Parameter', values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+
+    facet_grid(vars(Metric), vars(Period), scales = scales)+
+    xlab(xlbl) +
+    ylab(ylbl)+
+    theme(axis.text.x = element_text(color = "grey50", size = 20),
+          axis.text.y = element_text(color = "grey50", size = 20),
+          axis.title.x = element_text(color = "grey20", size = 25),
+          axis.title.y = element_text(color = "grey20", size = 25),
+          plot.title = element_text(size=25),
+          legend.title = element_text(size=25),
+          legend.text = element_text(color = "grey50",size=25),
+          strip.text.x = element_text(size = 20),
+          strip.text.y = element_text(size = 20,color = "grey20"))
+}

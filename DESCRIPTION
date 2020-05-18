@@ -28,7 +28,7 @@ Suggests: imputeTS,
           testthat,
           knitr,
           rmarkdown,
-          profvis,          
+          profvis,
           pbapply,
           parallel
 RoxygenNote: 7.1.0

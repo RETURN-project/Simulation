@@ -13,7 +13,6 @@ simulTS(
   seasAmp,
   trAv,
   remSd,
-  remMod,
   distMag,
   distT,
   distRec,
@@ -37,8 +36,6 @@ simulTS(
 
 \item{remSd}{standard deviation of the remainder}
 
-\item{remMod}{ARMA model of remainder}
-
 \item{distMag}{magnitude of the disturbance}
 
 \item{distT}{timing of the disturbance [observation number]}
@@ -46,6 +43,8 @@ simulTS(
 \item{distRec}{duration of the recovery [number of observations]}
 
 \item{distType}{type of disturbance-recovery process: 'piecewise' represents a step function with linear recovery, 'exponential' represents an exponential decay}
+
+\item{remMod}{ARMA model of remainder}
 }
 \value{
 a list containign the years for which a drought was introduced and a time series object, containing the simulated seasonality, trend, remainder, disturbance, and the sum of these components.
