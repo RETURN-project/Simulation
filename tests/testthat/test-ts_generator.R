@@ -80,6 +80,7 @@ test_that("Disturbance simulation",{
 
 test_that("Time series simulation",{
 
+  set.seed(197)
   nyr <- 5 # number of years
   nobsyr <- 12 # number of observations per year
   tMiss <- c(1,5,11,23)# observations having missing values
@@ -108,6 +109,7 @@ test_that("Time series simulation",{
 })
 
 test_that('simulation case',{
+  set.seed(197)
   # simulation settings
   nrep <- 5 # number of repetitions
   nyr <- 5 # number of years
