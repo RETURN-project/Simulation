@@ -39,3 +39,13 @@ test_that("Out of bounds", {
   expect_error(yryr(ts, ys, tpert = 9, deltat = 2),
                "*bounds*")
 })
+
+context("Recovery indicator: R80p")
+
+test_that("Fully recovered time series", {
+  # Generate a time series
+  ts <- seq(-2, 10, by = 0.1)
+  ys <- exponential(ts, offset = 2)
+
+  expect_equal(r80p(ts, ys), 1 / 0.8, tolerance = 1e-6)
+})
