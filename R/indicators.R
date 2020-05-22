@@ -3,7 +3,7 @@
 #' @param ts Vector containing the times (same size as ys)
 #' @param ys Vector containing the values (same size as ts)
 #' @param tpert Time of the perturbation. Default set to 0 yr
-#' @param deltat Reference time (in years). Default set to 5 yr
+#' @param deltat Reference recovery time (in years). Default set to 5 yr
 #'
 #' @return The YrYr parameter for the given time series
 #' @export
@@ -32,7 +32,7 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
 #'
 #' @param ts Vector containing the times (same size as ys). Perturbation assumed to happen at 0
 #' @param ys Vector containing the values (same size as ts)
-#' @param r Ratio. Default set to 0.8.
+#' @param r Ratio. Default set to 0.8
 #' @param ts_pre Sampling times for estimating Vpre. Default set to -1
 #' @param ts_post Sampling times for estimating Vpost. Default set to c(4, 5)
 #'
@@ -42,7 +42,7 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
 #' @examples
 #' # Generate an example time series
 #' ts <- seq(-2, 10, by = 0.1) # as a vector of times
-#' ys <- exponential(ts, offset = 2) # plus a vector of values
+#' ys <- exponential(ts, pert = -2, offset = 1, thalf = 0.25) # plus a vector of values
 #' r80p(ts, ys)
 r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
   # Auxiliary interpolation function. Given a time, returns the corresponding value.
