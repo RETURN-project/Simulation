@@ -60,3 +60,42 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
 
   return(Vpost / (Vpre * r))
 }
+
+#' RRI recovery function
+#'
+#' @param ts Vector containing the times (same size as ys). Perturbation assumed to happen at 0
+#' @param ys Vector containing the values (same size as ts)
+#' @param ts_pre Sampling times for estimating Vpre. Default set to -1
+#' @param ts_post Sampling times for estimating Vpost. Default set to c(4, 5)
+#'
+#' @return The RRI indicator
+#' @export
+#'
+#' @examples
+#' # Generate an example time series
+#' ts <- seq(-2, 10, by = 0.1) # as a vector of times
+#' ys <- exponential(ts, pert = -2, offset = 1, thalf = 0.25) # plus a vector of values
+#' rri(ts, ys)
+rri <- function(ts, ys, ts_pre=-1, ts_post=c(4, 5)) {
+  # Auxiliary interpolation function. Given a time, returns the corresponding value.
+  # If the time is in ts, returns the corresponding ys. If the time is not in ts,
+  # returns a linearly interpolated value
+  V <- approxfun(x = ts, y = ys)
+
+  # The disturbance is assumed to happen at t = 0
+  Vdist <- V(0)
+
+  # The typical value before perturbation is defined as the average of the values
+  # sampled at the times contained in ts_pre
+  Vpre  <- mean(V(ts_pre))
+
+  # The typical value after perturbation is defined as the maximum of the values
+  # sampled at the times contained in ts_post
+  Vpost <- max(V(ts_post))
+
+  # The deltas are closely related to the typical values
+  delta_dist <- abs(Vdist - Vpre)
+  delta_rec <- abs(Vpost - Vdist)
+
+  return(delta_rec / delta_dist)
+}

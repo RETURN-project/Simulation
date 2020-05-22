@@ -49,3 +49,13 @@ test_that("Fully recovered time series", {
 
   expect_equal(r80p(ts, ys), 1 / 0.8, tolerance = 1e-2)
 })
+
+context("Recovery indicator: RRI")
+
+test_that("Fully recovered time series", {
+  # Generate a time series
+  ts <- seq(-2, 10, by = 0.1) # as a vector of times
+  ys <- exponential(ts, pert = -2, offset = 1, thalf = 0.25) # plus a vector of values
+
+  expect_equal(rri(ts, ys), 1, tolerance = 1e-4)
+})
