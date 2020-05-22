@@ -1,5 +1,7 @@
 #' YrYr recovery function
 #'
+#' Year on year average
+#'
 #' @param ts Vector containing the times (same size as ys)
 #' @param ys Vector containing the values (same size as ts)
 #' @param tpert Time of the perturbation. Default set to 0 yr
@@ -7,6 +9,11 @@
 #'
 #' @return The YrYr parameter for the given time series
 #' @export
+#'
+#' @references Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018).
+#' Analyzing spatial and temporal variability in short-term rates of post-fire vegetation return
+#' from Landsat time series. Remote Sensing of Environment, 205, 32–45.
+#' \url{https://doi.org/10.1016/j.rse.2017.11.007}
 #'
 #' @examples
 #' # Generate an example time series
@@ -30,6 +37,8 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
 
 #' R80p recovery function
 #'
+#' Ratio of Eighty Percent (R80P). The ratios can be customized.
+#'
 #' @param ts Vector containing the times (same size as ys). Perturbation assumed to happen at 0
 #' @param ys Vector containing the values (same size as ts)
 #' @param r Ratio. Default set to 0.8
@@ -38,6 +47,11 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
 #'
 #' @return The R80p indicator (R_r_p if r != 0.8 is provided)
 #' @export
+#'
+#' @references Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018).
+#' Analyzing spatial and temporal variability in short-term rates of post-fire vegetation return
+#' from Landsat time series. Remote Sensing of Environment, 205, 32–45.
+#' \url{https://doi.org/10.1016/j.rse.2017.11.007}
 #'
 #' @examples
 #' # Generate an example time series
@@ -63,6 +77,8 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
 
 #' RRI recovery function
 #'
+#' Relative Recovery Indicator
+#'
 #' @param ts Vector containing the times (same size as ys). Perturbation assumed to happen at 0
 #' @param ys Vector containing the values (same size as ts)
 #' @param ts_pre Sampling times for estimating Vpre. Default set to -1
@@ -70,6 +86,11 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
 #'
 #' @return The RRI indicator
 #' @export
+#'
+#' @references Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018).
+#' Analyzing spatial and temporal variability in short-term rates of post-fire vegetation return
+#' from Landsat time series. Remote Sensing of Environment, 205, 32–45.
+#' \url{https://doi.org/10.1016/j.rse.2017.11.007}
 #'
 #' @examples
 #' # Generate an example time series
