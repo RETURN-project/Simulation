@@ -72,6 +72,7 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
   # sampled at the times contained in ts_post
   Vpost <- max(V(ts_post))
 
+  # Return the result
   return(Vpost / (Vpre * r))
 }
 
