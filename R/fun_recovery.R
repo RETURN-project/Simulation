@@ -100,9 +100,9 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
       # set_fast_options()
       # Apply BFAST0n on time series: find breaks in the regression
       if (seas){
-        bp <- breakpoints(response ~ trend + harmon, data = datapp, h = h, breaks = breaks)#, breaks = breaks
+        bp <- breakpoints(response ~ trend + harmon, data = datapp, h = h)#, breaks = breaks
       } else{
-        bp <- breakpoints(response ~ trend, data = datapp, h = h, breaks = breaks)##, breaks = breaks
+        bp <- breakpoints(response ~ trend, data = datapp, h = h)##, breaks = breaks
       }
       # Check if BFAST0n found breakpoints
       if(is.na(bp$breakpoints[1])){# no breakpoint found
@@ -110,7 +110,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
         names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
       }else{# at least one breakpoint found
         # Extract trend component and breaks
-        cf <- coef(bp, breaks = breaks)#, breaks = breaks
+        cf <- coef(bp)#, breaks = breaks
         # Extract trend component and breaks
         tbp <- bp$breakpoints #observation number of break
         #tr <- rep(NA,length(tsi))
@@ -217,7 +217,7 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
     # iterate over the parameter settings and simulate each time a time series
     for (pari in 1: length(parvr[[1]][[1]])){
       # simulate time series for a parameter combination
-      sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[pari]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
+      sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[1]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
 
       # iterate over the recovery indicator settings
       for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
@@ -244,7 +244,7 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
           #convert time series to annual values by selecting date closest to seasonal max
           tsi <- toAnnualTS(tsseas, tsi, obspyr)
           tsref <- toAnnualTS(tsseas, tsref, obspyr)
-          tdist <- ceiling(tdist/obspyr)
+          tdist <- which(tsref == min(tsref, na.rm = T))#ceiling(tdist/obspyr)
           obspyr <- 1
         }
         if (frq == 'quarterly'){
