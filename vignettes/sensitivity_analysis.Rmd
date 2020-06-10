@@ -352,7 +352,6 @@ xlbl <- 'Metric'
   dev.off()
   
   print(pltR2)
-  print(pltRMSE)
   print(pltMAPE)
   print(pltnTS)
 
