@@ -384,6 +384,29 @@ get_dist_val <- function(param, nval){
   out
 }
 
+#' Sample parameter values in a particular interval
+#'
+#' @param param parameter list containing the (i) 'type' = type of parameter, (ii) 'vals' = evaluated parameter values and (iii) 'obs' = the observed parameter values and (iv) 'fix' = interval of the fixed observations.
+#' @param nval number of values to be provided
+#'
+#' @return a vector containing nval parameter values
+#' @export
+#'
+get_int_val <- function(param, nval){
+  # if observed values of the parameter are available (type = dist), sample values using the frequencies of the observed values
+  if((param$type == 'range') | (param$type == 'dist')){
+    if(min(param$fix, na.rm = T) == max(param$fix, na.rm = T)){
+      out <- rep(min(param$fix, na.rm = T), nval)
+    }else{
+      out <- sample(seq(min(param$fix, na.rm = T), max(param$fix, na.rm = T), l = 100000),nval, replace = T)
+    }
+    # if the parameter only contains categorical values, randomly sample these categorical values
+  }else if(param$type == 'cat'){
+    out <- sample(param$fix,nval, replace = T)
+  }
+  out
+}
+
 #' Set list of parameter values. Each evaluated parameter is stepwise altered over a predefined set of values. While evaluating parameter x, the other parameters are kept constant and equal to their mean value.
 #'
 #' @param sttngs settings file for the time series simulation set-up
@@ -405,7 +428,7 @@ set_avg_par <- function(sttngs){
                    nyr = round(get_avg_val(sttngs$nyr,nTS)),# number of years to be simulated
                    nobsYr = rep(sttngs$general$nobsYr,nTS),# number of observations per year to be simulated
                    nDr = floor(get_avg_val(sttngs$nDr,nTS)),# number of drought years
-                   seasAv = rep(list(sttngs$general$seasAv),nTS),# seasonal average values
+                   seasAv = list(sttngs$general$seasAv),# seasonal average values
                    seasAmp = get_avg_val(sttngs$seasAmp,nTS),# seasonal amplitude
                    trAv = get_avg_val(sttngs$trAv,nTS),# offset
                    remSd = get_avg_val(sttngs$remSd,nTS),# standard deviation of the remainder
@@ -444,7 +467,7 @@ set_combine_par <- function(sttngs){
       comb[[vari]] <- rep(varvali[ii],length(comb[[1]]))# add value of parameter to be evaluated to the list
       comb$nrep <- rep(1,length(comb[[1]])) # set the number of repetitions
       comb$nobsYr <- rep(sttngs$general$nobsYr,length(comb[[1]])) # set the number of observations per year
-      comb$seasAv <- rep(list(sttngs$general$seasAv),length(comb[[1]]))# set the seasonality
+      comb$seasAv <- list(sttngs$general$seasAv)# set the seasonality
 
       pars[[vari]][[as.character(varvali[ii])]] <- comb # add the parameter values to the parameter list
     }
@@ -473,7 +496,7 @@ set_dist_par <- function(sttngs){
                    nyr = round(get_dist_val(sttngs$nyr,nTS)),
                    nobsYr = rep(sttngs$general$nobsYr,nTS),
                    nDr = floor(get_dist_val(sttngs$nDr,nTS)),
-                   seasAv = rep(list(sttngs$general$seasAv),nTS),
+                   seasAv = list(sttngs$general$seasAv),
                    seasAmp = get_dist_val(sttngs$seasAmp,nTS),
                    trAv = get_dist_val(sttngs$trAv,nTS),
                    remSd = get_dist_val(sttngs$remSd,nTS),
@@ -504,36 +527,36 @@ set_interval_par <- function(sttngs){
   for (i in 1:length(sttngs$general$eval)){#iterate over the parameters that need to be evaluated
     vari <- sttngs$general$eval[i]# parameter that needs to be evaluated
     varvali <- sttngs[[vari]]$vals# values of the parameter that needs to be evaluated
-    if(sttngs[[vari]]$type == 'dist'){
+    # if(sttngs[[vari]]$type == 'dist'){
       varvali <- matrix(varvali,nrow=2,ncol=length(varvali)/2)
       len <- length(varvali)/2
-    } else{len <- length(varvali)}
+    # } else{len <- length(varvali)}
 
     for(ii in 1:len){# iterate over the values of the evaluated parameter
       nTS <- sttngs$general$nTS# number of time series to be simulated per evaluated parameter value
       pari <- list(nrep = rep(1,nTS),#number of time series to be simulated per parameter combination
-                   nyr = round(get_avg_val(sttngs$nyr,nTS)),# number of years to be simulated
+                   nyr = round(get_int_val(sttngs$nyr,nTS)),# number of years to be simulated
                    nobsYr = rep(sttngs$general$nobsYr,nTS),# number of observations per year to be simulated
-                   nDr = floor(get_avg_val(sttngs$nDr,nTS)),# number of drought years
-                   seasAv = rep(list(sttngs$general$seasAv),nTS),# seasonal average values
-                   seasAmp = get_avg_val(sttngs$seasAmp,nTS),# seasonal amplitude
-                   trAv = get_avg_val(sttngs$trAv,nTS),# offset
-                   remSd = get_avg_val(sttngs$remSd,nTS),# standard deviation of the remainder
-                   distMag = get_dist_val(sttngs$distMag,nTS),# magnitude of the disturbance
-                   distT = get_dist_val(sttngs$distT,nTS),# timing disturbance
-                   distRec = get_dist_val(sttngs$distRec,nTS),# recovery period after disturbance
-                   missVal = get_avg_val(sttngs$missVal,nTS),# fraction of missing values
-                   DistMissVal = get_avg_val(sttngs$DistMissVal,nTS),# distribution of missing values
-                   distType = get_avg_val(sttngs$distType,nTS)# type of recovery
+                   nDr = floor(get_int_val(sttngs$nDr,nTS)),# number of drought years
+                   seasAv = list(sttngs$general$seasAv),# seasonal average values
+                   seasAmp = get_int_val(sttngs$seasAmp,nTS),# seasonal amplitude
+                   trAv = get_int_val(sttngs$trAv,nTS),# offset
+                   remSd = get_int_val(sttngs$remSd,nTS),# standard deviation of the remainder
+                   distMag = get_int_val(sttngs$distMag,nTS),# magnitude of the disturbance
+                   distT = get_int_val(sttngs$distT,nTS),# timing disturbance
+                   distRec = get_int_val(sttngs$distRec,nTS),# recovery period after disturbance
+                   missVal = get_int_val(sttngs$missVal,nTS),# fraction of missing values
+                   DistMissVal = get_int_val(sttngs$DistMissVal,nTS),# distribution of missing values
+                   distType = get_int_val(sttngs$distType,nTS)# type of recovery
                    )
-      if (sttngs[[vari]]$type == 'dist'){
+      # if (sttngs[[vari]]$type == 'dist'){
         pari[[vari]] <- sample(seq(min(varvali[,ii], na.rm = T), max(varvali[,ii], na.rm = T), l = 100000),nTS, replace = T)
         pars[[vari]][[as.character(mean(varvali[,ii]))]] <- pari
-      }
-      else{
-        pari[[vari]] <- rep(varvali[ii],nTS)
-        pars[[vari]][[as.character(varvali[ii])]] <- pari
-      }
+      # }
+      # else{
+      #   pari[[vari]] <- rep(varvali[ii],nTS)
+      #   pars[[vari]][[as.character(varvali[ii])]] <- pari
+      # }
     }
   }
   pars
