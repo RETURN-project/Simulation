@@ -1,7 +1,7 @@
 context("General functions")
 
 test_that("dense to annual", {
-  tsseas <- c(1,4,5,2)
+  tsseas <- rep(c(1,4,5,2),2)
   tsi <- c(2,5,7,4,5,6,7,3,4,5,6,7,2,1,3,4,5,3,6,9)
   obspyr <- 4
 
@@ -11,6 +11,31 @@ test_that("dense to annual", {
   diff <- sum(tsa - annual)
 
   expect_equal(diff, 0, tolerance = 1e-4)
+})
+
+test_that("dense to annual with missing values", {
+  tsseas <- rep(c(1,4,5,2),2)
+  tsi <- c(2,5,NA,4,5,6,7,3,4,5,6,7,2,1,3,4,5,3,6,9)
+  obspyr <- 4
+
+  tsa <- toAnnualTS(tsseas, tsi, obspyr, dtmax = 1/12)
+  annual <- tsi[seq(3,20,by=4)]
+
+  expect_equal(tsa, annual, tolerance = 1e-4)
+})
+
+test_that("dense to annual with varying intra-annual selection period", {
+  tsseas <- rep(c(1,4,5,2),2)
+  tsi <- c(2,5,NA,4,5,6,7,3,4,5,6,7,2,1,3,4,5,NA,NA,9)
+  obspyr <- 4
+
+  tsa1 <- toAnnualTS(tsseas, tsi, obspyr, dtmax = 1/12)
+  annual1 <- tsi[seq(3,20,by=4)]
+  tsa2 <- toAnnualTS(tsseas, tsi, obspyr, dtmax = 1/2)
+  annual2 <- c(5, 7, 6, 3, 9)
+
+  expect_equal(tsa1, annual1, tolerance = 1e-4)
+  expect_equal(tsa2, annual2, tolerance = 1e-4)
 })
 
 test_that("ts compression", {

@@ -40,15 +40,17 @@ TSdecompress <- function(ts){
 #' @param tsseas vector of observations (time series) representing the seasonal component of the time series to be converted
 #' @param tsi vector of observations (time series) that needs to be converted to an annual time series
 #' @param obspyr number of observations per year of the time series to be converted
+#' @param dtmax maximum time (expressed in year, so 1/12 equals one month) between selected observation and the seasonal maximum
 #'
 #' @return vector of observations (time series) with annual observation frequency
 #' @export
- toAnnualTS <- function(tsseas, tsi, obspyr){
+ toAnnualTS <- function(tsseas, tsi, obspyr, dtmax = 1/12){
     seasi <- rowMeans(matrix(tsseas, nrow = obspyr),na.rm=T)# average seasonality
     smax <- which(seasi == max(seasi, na.rm=T))# yearly observation number with max seas
     tsmi <- matrix(tsi, nrow = obspyr)
-    dst <- abs(matrix(rep(1:obspyr,times = (length(tsi)/obspyr)), nrow = obspyr)-smax)# distance of observations to seasonal max
+    dst <- abs(matrix(rep(1:obspyr,times = (length(tsi)/obspyr)), nrow = obspyr)-smax[1])# distance of observations to seasonal max
     dst[is.na(tsmi)] <- NA #set distance of NA observations equal to NA, these can not be selected
+    dst[dst > floor(obspyr*dtmax)] <- NA
     rsel <- as.matrix(apply(dst, 2, which.min))# row numbers of observations to be selected, i.e. those closest to seasonal max
     toNA <- unlist(lapply(rsel, identical, integer(0)))# years without observation: assign temporary the first observation of the year
     rsel[toNA] <- 1
