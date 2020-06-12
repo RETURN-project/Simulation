@@ -31,8 +31,11 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
   # returns a linearly interpolated value
   V <- approxfun(x = ts, y = ys)
 
+  dy <- (mean(V(min(tpert, na.rm = T) + deltat)) - mean(V(tpert)))
+  dx <- (mean(min(tpert, na.rm = T) + deltat) - mean(tpert))
+
   # The result is the mean slope between t = tpert and t = tpert + deltat
-  return((V(tpert + deltat) - V(tpert)) / deltat)
+  return(dy / dx)
 }
 
 #' R80p recovery function
@@ -58,7 +61,7 @@ yryr <- function(ts, ys, tpert=0, deltat=5) {
 #' ts <- seq(-2, 10, by = 0.1) # as a vector of times
 #' ys <- exponential(ts, pert = -2, offset = 1, thalf = 0.25) # plus a vector of values
 #' r80p(ts, ys)
-r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
+r80p <- function(ts, ys, r=0.8, ts_pre=c(-1,-2), ts_post=c(4, 5)) {
   # Auxiliary interpolation function. Given a time, returns the corresponding value.
   # If the time is in ts, returns the corresponding ys. If the time is not in ts,
   # returns a linearly interpolated value
@@ -84,6 +87,7 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
 #' @param ys Vector containing the values (same size as ts)
 #' @param ts_pre Sampling times for estimating Vpre. Default set to -1
 #' @param ts_post Sampling times for estimating Vpost. Default set to c(4, 5)
+#' @param tpert Time of the perturbation. Default set to 0 yr
 #'
 #' @return The RRI indicator
 #' @export
@@ -98,14 +102,14 @@ r80p <- function(ts, ys, r=0.8, ts_pre=-1, ts_post=c(4, 5)) {
 #' ts <- seq(-2, 10, by = 0.1) # as a vector of times
 #' ys <- exponential(ts, pert = -2, offset = 1, thalf = 0.25) # plus a vector of values
 #' rri(ts, ys)
-rri <- function(ts, ys, ts_pre=-1, ts_post=c(4, 5)) {
+rri <- function(ts, ys, tpert=0, ts_pre=-1, ts_post=c(4, 5)) {
   # Auxiliary interpolation function. Given a time, returns the corresponding value.
   # If the time is in ts, returns the corresponding ys. If the time is not in ts,
   # returns a linearly interpolated value
   V <- approxfun(x = ts, y = ys)
 
   # The disturbance is assumed to happen at t = 0
-  Vdist <- V(0)
+  Vdist <- mean(V(tpert))
 
   # The typical value before perturbation is defined as the average of the values
   # sampled at the times contained in ts_pre

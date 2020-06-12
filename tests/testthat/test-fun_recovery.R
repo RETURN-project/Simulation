@@ -6,10 +6,10 @@ test_that("Frazier - annual - too short time series", {
   tdist <- 2
   obspyr <- 1
   shortDenseTS <- FALSE
-  nPre <- 1
-  nDist <- 1
-  nPostMin <- 1
-  nPostMax <- 1
+  nPre <- 2
+  nDist <- 0
+  nPostMin <- 4
+  nPostMax <- 5
 
   metrics <- calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
 
@@ -24,23 +24,23 @@ test_that("Frazier - annual", {
   tdist <- 3
   obspyr <- 1
   shortDenseTS <- FALSE
-  nPre <- 1
-  nDist <- 1
-  nPostMin <- 1
-  nPostMax <- 1
+  nPre <- 2
+  nDist <- 0
+  nPostMin <- 4
+  nPostMax <- 5
 
   metrics <- calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
   pre <- 1
   dnbr <- 6
   ari <- 4
 
-  rri <- ari/dnbr
-  r80p <- -1/(0.8*pre)
-  yryr <- (-2 + 5)/5
+  rrim <- ari/dnbr
+  r80pm <- -1/(0.8*pre)
+  yryrm <- (-2 + 5)/5
 
-  expect_equal(metrics$RRI, rri, tolerance = 1e-4)
-  expect_equal(metrics$R80P, r80p, tolerance = 1e-4)
-  expect_equal(metrics$YrYr, yryr, tolerance = 1e-4)
+  expect_equal(metrics$RRI, rrim, tolerance = 1e-4)
+  expect_equal(metrics$R80P, r80pm, tolerance = 1e-4)
+  expect_equal(metrics$YrYr, yryrm, tolerance = 1e-4)
 })
 
 test_that("Frazier - dense", {
@@ -50,25 +50,24 @@ test_that("Frazier - dense", {
   obspyr <- 12
   shortDenseTS <- TRUE
   nPre <- 2
-  nDist <- 12
+  nDist <- 1
   nPostMin <- 4
   nPostMax <- 5
 
   metrics <- calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
   pre <- 1
   dist <- mean(tsio[25:36])
-  post <- mean(tsio[73:85])
+  post <- max(tsio[73:84])
   dnbr <- pre-dist
   ari <- post-dist
 
-  rri <- ari/dnbr
-  r80p <- post/(0.8*pre)
-  yryr <- (post - dist)/4.5
+  rrim <- ari/dnbr
+  r80pm <- post/(0.8*pre)
+  yryrm <- (mean(tsio[73:84]) - dist)/(4*12)
 
-
-  expect_equal(metrics$RRI, rri, tolerance = 1e-4)
-  expect_equal(metrics$R80P, r80p, tolerance = 1e-4)
-  expect_equal(metrics$YrYr, yryr, tolerance = 1e-4)
+  expect_equal(metrics$RRI, rrim, tolerance = 1e-4)
+  expect_equal(metrics$R80P, r80pm, tolerance = 1e-4)
+  expect_equal(metrics$YrYr, yryrm, tolerance = 1e-4)
 })
 
 test_that("Frazier - segmented", {
@@ -78,7 +77,7 @@ test_that("Frazier - segmented", {
   obspyr <- 12
   shortDenseTS <- TRUE
   nPre <- 2
-  nDist <- 12
+  nDist <- 1
   nPostMin <- 4
   nPostMax <- 5
   h <- 0.1
@@ -86,17 +85,15 @@ test_that("Frazier - segmented", {
   metrics <- calcBFASTrec(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
   pre <- 1
   dist <- mean(tsio[25:36])
-  post <- mean(tsio[73:85])
+  post <- max(tsio[73:84])
   dnbr <- pre-dist
   ari <- post-dist
 
   rri <- ari/dnbr
   r80p <- post/(0.8*pre)
-  yryr <- (post - dist)/4.5
-  sl <- 4/60
+  yryr <- (mean(tsio[73:84]) - dist)/(4*12)
 
   expect_equal(metrics$RRI, rri, tolerance = 1e-4)
   expect_equal(metrics$R80P, r80p, tolerance = 1e-4)
   expect_equal(metrics$YrYr, yryr, tolerance = 1e-4)
-  expect_equal(metrics$Sl, sl, tolerance = 1e-2)
 })

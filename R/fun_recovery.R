@@ -11,64 +11,30 @@
 #'
 #' @return a list containing the RRI recovery indicator, R80p recovery indicator and YrYr recovery indicator
 #' @export
+#'
 calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
-  #library(strucchange)
-  #library(bfast)
-    if(shortDenseTS){# Metrics adjusted for short, dense time series
-        # check if there are enough observations before and after the disturbance to calculate the metrics
-        if((tdist>((nPre*obspyr))) & (tdist < (length(tsio)-(nPostMax*obspyr)+1))){
-            # Vpre = pre-disturbance value, mean of observations within nPre year period prior to disturbance
-            Vpre <- mean(tsio[(tdist-(nPre*obspyr)):(tdist-1)], na.rm=T)
-            # V0 =  value during disturbance (over a period of one month)
-            V0 <- mean(tsio[tdist:(tdist+ (nDist*round(obspyr/12))-1)], na.rm=T)
-            # Ddist =  decrease due to disturbance (~impact)
-            Ddist <- Vpre-V0
-            # Post-disturbance value
-            Vpost <- mean(tsio[(tdist+(nPostMin*obspyr)):(tdist+(nPostMax*obspyr))], na.rm=T)
-            # ARI: difference between maximum value within nPost years after disturbance and the disturbance value
-            ARI <- Vpost - V0
-            # RRI: Relative Recovery Index (~recovery relative to impact)
-            RRI <- ARI/Ddist
-            # R80p recovery index (~ ability to reach 80% of pre-disturbance value)
-            R80P <- Vpost/(Vpre*0.8)
-            # YrYR recovery index (~ related to slope)
-            YrYr <- (Vpost-V0)/((nPostMax+nPostMin)/2)
-            # make list of recovery indicators as output of the function
-            lst <- list(RRI, R80P, YrYr)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')
-            # give NA as output if not able to calculate the recovery indicatores
-        }else{
-            lst <- list(NA, NA, NA)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')
-        }
-    }else{#original metrics, typically applied on long time series with annual observations
-        # check if there are enough observations before and after the disturbance to calculate the metrics
-        if((tdist>((2*obspyr))) & (tdist < (length(tsio)-(5*obspyr)+1))){
-            # Vpre = pre-disturbance value, mean of observations within nPre year period prior to disturbance
-            Vpre <- mean(tsio[(tdist-(2*obspyr)):(tdist-1)], na.rm=T)
-            # V0 =  value during disturbance (over a period of one month)
-            V0 <- tsio[tdist]
-            # Ddist =  decrease due to disturbance (~impact)
-            Ddist <- Vpre-V0
-            # ARI: difference between maximum value within nPost years after disturbance and the disturbance value
-            ARI <- max(tsio[(tdist +(4*obspyr)):(tdist+(5*obspyr))], na.rm=T) - V0
-            # RRI: Relative Recovery Index (~recovery relative to impact)
-            RRI <- ARI/Ddist
-            if(is.infinite(RRI)){RRI <- NA}
-            # R80p recovery index (~ ability to reach 80% of pre-disturbance value)
-            R80P <- max(tsio[(tdist +(4*obspyr)):(tdist+(5*obspyr))], na.rm=T)/(Vpre*0.8)
-            if(is.infinite(R80P)){R80P <- NA}
-            # YrYR recovery index (~ related to slope)
-            YrYr <- (tsio[tdist+(5*obspyr)]-V0)/5
-            # make list of recovery indicators as output of the function
-            lst <- list(RRI, R80P, YrYr)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')
-        }else{
-            lst <- list(NA, NA, NA)
-            names(lst) <- c('RRI', 'R80P', 'YrYr')
-        }
+    # check if there are enough observations before and after the disturbance to calculate the metrics
+    if((tdist>((nPre*obspyr))) & (tdist < (length(tsio)-(nPostMax*obspyr)+1))){
+      # translate parameters to those needed for the recovery functions
+      ys <- tsio
+      ts <- seq(1,length(tsio))
+      tpert <- seq(tdist,(tdist+(nDist*obspyr)-1))
+      ts_pre <- seq(tdist-(nPre*obspyr),tdist-1)
+      ts_post <- seq(tdist+(nPostMin*obspyr),tdist+(nPostMax*obspyr)-1)
+      deltat <- switch(shortDenseTS + 1, (nPostMax*obspyr), ts_post-tdist)
+
+      RRI <- rri(ts,ys,tpert,ts_pre, ts_post)
+      R80P <- r80p(ts,ys,r = 0.8,ts_pre, ts_post)
+      YrYr <- yryr(ts,ys,tpert, deltat)
+      # make list of recovery indicators as output of the function
+      lst <- list(RRI, R80P, YrYr)
+      names(lst) <- c('RRI', 'R80P', 'YrYr')
+      # give NA as output if not able to calculate the recovery indicatores
+    }else{
+      lst <- list(NA, NA, NA)
+      names(lst) <- c('RRI', 'R80P', 'YrYr')
     }
-    lst
+  lst
 }
 
 #' Post-disturbance slope and recovery metrics derived from BFAST0n trend segments. The calcBFASTrec function derives a set of recovery indicators after fitting a segmented trend in the time series. Using the breakpoints function of the strucchange package, a segmented trend is fitted (hereafter called BFAST0n trend segments). The detected break showing the largest change (in absolute values) is assumed to represent the disturbance. Using the segmented trend and detected disturbance date, the RRI, R80p, YrYr and the slope of the post-disturbance trend segment are derived as recovery indicators.
@@ -88,7 +54,7 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @export
 #' @import strucchange
 #' @import stats
-calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks = 'BIC', seas = F){
+calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas = F){
   # Create time series object, needed as input for BFAST
   tsi <- ts(tsio, frequency = obspyr)
   # Convert the time series object into a dataframe, needed for the breakpoints function
@@ -153,14 +119,13 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
 #'
 #' @return dataframe
 #' @export
-toDF <- function(mat, setvr, metric, freq, input, nDist, breaks, seas){
+toDF <- function(mat, setvr, metric, freq, input, nDist, seas){
   tst <- as.data.frame(t(mat))
   names(tst) <- setvr
   tst$Metric <- factor(metric)
   tst$Dense <- factor(freq)
   tst$Smooth <- factor(input)
   tst$Period <- revalue(factor(nDist), c("1"="Short", "12"="Long"))#factor(recSttngs$nDist)#
-  tst$Breaks <- factor(breaks)
   tst$Seas <- factor(seas)
   tst
 }
@@ -271,7 +236,7 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
           rm(outp)
         }
         if(funSet$input[rset] == 'segmented'){
-          outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, breaks, seas)
+          outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas)
           m_RRIi[rset,pari] <- outp$RRI# measured RRI
           m_R80pi[rset,pari] <- outp$R80P# measured R80p
           m_YrYri[rset,pari] <- outp$YrYr# measured YrYR

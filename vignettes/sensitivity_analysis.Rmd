@@ -182,7 +182,7 @@ sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random', fix = 'random')
 sttngs$'trAv' <- list(type = 'range', vals = TrVImean, fix = TrVImean)
 sttngs$'general' <- list(
   eval = c('distT','distRec', 'missVal','distMag', 'seasAmp', 'remSd'),#parameters to be evaluated, can be  'distT','distRec', 'missVal' 'distMag', 'seasAmp', 'remSd'
-  nTS = 20,
+  nTS = 100,
   nobsYr = STnobsYr,
   seasAv = seasVImean,
   remcoef = Rem_VIcoef,
@@ -205,7 +205,7 @@ __funSet__: list of settings for the computation of the recovery indicators. Mor
 + *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
 + *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
 + *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
-+ *nDist*: in case *shortDenseTS* is TRUE: the number of months after the disturbance used to derive the value during the disturbance 
++ *nDist*: in case *shortDenseTS* is TRUE: the number of years after the disturbance used to derive the value during the disturbance 
 + *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
 + *h*: in case *input* equals 'segmented', the *h* value is used in the segmentation algorithm to define the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment
 + *breaks*: in case *input* equals 'segmented', the criterium given by *breaks* is used in the segmentation algorithm to define the optimal number of segments. Can be set to 'BIC' or 'LWZ'
@@ -218,11 +218,10 @@ funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','den
                'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),# settings for the recovery indicators
                'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
                'nPre' = c(2,2,2,2,2,2,2),
-               'nDist' = c(12,1,1,1,12,12,12),
+               'nDist' = c(0,0,0,0,1,1,1),
                'nPostMin' = c(4,0,0,0,4,4,4),
-               'nPostMax' = c(6,1,1,1,6,6,6),
+               'nPostMax' = c(5,1,1,1,6,6,6),
                'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15),
-               'breaks' = rep('BIC',7),
                'seas' = c(rep(T,7)))
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))

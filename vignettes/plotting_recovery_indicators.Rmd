@@ -1,0 +1,53 @@
+---
+title: "Plot recovery indicators"
+author: "Wanda De Keersmaecker"
+date: "6/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load libraries
+library(BenchmarkRecovery)
+```
+
+## Illustrate recovery indicators for yearly time series
+
+```{r}
+# Let's generate yearly time series 
+ts1 <- -2:5
+ys1 <- c(6,5,1,1.5,2,3,3,4)
+ys2 <- c(7,6,1,1.5,2,3,3,4)
+ys3 <- c(7,6,1,1.5,2,3,3,4)+2
+
+tpert <- 0
+ts_pre <- c(-2,-1)
+ts_post <- c(4,5)
+
+# calculate recovery indicators
+rri_y1 <- rri(ts1, ys1, tpert = tpert, ts_pre = ts_pre, ts_post = ts_post)
+r80p_y1 <- r80p(ts1, ys1, ts_pre = ts_pre, ts_post = ts_post)
+yryr_y1 <- yryr(ts1,ys1,tpert,deltat = 5)
+
+rri_y2 <- rri(ts1, ys2, tpert = tpert, ts_pre = ts_pre, ts_post = ts_post)
+r80p_y2 <- r80p(ts1, ys2, ts_pre = ts_pre, ts_post = ts_post)
+yryr_y2 <- yryr(ts1,ys2,tpert,deltat = 5)
+
+rri_y3 <- rri(ts1, ys3, tpert = tpert, ts_pre = ts_pre, ts_post = ts_post)
+r80p_y3 <- r80p(ts1, ys3, ts_pre = ts_pre, ts_post = ts_post)
+yryr_y3 <- yryr(ts1,ys3,tpert,deltat = 5)
+
+
+# plot the results
+rec1 <- paste0('RRI = ', round(rri_y1, digits = 3), ', R80p = ', round(r80p_y1, digits = 3), ', YrYr = ', round(yryr_y1, digits = 3))
+rec2 <- paste0('RRI = ', round(rri_y2, digits = 3), ', R80p = ', round(r80p_y2, digits = 3), ', YrYr = ', round(yryr_y2, digits = 3))
+rec3 <- paste0('RRI = ', round(rri_y3, digits = 3), ', R80p = ', round(r80p_y3, digits = 3), ', YrYr = ', round(yryr_y3, digits = 3))
+
+plot(ts1, ys1, 'o', xlab = 'Year', ylab = 'Response', ylim = c(min(c(ys1,ys2,ys3)), max(c(ys1,ys2,ys3))))
+lines(ts1, ys2, 'o', col = 'red')
+lines(ts1, ys3, 'o', col = 'orange')
+legend('topright', legend = c(rec1, rec2, rec3),
+       col = c('black', 'red', 'orange'), lty = 1, cex = 1)
+```
+
