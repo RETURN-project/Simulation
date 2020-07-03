@@ -214,26 +214,26 @@ __funSet__: list of settings for the computation of the recovery indicators. Mor
 
 ```{r}
 # recovery settings
-funSet <- list('freq' = c('annual', 'dense','dense','dense','dense','dense','dense'),
-               'input' = c('raw','raw', 'smoothed', 'segmented', 'raw', 'smoothed', 'segmented'),# settings for the recovery indicators
-               'shortDenseTS' = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
-               'nPre' = c(2,2,2,2,2,2,2),
-               'nDist' = c(0,0,0,0,1,1,1),
-               'nPostMin' = c(4,0,0,0,4,4,4),
-               'nPostMax' = c(5,1,1,1,6,6,6),
-               'h' = c(0.15,0.15,0.15,0.15,0.15,0.15,0.15),
-               'seas' = c(rep(T,7)))
+funSet <- list('freq' = c(rep('annual', 6),  rep('dense',6), rep('quarterly',6)),
+               'input' = rep(c('raw', 'smoothed','segmented'),6),# settings for the recovery indicators
+               'shortDenseTS' = c(rep(FALSE, 6), rep(TRUE,12)),
+               'nPre' = rep(2,18),
+               'nDist' = c(rep(0,6),rep(1,12)),
+               'nPostMin' = rep(c(4,4,4,1,1,1), 3),
+               'nPostMax' = c(rep(5,3), rep(1,3), rep(6,3), rep(2,3), rep(6,3), rep(2,3)),
+               'h' = rep(0.15,18),
+               'seas' = c(rep(F,6),rep(T,12)))
 
 save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
-```{r}
+```{r, eval=F}
 
 # Calculate the number of cores
 no_cores <- detectCores() - 1
- 
+
 # Initiate cluster
 cl <- makeCluster(no_cores)
 
@@ -242,7 +242,7 @@ start_time <- Sys.time()
 set_fast_options()
 
 # run the sensitivity analysis
-clusterEvalQ(cl, .libPaths(c("C:\\Users\\keers001\\OneDrive - WageningenUR\\R", .libPaths()[2])))
+# clusterEvalQ(cl, .libPaths(c("C:\\Users\\keers001\\OneDrive - WageningenUR\\R", .libPaths()[2])))
 # clusterEvalQ(cl, library(BenchmarkRecovery))
 pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename, cl = cl)
 
@@ -254,7 +254,6 @@ tot_time <- end_time - start_time
 print(end_time - start_time)
 
 ```
-
 
 # Plot the performance indicators
 
@@ -502,7 +501,7 @@ for(vr in 1:length(caseList)){
     tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c( "low", 'medium', 'high'))
     }
   
-  lbls <- c("raw, annual", 'raw, dense', "segmented, dense", 'smooth, dense')
+  lbls <- c("raw, BAP", 'piecewise, BAP', 'smoothed, BAP', "raw, dense", 'piecewise, dense', 'smoothed, dense', "raw, quarterly", 'piecewise, quarterly', 'smoothed, quarterly')
   sname <- caseList[[vr]]
   xlbl <- simFullName[[sname]]
   
