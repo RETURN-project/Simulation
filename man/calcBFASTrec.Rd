@@ -13,7 +13,6 @@ calcBFASTrec(
   nDist,
   nPostMin,
   nPostMax,
-  breaks = "BIC",
   seas = F
 )
 }
@@ -34,9 +33,9 @@ calcBFASTrec(
 
 \item{nPostMax}{If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery}
 
-\item{breaks}{'BIC' or 'LWZ': criteria used to define the optimal number of breaks}
-
 \item{seas}{TRUE or FALSE, include seasonal term when detecting breaks?}
+
+\item{breaks}{'BIC' or 'LWZ': criteria used to define the optimal number of breaks}
 }
 \value{
 a list containing  the RRI, R80p, YrYr recovery indicator derived from the BFAST0n trend segments and slope of the trend segment after the disturbance (sl).

@@ -17,7 +17,7 @@ calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
 
 \item{nPre}{If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value}
 
-\item{nDist}{If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance}
+\item{nDist}{If shortDenseTS is TRUE, number of years used to quantify the time series value during the disturbance}
 
 \item{nPostMin}{If shortDenseTS is TRUE,  the post-disturbance condition is quantified starting from nPostMin years after the disturbance}
 

@@ -4,7 +4,7 @@
 \alias{toAnnualTS}
 \title{Convert time series to annual frequency: The toAnnualTS function converts a time series with n observations per year to an annual time series (one observation per year). The main concept is to select observations per year closest to a given day of year that have no missing value (NA). Here, the day of year for which the seasonality is maximum is being used.}
 \usage{
-toAnnualTS(tsseas, tsi, obspyr)
+toAnnualTS(tsseas, tsi, obspyr, dtmax = 1/12)
 }
 \arguments{
 \item{tsseas}{vector of observations (time series) representing the seasonal component of the time series to be converted}
@@ -12,6 +12,8 @@ toAnnualTS(tsseas, tsi, obspyr)
 \item{tsi}{vector of observations (time series) that needs to be converted to an annual time series}
 
 \item{obspyr}{number of observations per year of the time series to be converted}
+
+\item{dtmax}{maximum time (expressed in year, so 1/12 equals one month) between selected observation and the seasonal maximum}
 }
 \value{
 vector of observations (time series) with annual observation frequency
