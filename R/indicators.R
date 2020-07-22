@@ -22,7 +22,8 @@
 #' yryr(ts, ys)
 yryr <- function(ts, ys, tpert=0, deltat=5) {
   # Check input
-  if ((tpert < min(ts, na.rm = TRUE)) || (tpert + deltat > max(ts, na.rm = TRUE))) {
+  if ((min(tpert) < min(ts, na.rm = TRUE)) || (max(tpert) + max(deltat) > max(ts, na.rm = TRUE))) {
+  # if ((tpert < min(ts, na.rm = TRUE)) || (tpert + deltat > max(ts, na.rm = TRUE))) {
     stop("Error: 'tpert' and/or 'tpert + deltat' are outside the bounds imposed by 'ts'")
   }
 

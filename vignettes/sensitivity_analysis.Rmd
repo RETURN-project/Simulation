@@ -2,11 +2,7 @@
 title: "Prototype of benchmark study"
 author: "Wanda De Keersmaecker"
 date: ""
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Prototype of benchmark study}
-  %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+output: html_document
 ---
 
 
@@ -16,6 +12,11 @@ knitr::opts_chunk$set(echo = TRUE,
                       fig.width=18,
                       fig.height=10)#
 
+# output: rmarkdown::html_vignette
+# vignette: >
+#   %\VignetteIndexEntry{Prototype of benchmark study}
+#   %\VignetteEngine{knitr::rmarkdown}
+#   \usepackage[utf8]{inputenc}
 # Load libraries
 library(devtools)
 library(BenchmarkRecovery)
@@ -243,7 +244,7 @@ set_fast_options()
 
 # run the sensitivity analysis
 # clusterEvalQ(cl, .libPaths(c("C:\\Users\\keers001\\OneDrive - WageningenUR\\R", .libPaths()[2])))
-# clusterEvalQ(cl, library(BenchmarkRecovery))
+clusterEvalQ(cl, library(BenchmarkRecovery))
 pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename, cl = cl)
 
 stopCluster(cl)

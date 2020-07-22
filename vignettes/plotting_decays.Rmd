@@ -2,11 +2,7 @@
 title: "Plotting decay functions"
 author: "Pablo Rodriguez-Sanchez"
 date: ""
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Plotting decay functions}
-  %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -15,6 +11,12 @@ knitr::opts_chunk$set(echo = TRUE,
                       eval = TRUE, 
                       fig.width=8, 
                       fig.height=6) 
+
+# output: rmarkdown::html_vignette
+# vignette: >
+#   %\VignetteIndexEntry{Plotting decay functions}
+#   %\VignetteEngine{knitr::rmarkdown}
+#   \usepackage[utf8]{inputenc}
 
 # Load libraries
 library(BenchmarkRecovery)

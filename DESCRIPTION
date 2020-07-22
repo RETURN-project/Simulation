@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "first.last@example.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: This package compares the performance of recovery indicators derived from remote sensing time series. It simulates time series with varying characteristics (eg amplitude of seasonality), derives recovery indicators using different preprocessing techniques and compares their performance.
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
