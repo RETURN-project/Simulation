@@ -3,6 +3,10 @@ title: "Prototype of benchmark study"
 author: "Wanda De Keersmaecker"
 date: ""
 output: html_document
+vignette: >
+   %\VignetteIndexEntry{Prototype of benchmark study}
+   %\VignetteEngine{knitr::rmarkdown}
+   %\usepackage[utf8]{inputenc}
 ---
 
 

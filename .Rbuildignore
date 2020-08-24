@@ -2,3 +2,4 @@
 ^.travis.yml$
 ^\.Rproj\.user$
 ^img$
+^vignettes/sensitivity_analysis\.Rmd$

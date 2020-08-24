@@ -3,6 +3,10 @@ title: "Plot recovery indicators"
 author: "Wanda De Keersmaecker"
 date: "6/10/2020"
 output: html_document
+vignette: >
+   %\VignetteIndexEntry{Plot recovery indicators}
+   %\VignetteEngine{knitr::rmarkdown}
+   %\usepackage[utf8]{inputenc}
 ---
 
 ```{r setup, include=FALSE}
