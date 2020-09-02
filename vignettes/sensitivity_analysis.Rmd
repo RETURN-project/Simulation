@@ -237,21 +237,20 @@ The specified settings are then used to simulate time series, calculate recovery
 ```{r, eval=F}
 
 # Calculate the number of cores
-no_cores <- detectCores() - 1
+no_cores <- detectCores()
 
 # Initiate cluster
-cl <- makeCluster(no_cores)
+cl <- makeCluster(no_cores - 1)
 
 # start clock
 start_time <- Sys.time()
 set_fast_options()
 
 # run the sensitivity analysis
-# clusterEvalQ(cl, .libPaths(c("C:\\Users\\keers001\\OneDrive - WageningenUR\\R", .libPaths()[2])))
-clusterEvalQ(cl, library(BenchmarkRecovery))
-pblapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename, cl = cl)
+# clusterEvalQ(cl, library(BenchmarkRecovery))
+lapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename)
 
-stopCluster(cl)
+# stopCluster(cl)
 
 # stop clock
 end_time <- Sys.time()
