@@ -237,10 +237,10 @@ The specified settings are then used to simulate time series, calculate recovery
 ```{r, eval=F}
 
 # Calculate the number of cores
-no_cores <- detectCores()
+# no_cores <- detectCores()
 
 # Initiate cluster
-cl <- makeCluster(no_cores - 1)
+# cl <- makeCluster(no_cores - 1)
 
 # start clock
 start_time <- Sys.time()
