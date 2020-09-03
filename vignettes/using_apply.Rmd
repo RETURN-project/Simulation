@@ -1,0 +1,140 @@
+---
+title: "Avoiding nested loops with apply functions"
+author: "Pablo Rodriguez-Sanchez"
+date: "9/3/2020"
+output: html_document
+---
+
+## Problem description
+Currently, our vignette `sensitivityAnalysis.Rmd` is using `evalParam` for creating outputs (in the form of saved files) corresponding to each one of the 96 permutations of the following parameters:
+
+- `par1`, whose possible values are `(R80p, RRI, simTS, YrYr)`
+- `par2`, whose possible values are `(MAPE, nTS, R2, RMSE)`
+- `par3`, whose possible values are `(distMag, distRec, distT, missVal, remSd, seasAmp)`
+
+The loop corresponding to `par1` happens at vignette level via an `lapply` function. The other two happen inside `evalParam` via nested `for` loops.
+
+For the sake of code clarity, speed and parallelization, it could be a good idea to refactor `evalParam` in a more atomic way. By atomic I mean accepting one or more parameters identifying which one of the 96 possible cases we want to calculate, and calculating that and only that one. Depending on the amount of identification parameters, the whole process can be efficiently looped via vectorization, `lapply` (for a single id per row) or `mapply` (for multiple ids per row).
+
+The `evalParam` function is already quite complicated, so we'll assume vectorization is not feasible. The two remaining possibilities are thus:
+
+1. Use a single identifier (i.e.: `evalParam(..., id = "R80p_nTS_distT")`, to later be called via `lapply`).
+2. Use a multiple identifier (i.e: `evalParam(..., par1 = "R80p", par2 = "nTS", par3 = "distT")`, to later be called via `mapply`).
+
+In the present vignette I show a simple case study comparing these two options (plus the not-always-easy vectorization).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Generate the input data frame
+We will generate a simple data set with all the 12 permutations corresponding to these identifiers:
+
+- `type`, whose possible values are `("A", "B", "C")`.
+- `gender`, whose possible values are `(1, 2)`.
+- `country`, whose possible values are `("NL", "BE")`.
+
+plus a single column containing some measurement (just a random number in this case).
+
+```{r cases-definition}
+# Identifiers
+v1 <- c("A", "B", "C")
+v2 <- c(1, 2)
+v3 <- c("NL", "BE")
+
+# Measurements
+v4 <- runif(n = length(v1) * length(v2) * length(v3))
+```
+
+```{r permute-all-cases}
+idf <- expand.grid(type = v1, gender = v2, country = v3, stringsAsFactors = FALSE)
+idf <- cbind(idf, measurement = v4)
+```
+
+```{r see-dataset-nonames, echo=FALSE}
+print(idf)
+```
+
+It is usually a good idea to assign meaningful names to the rows.
+
+```{r create-single-ids}
+# Auxiliary function.
+# Creates a single row identifier by combining type, gender and country
+# For instance: "B_2_NL"
+create_id <- function(type, gender, country) {
+  id = paste(type, gender, country, sep = "_")
+}
+
+rownames(idf) <- create_id(idf$type, idf$gender, idf$country) # Rownames checks that the names are not duplicated
+```
+
+```{r see-dataset, echo=FALSE}
+print(idf)
+```
+
+If the name is well chosen (and ours is) it can even be redundant with the other three id columns. But for this tutorial we'll keep all of them, in order to investigate different ways of applying functions to a given row.
+
+## Analyze the data
+We want to perform the following analysis: for each row, multiply the measurement by 2 if the country is Belgium, and by -2 if the country is the Netherlands. The three functions below do the same, and only differ in the way the input row is specified:
+
+```{r functions}
+
+# Analyze (vectorized)
+vanalyze <- function(row) {
+  
+  # Auxiliary function. 
+  # Returns 2 for Belgium and -2 for The Netherlands
+  country_to_number <- function(country) {
+    2 * (country == "BE") - 2 * (country == "NL")
+  }
+  
+  number <- country_to_number(row$country)
+  return(number * row$measurement)
+}
+
+# Analyze (prepared for lapply)
+# Same as vanalyze, but a single id (the row name) has to be provided
+lanalyze <- function(id, data) {
+  row <- data[id, ]
+  vanalyze(row)
+}
+
+# Analyze (prepared for mapply)
+# Same as vanalyze, but type, gender and country have to be provided
+manalyze <- function(type, gender, country, data) {
+  id <- create_id(type, gender, country)
+  lanalyze(id, data)
+}
+```
+
+The analysis itself is deliberately silly. It is just an example of an action to be:
+
+1. Performed on an input data set.
+2. Controlled by an input data set (in this case, the same one).
+
+### Apply to a desired subset
+```{r apply-sub}
+vresults <- vanalyze(idf[c(1, 11), ]) # Using vectorization
+lresults <- lapply(c("A_1_NL", "B_2_BE"), lanalyze, data = idf) # Using lapply (single row identifier)
+mresults <- mapply(manalyze, c("A", "B"), c(1, 2), c("NL", "BE"), MoreArgs = list(data = idf)) # Using mapply (multiple row identifiers)
+```
+
+```{r print-results-sub}
+print(vresults)
+print(lresults)
+print(mresults)
+```
+
+### Apply to the whole dataset
+
+```{r apply}
+vresults <- vanalyze(idf) # Using vectorization
+lresults <- lapply(create_id(idf$type, idf$gender, idf$country), lanalyze, data = idf) # Using lapply (single row identifier)
+mresults <- mapply(manalyze, idf$type, idf$gender, idf$country, MoreArgs = list(data = idf)) # Using mapply (multiple row identifiers)
+```
+
+```{r print-results}
+print(vresults)
+print(lresults)
+print(mresults)
+```
