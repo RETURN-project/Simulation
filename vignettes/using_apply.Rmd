@@ -75,17 +75,27 @@ print(idf)
 If the name is well chosen (and ours is) it can even be redundant with the other three id columns. But for this tutorial we'll keep all of them, in order to investigate different ways of applying functions to a given row.
 
 ## Analyze the data
-We want to perform the following analysis: for each row, multiply the measurement by 2 if the country is Belgium, and by -2 if the country is the Netherlands. The three functions below do the same, and only differ in the way the input row is specified:
+We want to perform the following analysis: 
+
+- for each row
+  - multiply the measurement by 2 if the country is Belgium.
+  - multiply the measurement by -2 if the country is the Netherlands. 
+  
+The four functions below do the same, and only differ in the way the input row is specified:
 
 ```{r functions}
-
-# Analyze (vectorized)
-vanalyze <- function(row) {
+# Analyze (brute-force)
+# This method is expected to be called row by row (for instance, inside a loop). It will crash otherwise
+analyze <- function(row) {
   
   # Auxiliary function. 
   # Returns 2 for Belgium and -2 for The Netherlands
   country_to_number <- function(country) {
-    2 * (country == "BE") - 2 * (country == "NL")
+    if(country == "BE") {
+      return(2)
+    } else {
+      return(-2)
+    }
   }
   
   number <- country_to_number(row$country)
@@ -93,17 +103,31 @@ vanalyze <- function(row) {
 }
 
 # Analyze (prepared for lapply)
-# Same as vanalyze, but a single id (the row name) has to be provided
+# Same as analyze, but a single id (the row name) has to be provided
 lanalyze <- function(id, data) {
   row <- data[id, ]
-  vanalyze(row)
+  analyze(row)
 }
 
 # Analyze (prepared for mapply)
-# Same as vanalyze, but type, gender and country have to be provided
+# Same as analyze, but type, gender and country have to be provided
 manalyze <- function(type, gender, country, data) {
   id <- create_id(type, gender, country)
   lanalyze(id, data)
+}
+
+# Analyze (vectorized)
+# Vectorizing the input is often complicated, but in this case is possible. I leave here the example
+vanalyze <- function(row) {
+  
+  # Auxiliary function. 
+  # Returns 2 for Belgium and -2 for The Netherlands in a vectorized way
+  country_to_number <- function(country) {
+    2 * (country == "BE") - 2 * (country == "NL")
+  }
+  
+  number <- country_to_number(row$country)
+  return(number * row$measurement)
 }
 ```
 
@@ -114,27 +138,27 @@ The analysis itself is deliberately silly. It is just an example of an action to
 
 ### Apply to a desired subset
 ```{r apply-sub}
-vresults <- vanalyze(idf[c(1, 11), ]) # Using vectorization
 lresults <- lapply(c("A_1_NL", "B_2_BE"), lanalyze, data = idf) # Using lapply (single row identifier)
 mresults <- mapply(manalyze, c("A", "B"), c(1, 2), c("NL", "BE"), MoreArgs = list(data = idf)) # Using mapply (multiple row identifiers)
+vresults <- vanalyze(idf[c(1, 11), ]) # Using vectorization
 ```
 
 ```{r print-results-sub}
-print(vresults)
 print(lresults)
 print(mresults)
+print(vresults)
 ```
 
 ### Apply to the whole dataset
 
 ```{r apply}
-vresults <- vanalyze(idf) # Using vectorization
 lresults <- lapply(create_id(idf$type, idf$gender, idf$country), lanalyze, data = idf) # Using lapply (single row identifier)
 mresults <- mapply(manalyze, idf$type, idf$gender, idf$country, MoreArgs = list(data = idf)) # Using mapply (multiple row identifiers)
+vresults <- vanalyze(idf) # Using vectorization
 ```
 
 ```{r print-results}
-print(vresults)
 print(lresults)
 print(mresults)
+print(vresults)
 ```
