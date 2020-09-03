@@ -21,7 +21,16 @@ The `evalParam` function is already quite complicated, so we'll assume vectoriza
 1. Use a single identifier (i.e.: `evalParam(..., id = "R80p_nTS_distT")`, to later be called via `lapply`).
 2. Use a multiple identifier (i.e: `evalParam(..., par1 = "R80p", par2 = "nTS", par3 = "distT")`, to later be called via `mapply`).
 
-In the present vignette I show a simple case study comparing these two options (plus the not-always-easy vectorization).
+###  Graphical summary
+Currently `evalParam` is doing too much:
+
+![](../img/diagram_now.png)
+
+It will be advisable to split like:
+
+![](../img/diagram_future.png)
+
+In the present vignette I show a simple case study of using apply functions in this kind of problems (plus the not-always-easy vectorization).
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
