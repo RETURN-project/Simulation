@@ -45,44 +45,42 @@ The following characteristics are derived from the decomposed time series:
 * offset 
 * standard deviation of the remainder component (one value per input time series)
 * fitted ARMA model in the remainder component (one model per input time series)
-```{r}
-#profvis({
-# ------------------------------------------------
+
+```{r load-data}
 # inputs
-ifolder <- '../data/' #'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'#  'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\SampledData\\'# #folder where input data is located
-ofolder <- '../data/' #'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Int_pie_2000\\'# '../data/' # 'C:\\Users\\keers001\\OneDrive - WageningenUR\\RETURN\\Data\\RETURN\\20191019_SimulationOptSAR\\Landsat\\Avg_exp_1000\\'# folder where outputs will be written
-basename <- 'toyset'#'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI'# 'toyset'# name of the input dataset (contains sampled satellite time series)
-nyr <- 18 # number of years in observation period
-nobsYr <- 365 # number of observations per year
+ifolder <- '../data/'
+ofolder <- '../data/' # Folder where outputs will be written
+basename <- 'toyset'# Name of the input dataset (contains sampled satellite time series)
+nyr <- 18 # Number of years in observation period
+nobsYr <- 365 # Number of observations per year
 
-ifileVI <- paste0(basename, '.rda')
-dfVi <- loadRData(file = file.path(ifolder, ifileVI))
+ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
+dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
+```
 
-# ------------------------------------------------
+```{r decompose-timeseries}
 # First decompose time series into seasonality, trend and remainder:
 tmp <- decompTSbfast(dfVi, nyr, nobsYr)
-dataVISeasbf <-  tmp[[1]]# sesonality (fitted harmonic function)
-dataVIRembf <- tmp[[2]]# remainder
-dataVITrbf <- tmp[[3]]# trend (linear trend without break)
-dataVISeasCoef <- tmp[[4]]# coefficients of fitted harmonic functions 
+dataVISeasbf <-  tmp[[1]] # Sesonality (fitted harmonic function)
+dataVIRembf <- tmp[[2]] # Remainder
+dataVITrbf <- tmp[[3]] # Trend (linear trend without break)
+dataVISeasCoef <- tmp[[4]] # Coefficients of fitted harmonic functions 
+```
 
-# ------------------------------------------------
-# Then, derive the characteristics:
+```{r derive-characteristics}
+tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2) # Fraction missing values
 
-tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2)# fraction missing values
-
-seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # seasonal amplitude for each pixel
-seasS <- dataVISeasbf[dataVISeasbf[,1]<0,]#average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
+seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # Seasonal amplitude for each pixel
+seasS <- dataVISeasbf[dataVISeasbf[,1]<0,] # Average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
 seasVImean <- colMeans(as.matrix(seasS[,-c(1,2)]))
 
-TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T)# offset 
+TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T) # Offset 
 
-Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T)# SD of remainder per pixel
-Rem_VIcoef <- list()# ARMA model - characterization of the remainder dynamics per pixel
+Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T) # SD of remainder per pixel
+Rem_VIcoef <- list() # ARMA model - characterization of the remainder dynamics per pixel
 for(i in 1:dim(dataVIRembf)[1]){
   Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
 }
-# })
 ```
 
 ```{r plot, echo=FALSE}
@@ -109,32 +107,29 @@ par(fig=c(0,1,0,0.33), new=TRUE)
 plot(tsrz, type = 'o', main = 'Remainder',
      xlab = 'Time [year]', ylab = 'NBR [-]', lwd = 2)
 
-# all seasonal cycles 
+# All seasonal cycles 
 plot(zoo(t(dataVISeasbf[,-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of sampled pixels',
      xlab = 'Time', ylab = 'NBR [-]')
 
-# seasonal cylce Southern hemisphere and mean seasonal cycle
+# Seasonal cylce Southern hemisphere and mean seasonal cycle
 plot(zoo(t(dataVISeasbf[which(dataVISeasbf[,1]<0),-c(1,2)]),tmz), plot.type = "single", col = 'gray' , main = 'Seasonality of pixels in Southern hemisphere and mean seasonal',
      xlab = 'Time', ylab = 'NBR [-]')
 lines(as.Date(names(seasVImean)), seasVImean, type = 'l', lwd = 2)
-
 
 # Amplitude seasonality
 hist(seasVImax, main = 'Amplitude seasonality', xlab = 'Amplitude [-]')
 mx <- mean(seasVImax)
 abline(v = mx, col = "red", lwd = 2)
 
-
-# missing values
+# Missing values
 hist(tsVIMissVal, main = 'Fraction missing values (daily temporal resolution)', xlab = 'Fraction missing values [-]')
 mx <- mean(tsVIMissVal)
 abline(v = mx, col = "red", lwd = 2)
 
-# standard deviation remainder
+# Standard deviation remainder
 hist(Rem_VIsd, main = 'Standard deviation remainder', xlab = 'Standard deviation remainder [-]')
 mx <- mean(Rem_VIsd)
 abline(v = mx, col = "red", lwd = 2)
-
 ```
 
 # Simulate time series, measure recovery and evaluate performance
