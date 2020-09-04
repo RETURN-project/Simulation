@@ -12,7 +12,7 @@ Currently, our vignette `sensitivityAnalysis.Rmd` is using `evalParam` for creat
 - `par2`, whose possible values are `(MAPE, nTS, R2, RMSE)`
 - `par3`, whose possible values are `(distMag, distRec, distT, missVal, remSd, seasAmp)`
 
-The loop corresponding to `par1` happens at vignette level via an `lapply` function. The other two happen inside `evalParam` via nested `for` loops.
+The loop corresponding to `par3` happens at vignette level via an `lapply` function. The other two happen inside `evalParam` via nested `for` loops.
 
 For the sake of code clarity, speed and parallelization, it could be a good idea to refactor `evalParam` in a more atomic way. By atomic I mean accepting one or more parameters identifying which one of the 96 possible cases we want to calculate, and calculating that and only that one. Depending on the amount of identification parameters, the whole process can be efficiently looped via vectorization, `lapply` (for a single id per row) or `mapply` (for multiple ids per row).
 
