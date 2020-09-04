@@ -147,7 +147,7 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 
 #' Run sensitivity analysis for particular parameter of interest
 #'
-#' @param vr integer: defines the target parameter for the sensitivity study. The vr'th 'eval' parameter in the settings list is selected as target
+#' @param evr char: name of parameter that will be evaluated in the simulation (for instance: "distT")
 #' @param sttngs list of settings
 #' @param pars list of simulation parameters
 #' @param funSet list of recovery indicator settings
@@ -157,12 +157,12 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 #' @return performance indicators (R2, RMSE, MAPE) and indicators of the relation between the measured and simulated recovery indicators (slope, intercept, p value of normality test of residuals). For each performace indicator a matrix is saved where the rows refer to the evaluated values of the paramter of interest and the columns to the various recovery indicator settings.
 #' @export
 #'
-evalParam <- function(vr, sttngs, pars, funSet, basename, ofolder = '') {
+evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
 
   winsize <- c(365, 4, 1)
   names(winsize) <- c('dense', 'quarterly', 'annual')
 
-  evr <- sttngs$general$eval[vr] # name of parameter that will be evaluated in the simulation
+  # Extract case parameters
   parvr <- pars[[evr]]
 
   # Initialize data containers
@@ -189,7 +189,7 @@ evalParam <- function(vr, sttngs, pars, funSet, basename, ofolder = '') {
 
 
   # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
-  for (i in 1:length(parvr)){#length(setvr)
+  for (i in 1:length(parvr))
 
     empty2 <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
     m_RRIi <- empty2
