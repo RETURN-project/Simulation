@@ -189,7 +189,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
 
 
   # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
-  for (i in 1:length(parvr))
+  for (i in 1:length(parvr)) {
 
     empty2 <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
     m_RRIi <- empty2
