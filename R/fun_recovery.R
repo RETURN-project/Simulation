@@ -165,38 +165,41 @@ evalParam <- function(vr, sttngs, pars, funSet, basename, ofolder = '') {
   evr <- sttngs$general$eval[vr] # name of parameter that will be evaluated in the simulation
   parvr <- pars[[evr]]
 
-  RRI_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
-  RRI_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  # Initialize data containers
+  empty <- matrix(NA, length(parvr), length(funSet[[1]]))
+  RRI_rmse <- empty
+  RRI_mape <- empty
+  RRI_rsq <- empty
+  RRI_nTS <- empty
 
-  R80p_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
-  R80p_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  R80p_rmse <- empty
+  R80p_mape <- empty
+  R80p_rsq <- empty
+  R80p_nTS <- empty
 
-  YrYr_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
-  YrYr_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  YrYr_rmse <- empty
+  YrYr_mape <- empty
+  YrYr_rsq <- empty
+  YrYr_nTS <- empty
 
-  # SL_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
-  # SL_mape <- matrix(NA,length(parvr), length(funSet[[1]]))
-  # SL_rsq <- matrix(NA,length(parvr), length(funSet[[1]]))
-  # SL_nTS <- matrix(NA,length(parvr), length(funSet[[1]]))
+  # SL_rmse <- empty
+  # SL_mape <- empty
+  # SL_rsq <- empty
+  # SL_nTS <- empty
 
 
   # iterate over values of evaluated parameter and simulate nrep time series per combination of all other variables
   for (i in 1:length(parvr)){#length(setvr)
 
-    m_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))#
-    m_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    m_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    # m_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    s_RRIi <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    s_R80pi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    s_YrYri <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
-    # s_SLi <-  matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    empty2 <- matrix(NA,nrow = length(funSet[[1]]), ncol = length(parvr[[1]][[1]]))
+    m_RRIi <- empty2
+    m_R80pi <-  empty2
+    m_YrYri <-  empty2
+    # m_SLi <-  empty2
+    s_RRIi <- empty2
+    s_R80pi <-  empty2
+    s_YrYri <-  empty2
+    # s_SLi <-  empty2
 
     # iterate over the parameter settings and simulate each time a time series
     for (pari in 1: length(parvr[[1]][[1]])){
