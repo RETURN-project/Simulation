@@ -14,33 +14,33 @@
 #'
 calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
     # check if there are enough observations before and after the disturbance to calculate the metrics
-    if((tdist>((nPre*obspyr))) & (tdist < (length(tsio)-(nPostMax*obspyr)+1)) & (sum(!is.na(tsio))>2)){
+    if ( (tdist > (nPre*obspyr) ) & ( tdist < (length(tsio) - (nPostMax*obspyr) + 1) ) & ( sum(!is.na(tsio)) > 2) ) {
       # translate parameters to those needed for the recovery functions
       ys <- tsio
-      ts <- seq(1,length(tsio))
-      if (obspyr == 1 | nDist == 0){
-        tpert <- seq(tdist,tdist+(nDist*obspyr))
+      ts <- seq(1, length(tsio))
+      if (obspyr == 1 | nDist == 0 ){
+        tpert <- seq(tdist, tdist + nDist*obspyr )
       }else{
-        tpert <- seq(tdist,tdist+(nDist*obspyr)-1)
+        tpert <- seq(tdist, tdist + nDist*obspyr - 1)
       }
-      ts_pre <- seq(tdist-(nPre*obspyr),tdist-1)
+      ts_pre <- seq(tdist - nPre*obspyr, tdist - 1)
 
-      if (obspyr == 1 | nPostMin == nPostMax){
-        ts_post <-  seq(tdist +(nPostMin*obspyr), tdist +(nPostMax*obspyr))
-      }else{
-        ts_post <-  seq(tdist +(nPostMin*obspyr), tdist +(nPostMax*obspyr)-1)
+      if (obspyr == 1 | nPostMin == nPostMax) {
+        ts_post <-  seq(tdist + (nPostMin*obspyr), tdist + (nPostMax*obspyr))
+      } else {
+        ts_post <-  seq(tdist + (nPostMin*obspyr), tdist + (nPostMax*obspyr) - 1)
       }
 
-      deltat <- switch(shortDenseTS + 1, (nPostMax*obspyr), ts_post-tdist)
+      deltat <- switch(shortDenseTS + 1, nPostMax*obspyr, ts_post-tdist)
 
-      RRI <- rri(ts,ys,tpert,ts_pre, ts_post)
-      R80P <- r80p(ts,ys,r = 0.8,ts_pre, ts_post)
-      YrYr <- yryr(ts,ys,tpert, deltat)
+      RRI <- rri(ts, ys, tpert, ts_pre, ts_post)
+      R80P <- r80p(ts, ys, r = 0.8, ts_pre, ts_post)
+      YrYr <- yryr(ts, ys, tpert, deltat)
       # make list of recovery indicators as output of the function
       lst <- list(RRI, R80P, YrYr)
       names(lst) <- c('RRI', 'R80P', 'YrYr')
       # give NA as output if not able to calculate the recovery indicatores
-    }else{
+    } else {
       lst <- list(NA, NA, NA)
       names(lst) <- c('RRI', 'R80P', 'YrYr')
     }
@@ -64,29 +64,31 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @export
 #' @import strucchange
 #' @import stats
-calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas = F){
+calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas = F) {
   # Create time series object, needed as input for BFAST
   tsi <- ts(tsio, frequency = obspyr)
   # Convert the time series object into a dataframe, needed for the breakpoints function
-  if(obspyr>1){
+  if( obspyr>1 ) {
     datapp <- bfastpp(tsi, order = 1, lag = NULL, slag = NULL,
                       na.action = na.omit, stl = 'none')
-  }else if(!seas){
+  } else if(!seas) {
     datapp <- data.frame(response = tsio, trend = seq(1:length(tsio)))
-  }else{stop('No seasonal term allowed for time series with one observation per year or less.')}
+  } else {
+    stop('No seasonal term allowed for time series with one observation per year or less.')
+  }
 
   nreg <- switch(seas+1, 2, 5)
   # Test if enough observations are available to fit piecewise model
-  if(floor(length(tsio[is.na(tsio)==F]) * h) > nreg){
+  if(floor(length(tsio[is.na(tsio)==F]) * h) > nreg) {
     # set_fast_options()
     # Apply BFAST0n on time series: find breaks in the regression
-    if (seas){
+    if (seas) {
       bp <- breakpoints(response ~ trend + harmon, data = datapp, h = h)#, breaks = breaks
-    } else{
+    } else {
       bp <- breakpoints(response ~ trend, data = datapp, h = h)##, breaks = breaks
     }
     # Check if BFAST0n found breakpoints
-    if(is.na(bp$breakpoints[1])){# no breakpoint found
+    if( is.na(bp$breakpoints[1]) ){ # no breakpoint found
       frz <- list(NA, NA, NA, NA)
       names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
     }else{# at least one breakpoint found
@@ -114,7 +116,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
       frz <- c(frz, sl)
       names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
     }
-  }else{
+  } else {
     frz <- list(NA, NA, NA, NA)
     names(frz) <- c('RRI', 'R80P', 'YrYr', 'Sl')
   }
@@ -159,6 +161,11 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 #'
 evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
 
+  # TODO:
+  # The main to do is to pass `R80p`, `YrYr` and so on as parameters.
+  #
+  # Currently calcBFASTrec and calcFrazier calculate all the cases by default.
+
   winsize <- c(365, 4, 1)
   names(winsize) <- c('dense', 'quarterly', 'annual')
 
@@ -202,12 +209,14 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
     # s_SLi <-  empty2
 
     # iterate over the parameter settings and simulate each time a time series
-    for (pari in 1: length(parvr[[1]][[1]])){
+    for (pari in 1: length(parvr[[1]][[1]])){ # TODO: what is this length?
       # simulate time series for a parameter combination
       sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[1]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
 
       # iterate over the recovery indicator settings
-      for (rset in 1:length(funSet[[1]])){#1:length(funSet[[1]])
+      for (rset in 1:length(funSet[[1]])){ # TODO: what is this length?
+        # TODO: this block can go outside current loop
+        # ============================================
         tsi <- sc[[1]][1,]
         tsseas <-sc[[2]][1,]
         obspyr <- sc[[5]][1,]$obs_per_year
@@ -215,7 +224,11 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         tsref <- sc[[3]][1,]
         nobs <- (sc[[5]][1,]$number_yrs)* obspyr
         tm <- 1:nobs
+        # ============================================
 
+        # TODO comment this block
+        # Most of the descriptions of this variables are in vignettes/sensitivity_analysis.Rmd
+        # ============================================
         inp <- funSet$input[rset]
         frq <- funSet[['freq']][rset]
         shortDenseTS <- funSet[['shortDenseTS']][rset]
@@ -226,6 +239,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         h <- funSet[['h']][rset]
         seas <- funSet[['seas']][rset]
         breaks <- funSet[['breaks']][rset]
+        # ============================================
 
         # change temporal resolution
         if (frq == 'annual'){
@@ -235,7 +249,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
           tdist <- which(tsref == min(tsref, na.rm = T))#ceiling(tdist/obspyr)
           obspyr <- 1
         }
-        if (frq == 'quarterly'){
+        if (frq == 'quarterly'){ # TODO: else or else if?
           #convert time series to quarterly resolution
           dts <- seq(as.Date('2000-01-01'), by = '1 days', length = nobs)
           tsi <- toRegularTS(tsi, dts, 'mean', 'quart')
@@ -244,13 +258,16 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
           obspyr <- 4
         }
 
+        # If the input is smoothed data, do this
+        # TODO: what does 'this' mean exactly?
         if (inp == 'smoothed'){
           temp.zoo<-zoo(tsi,(1:length(tsi)))
           m.av<-rollapply(temp.zoo, as.numeric(winsize[frq]), mean, na.rm = T, fill = NA)
           tsi <- as.numeric(m.av)
-
         }
 
+        # TODO: these two conditionals may be run, but their results are never used
+        # ============================================
         if((inp == 'smoothed') | (inp == 'raw')){
           outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
           m_RRIi[rset,pari] <- outp$RRI# measured RRI
@@ -269,16 +286,19 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         }
 
         # reference indicators
-        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax) # TODO: this is ALWAYS called!
         s_RRIi[rset,pari] <- outp$RRI#simulated (true) RRI
         s_R80pi[rset,pari] <- outp$R80P#simulated (true) R80p
         s_YrYri[rset,pari] <- outp$YrYr
         # if(inp == 'segmented'){
         #   # s_SLi[rset,pari] <- tsref[tdist+3] - tsref[tdist+2]
         # }
+
+        # ============================================
       }
       rm(sc)
     }
+
     # evaluate recovery indicators
     # R2
     RRI_rsq[i,] <- sapply(1:dim(s_RRIi)[1], function(it) rsq(s_RRIi[it,], m_RRIi[it,]))
@@ -303,6 +323,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
     R80p_nTS[i,] <- apply(m_R80pi, 1, function(x){sum(is.na(x)==F)/length(x)})
     YrYr_nTS[i,] <- apply(m_YrYri, 1, function(x){sum(is.na(x)==F)/length(x)})
     # SL_nTS[i,] <- apply(m_SLi, 1, function(x){sum(is.na(x)==F)/length(x)})
+
   }
 
   RRI_rsqDF <- toDF(RRI_rsq, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
