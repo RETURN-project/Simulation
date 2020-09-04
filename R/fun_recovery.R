@@ -151,18 +151,18 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 #' @param sttngs list of settings
 #' @param pars list of simulation parameters
 #' @param funSet list of recovery indicator settings
-#' @param ofolder folder where the output files should be stored
 #' @param basename basename for the output files
+#' @param ofolder (optional) folder where the output files should be stored. If nothing is provided, no file is saved
 #'
-#' @return saves performance indicators to the output folder (R2, RMSE, MAPE) and indicators of the relation between the measured and simulated recovery indicators (slope, intercept, p value of normality test of residuals). For each performace indicator a matrix is saved where the rows refer to the evaluated values of the paramter of interest and the columns to the various recovery indicator settings.
+#' @return performance indicators (R2, RMSE, MAPE) and indicators of the relation between the measured and simulated recovery indicators (slope, intercept, p value of normality test of residuals). For each performace indicator a matrix is saved where the rows refer to the evaluated values of the paramter of interest and the columns to the various recovery indicator settings.
 #' @export
 #'
-evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
+evalParam <- function(vr, sttngs, pars, funSet, basename, ofolder = '') {
 
   winsize <- c(365, 4, 1)
   names(winsize) <- c('dense', 'quarterly', 'annual')
 
-  evr <- sttngs$general$eval[vr]# name of parameter that will be evaluated in the simulation
+  evr <- sttngs$general$eval[vr] # name of parameter that will be evaluated in the simulation
   parvr <- pars[[evr]]
 
   RRI_rmse <- matrix(NA,length(parvr), length(funSet[[1]]))
@@ -322,26 +322,36 @@ evalParam <- function(vr, sttngs, pars, funSet, ofolder, basename){
   YrYr_nTSDF <- toDF(YrYr_nTS, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
   # SL_nTSDF <- toDF(SL_nTS, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
 
+  # Save the performance indicators (if desired)
+  save_results = (ofolder != '')
+  if(save_results) {
+    save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
+    save(R80p_rsqDF, file = file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
+    save(YrYr_rsqDF, file = file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+    # save(SL_rsqDF, file = file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
 
-  # export the performance indicators
-  save(RRI_rsqDF, file = file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
-  save(R80p_rsqDF, file = file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
-  save(YrYr_rsqDF, file = file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
-  # save(SL_rsqDF, file = file.path(ofolder, paste0(basename, '_SL_R2_' , evr, '.rda')))
+    save(RRI_rmseDF, file = file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
+    save(R80p_rmseDF, file = file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
+    save(YrYr_rmseDF, file = file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
+    # save(SL_rmseDF, file = file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
 
-  save(RRI_rmseDF, file = file.path(ofolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
-  save(R80p_rmseDF, file = file.path(ofolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
-  save(YrYr_rmseDF, file = file.path(ofolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
-  # save(SL_rmseDF, file = file.path(ofolder, paste0(basename, '_SL_RMSE_' , evr, '.rda')))
+    save(RRI_mapeDF, file = file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
+    save(R80p_mapeDF, file = file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
+    save(YrYr_mapeDF, file = file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+    # save(SL_mapeDF, file = file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
 
-  save(RRI_mapeDF, file = file.path(ofolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
-  save(R80p_mapeDF, file = file.path(ofolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
-  save(YrYr_mapeDF, file = file.path(ofolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
-  # save(SL_mapeDF, file = file.path(ofolder, paste0(basename, '_SL_MAPE_' , evr, '.rda')))
+    save(RRI_nTSDF, file = file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
+    save(R80p_nTSDF, file = file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
+    save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
+    # save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+  }
 
-  save(RRI_nTSDF, file = file.path(ofolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
-  save(R80p_nTSDF, file = file.path(ofolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
-  save(YrYr_nTSDF, file = file.path(ofolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
-  # save(SL_nTSDF, file = file.path(ofolder, paste0(basename, '_SL_nTS_' , evr, '.rda')))
+  # Output the performance indicators
+  return(
+    list(RRI_rsqDF, R80p_rsqDF, YrYr_rsqDF,
+         RRI_rmseDF, R80p_rmseDF, YrYr_rmseDF,
+         RRI_mapeDF, R80p_mapeDF, YrYr_mapeDF,
+         RRI_nTSDF, R80p_nTSDF, YrYr_nTSDF)
+  )
 }
 
