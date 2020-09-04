@@ -213,19 +213,17 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
       # simulate time series for a parameter combination
       sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[1]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
 
+      # Extract simulation's key parameters
+      tsi <- sc[[1]][1,]
+      tsseas <-sc[[2]][1,]
+      obspyr <- sc[[5]][1,]$obs_per_year
+      tdist <- sc[[5]][1,]$dist_time
+      tsref <- sc[[3]][1,]
+      nobs <- (sc[[5]][1,]$number_yrs)* obspyr
+      tm <- 1:nobs
+
       # iterate over the recovery indicator settings
       for (rset in 1:length(funSet[[1]])){ # TODO: what is this length?
-        # TODO: this block can go outside current loop
-        # ============================================
-        tsi <- sc[[1]][1,]
-        tsseas <-sc[[2]][1,]
-        obspyr <- sc[[5]][1,]$obs_per_year
-        tdist <- sc[[5]][1,]$dist_time
-        tsref <- sc[[3]][1,]
-        nobs <- (sc[[5]][1,]$number_yrs)* obspyr
-        tm <- 1:nobs
-        # ============================================
-
         # TODO comment this block
         # Most of the descriptions of this variables are in vignettes/sensitivity_analysis.Rmd
         # ============================================
@@ -266,8 +264,6 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
           tsi <- as.numeric(m.av)
         }
 
-        # TODO: these two conditionals may be run, but their results are never used
-        # ============================================
         if((inp == 'smoothed') | (inp == 'raw')){
           outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
           m_RRIi[rset,pari] <- outp$RRI# measured RRI
@@ -286,7 +282,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         }
 
         # reference indicators
-        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax) # TODO: this is ALWAYS called!
+        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
         s_RRIi[rset,pari] <- outp$RRI#simulated (true) RRI
         s_R80pi[rset,pari] <- outp$R80P#simulated (true) R80p
         s_YrYri[rset,pari] <- outp$YrYr
@@ -294,7 +290,6 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         #   # s_SLi[rset,pari] <- tsref[tdist+3] - tsref[tdist+2]
         # }
 
-        # ============================================
       }
       rm(sc)
     }
