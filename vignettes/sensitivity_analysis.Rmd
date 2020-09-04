@@ -243,7 +243,8 @@ set_fast_options()
 
 # run the sensitivity analysis
 # clusterEvalQ(cl, library(BenchmarkRecovery))
-lapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, ofolder = ofolder, basename = basename)
+# results_list <- evalParam(1, sttngs, pars, funSet, basename, ofolder)
+results_list <- lapply(1:length(sttngs$general$eval), FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, basename = basename, ofolder = ofolder)
 
 # stopCluster(cl)
 
