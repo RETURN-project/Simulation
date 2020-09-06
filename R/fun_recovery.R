@@ -16,15 +16,18 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
     # check if there are enough observations before and after the disturbance to calculate the metrics
     if ( (tdist > (nPre*obspyr) ) & ( tdist < (length(tsio) - (nPostMax*obspyr) + 1) ) & ( sum(!is.na(tsio)) > 2) ) {
       # translate parameters to those needed for the recovery functions
-      ys <- tsio
-      ts <- seq(1, length(tsio))
-      if (obspyr == 1 | nDist == 0 ){
+      ys <- tsio# response 
+      ts <- seq(1, length(tsio))# observation number
+        # the observations during the perturbation
+      if (obspyr == 1 | nDist == 0 ){# if annual observatons or if duration of perturbation equals one time step
         tpert <- seq(tdist, tdist + nDist*obspyr )
       }else{
         tpert <- seq(tdist, tdist + nDist*obspyr - 1)
       }
+        # the observations that represent the pre-disturbed state
       ts_pre <- seq(tdist - nPre*obspyr, tdist - 1)
 
+        # the observations that represent the post-disturbed state
       if (obspyr == 1 | nPostMin == nPostMax) {
         ts_post <-  seq(tdist + (nPostMin*obspyr), tdist + (nPostMax*obspyr))
       } else {
@@ -227,16 +230,16 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         # TODO comment this block
         # Most of the descriptions of this variables are in vignettes/sensitivity_analysis.Rmd
         # ============================================
-        inp <- funSet$input[rset]
-        frq <- funSet[['freq']][rset]
+        inp <- funSet$input[rset]# 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
+        frq <- funSet[['freq']][rset]# 'dense', 'quarterly', or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual' or 'quarterly', the time series are converted to annual or quarterly frequency, respectively.
         shortDenseTS <- funSet[['shortDenseTS']][rset]
-        nPre <- funSet[['nPre']][rset]
-        nDist <- funSet[['nDist']][rset]
-        nPostMin <- funSet[['nPostMin']][rset]
-        nPostMax <- funSet[['nPostMax']][rset]
-        h <- funSet[['h']][rset]
-        seas <- funSet[['seas']][rset]
-        breaks <- funSet[['breaks']][rset]
+        nPre <- funSet[['nPre']][rset]# the number of years before the disturbance used to derive the pre-disturbance values
+        nDist <- funSet[['nDist']][rset]# the number of years after the disturbance used to derive the value during the disturbance
+        nPostMin <- funSet[['nPostMin']][rset]# the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
+        nPostMax <- funSet[['nPostMax']][rset]#  the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
+        h <- funSet[['h']][rset]# only relevant if inp equals 'segmented', the h value is used in the piecewise regression to define the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment
+        seas <- funSet[['seas']][rset]# only relevant if inp equals 'segmented', seas denotes whether a seasonal term needs to be used in the piecewise regression
+        breaks <- funSet[['breaks']][rset]# only relevant if inp equals 'segmented', the criterium given by breaks is used in the piecewise regression to define the optimal number of segments. Can be set to 'BIC' or 'LWZ'. This option has been deactivated
         # ============================================
 
         # change temporal resolution
