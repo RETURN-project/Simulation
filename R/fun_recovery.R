@@ -4,10 +4,10 @@
 #' @param tdist observation number of disturbance, indicating the timing of the disturbance
 #' @param obspyr number of observations per year
 #' @param shortDenseTS TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series
-#' @param nPre If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value
-#' @param nDist If shortDenseTS is TRUE, number of years used to quantify the time series value during the disturbance
-#' @param nPostMin If shortDenseTS is TRUE,  the post-disturbance condition is quantified starting from nPostMin years after the disturbance
-#' @param nPostMax If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the post-disturbance condition
+#' @param nPre number of years prior to the disturbance used to calculate the pre-disturbance value
+#' @param nDist number of years used to quantify the time series value during the disturbance
+#' @param nPostMin the post-disturbance condition is quantified starting from nPostMin years after the disturbance
+#' @param nPostMax max number of years after the disturbance used to quantify the post-disturbance condition
 #'
 #' @return a list containing the RRI recovery indicator, R80p recovery indicator and YrYr recovery indicator
 #' @export
