@@ -157,7 +157,7 @@ Next to the type of the parameter, a set of parameter values (*vals*) need to be
 While evaluating the sensitivity to one specific parameter, the values of all other parameters also need to be set. Four approaches can be used to achieve this. First, the *avg* and *int* approaches set the parameters to their average value. This equals the mean value of the distribution of observed values of *dist* parameters, the mean value of the range of values (given by *vals*) for *range* parameters and a randomly selected value (selected from the values give by *vals*) for *cat* parameters. Second, the *dist* approach selects values for the parameters given by the likelihood of their occurrence. The likelihood is defined by the histogram of observed values for *dist* parameters and a random selection of values is made for *range* and *cat* parameters. Third, the *comb* approach defines all combinations of evaluated values for each parameter (as defined in *vals*). 
 
 
-```{r}
+```{r set-settings}
 #-------------------------------------------------
 #  settings  simulation
 STnobsYr <- 365
@@ -207,7 +207,7 @@ __funSet__: list of settings for the computation of the recovery indicators. Mor
 + *seas*: in case *input* equals 'segmented', *seas* denotes whether a seasonal term needs to be used in the segmentation algorithm 
 
 
-```{r}
+```{r set-funSet}
 # recovery settings
 funSet <- list('freq' = c(rep('annual', 6),  rep('dense',6), rep('quarterly',6)),
                'input' = rep(c('raw', 'smoothed','segmented'),6),# settings for the recovery indicators
@@ -224,7 +224,7 @@ save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
-```{r, eval=TRUE}
+```{r simulate-and-extract, eval=TRUE}
 
 # Calculate the number of cores
 no_cores <- detectCores()
@@ -245,7 +245,7 @@ print(end_time - start_time)
 
 # Plot the performance indicators
 
-```{r, include = F}
+```{r plot2, include = F}
 # general settings
 caseList <- c('seasAmp','remSd','distMag','distT','distRec','missVal')# evaluated time series characteristics for which a plot needs to be made
 
@@ -269,7 +269,7 @@ names(simFullName) <- c('distMag',
 ```
 
 Compare the performance of each recovery indicator
-```{r, include=F}
+```{r compare-indicators, include=F}
 for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
   # setvr <- sttngs[[evr]]# settings of simulation
@@ -346,7 +346,7 @@ xlbl <- 'Metric'
 
 Which characteristics influence the performance the most?
 
-```{r, include=F}
+```{r compare-performance, include=F}
 # compare effect of each parameter on the 
 caseList <- c( 'seasAmp', 'remSd', 'missVal','distRec','distT','distMag')# evaluated time series characteristics for which a plot needs to be made
 
@@ -452,7 +452,7 @@ data <- totp_rsq
 
 How can we improve the performance?
 
-```{r, include=F}
+```{r improve-performance, include=F}
 for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
   # setvr <- sttngs[[evr]]# settings of simulation
