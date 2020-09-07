@@ -23,19 +23,19 @@ calcBFASTrec(
 
 \item{h}{This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.}
 
-\item{shortDenseTS}{TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series. In case FALSE, the input time series is assumed to have annual observations and at least 2 and 5 pre- and post-disturbance years, respectively.}
+\item{shortDenseTS}{TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series.}
 
-\item{nPre}{If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value}
+\item{nPre}{number of years prior to the disturbance used to calculate the pre-disturbance value}
 
-\item{nDist}{If shortDenseTS is TRUE, number of months used to quantify the time series value during the disturbance}
+\item{nDist}{number of months used to quantify the time series value during the disturbance}
 
-\item{nPostMin}{If shortDenseTS is TRUE, min number of years after the disturbance used to quantify the recovery}
+\item{nPostMin}{min number of years after the disturbance used to quantify the recovery}
 
-\item{nPostMax}{If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the recovery}
+\item{nPostMax}{max number of years after the disturbance used to quantify the recovery}
 
 \item{seas}{TRUE or FALSE, include seasonal term when detecting breaks?}
 
-\item{breaks}{'BIC' or 'LWZ': criteria used to define the optimal number of breaks}
+\item{breaks}{'BIC' or 'LWZ': criteria used to define the optimal number of breaks (desactivated)}
 }
 \value{
 a list containing  the RRI, R80p, YrYr recovery indicator derived from the BFAST0n trend segments and slope of the trend segment after the disturbance (sl).
