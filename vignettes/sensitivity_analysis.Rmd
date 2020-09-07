@@ -1,6 +1,6 @@
 ---
 title: "Prototype of benchmark study"
-author: "Wanda De Keersmaecker"
+author: "Wanda De Keersmaecker, Pablo Rodriguez-Sanchez"
 date: ""
 output: html_document
 vignette: >
@@ -14,13 +14,8 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, 
                       eval = T,
                       fig.width=18,
-                      fig.height=10)#
+                      fig.height=10)
 
-# output: rmarkdown::html_vignette
-# vignette: >
-#   %\VignetteIndexEntry{Prototype of benchmark study}
-#   %\VignetteEngine{knitr::rmarkdown}
-#   \usepackage[utf8]{inputenc}
 # Load libraries
 library(devtools)
 library(BenchmarkRecovery)
@@ -186,9 +181,9 @@ sttngs$'general' <- list(
   nobsYr = STnobsYr,
   seasAv = seasVImean,
   remcoef = Rem_VIcoef,
-  parSetUp = 'int')#parameter set-up: can be avg dist, comb, or int
+  parSetUp = 'int') # Parameter set-up: can be avg dist, comb, or int
 
-pars <- setParamValues(sttngs)
+pars <- setParamValues(sttngs) #TODO: pars and sttngs seem to be redundant. Use only sttngs as argument to evalParam?
 
 # remove redundant variables
 rm(list=setdiff(ls(), c("sttngs",'ifolder', 'ofolder', 'basename', 'ncores', 'pars')))
@@ -229,29 +224,21 @@ save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
-```{r, eval=F}
+```{r, eval=TRUE}
 
 # Calculate the number of cores
-# no_cores <- detectCores()
+no_cores <- detectCores()
 
-# Initiate cluster
-# cl <- makeCluster(no_cores - 1)
-
-# start clock
+# Start clock
 start_time <- Sys.time()
 set_fast_options()
 
-# run the sensitivity analysis
-# clusterEvalQ(cl, library(BenchmarkRecovery))
-
-evrs <- sttngs$general$eval # ("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd")
-results_list <- lapply(evrs, FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, basename = basename, ofolder = ofolder)
-
-# stopCluster(cl)
+# Run the sensitivity analysis
+caseList <- sttngs$general$eval # ("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd")
+results_list <- mclapply(caseList, FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, basename = basename, ofolder = ofolder, mc.cores = no_cores - 1)
 
 # stop clock
 end_time <- Sys.time()
-tot_time <- end_time - start_time
 print(end_time - start_time)
 
 ```
@@ -260,7 +247,7 @@ print(end_time - start_time)
 
 ```{r, include = F}
 # general settings
-caseList <- c( 'seasAmp','remSd','distMag','distT','distRec','missVal')# evaluated time series characteristics for which a plot needs to be made
+caseList <- c('seasAmp','remSd','distMag','distT','distRec','missVal')# evaluated time series characteristics for which a plot needs to be made
 
 
 simFullName  <- list('Disturbance magnitude',
@@ -287,6 +274,7 @@ for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
   # setvr <- sttngs[[evr]]# settings of simulation
   
+  # TODO: retrieve data from results_list instead of from saved files
   RRI_rsq <- loadRData(file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
   R80p_rsq <- loadRData(file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
   YrYr_rsq <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
