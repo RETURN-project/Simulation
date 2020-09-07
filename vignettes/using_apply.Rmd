@@ -3,6 +3,10 @@ title: "Avoiding nested loops with apply functions"
 author: "Pablo Rodriguez-Sanchez"
 date: "9/3/2020"
 output: html_document
+vignette: >
+   %\VignetteIndexEntry{Using apply functions}
+   %\VignetteEngine{knitr::rmarkdown}
+   %\usepackage[utf8]{inputenc}
 ---
 
 ## Problem description

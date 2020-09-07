@@ -3,3 +3,4 @@
 ^\.Rproj\.user$
 ^img$
 ^vignettes/sensitivity_analysis\.Rmd$
+^vignettes/using_apply\.Rmd$
