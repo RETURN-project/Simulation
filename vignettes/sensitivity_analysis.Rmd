@@ -49,37 +49,112 @@ basename <- 'toyset'# Name of the input dataset (contains sampled satellite time
 nyr <- 18 # Number of years in observation period
 nobsYr <- 365 # Number of observations per year
 
-ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
-dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
 ```
 
-```{r decompose-timeseries}
+```{r aux-function, echo=FALSE}
+extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
+  ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
+  dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
+  
+  # First decompose time series into seasonality, trend and remainder:
+  tmp <- decompTSbfast(dfVi, nyr, nobsYr)
+  dataVISeasbf <-  tmp[[1]] # Sesonality (fitted harmonic function)
+  dataVIRembf <- tmp[[2]] # Remainder
+  dataVITrbf <- tmp[[3]] # Trend (linear trend without break)
+  dataVISeasCoef <- tmp[[4]] # Coefficients of fitted harmonic functions 
+  
+  # Derive characteristics
+  tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2) # Fraction missing values
+  
+  seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # Seasonal amplitude for each pixel
+  seasS <- dataVISeasbf[dataVISeasbf[,1]<0,] # Average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
+  seasVImean <- colMeans(as.matrix(seasS[,-c(1,2)]))
+  
+  TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T) # Offset 
+  
+  Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T) # SD of remainder per pixel
+  Rem_VIcoef <- list() # ARMA model - characterization of the remainder dynamics per pixel
+  for(i in 1:dim(dataVIRembf)[1]){
+    Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
+  }
+  
+  # Settings  simulation
+  STnobsYr <- 365
+  Vqntl <- c( .05, .25, .4, .6, .75, .95)#c( .05, .25, .5, .75, .95)#c( .5)# c( .05, .25, .5, .75)# set of quantiles used to derive realistic values (for number of 
+  
+  sttngs <- list()
+  sttngs$'seasAmp' <- list(type = 'dist', vals = c(0,0,quantile(seasVImax, Vqntl)), obs = seasVImax, fix = quantile(seasVImax, c(.4, .6)))
+  sttngs$'missVal' <- list(type = 'dist',  vals = c(1-1/16,1-1/16,quantile(tsVIMissVal, Vqntl)), obs = tsVIMissVal, fix = quantile(tsVIMissVal, c(.4, .6)))
+  sttngs$'remSd' <- list(type = 'dist',  vals = c(0,0,quantile(Rem_VIsd, Vqntl)), obs = Rem_VIsd, fix = quantile(Rem_VIsd, c(.4, .6)))
+  sttngs$'nyr' <- list(type = 'range', vals = c(25), fix = 25)#seq(6,36, by = 6)
+  sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.2,0.25,0.35,0.4,0.5), fix = -c(0.25,0.35))
+  sttngs$'distT' <- list(type = 'range', vals = c(3,6,9,12,15,18), fix = c(9,12))#seq(3,33, by = 6)
+  sttngs$'distRec' <- list(type = 'range', vals = c(0.5,2,2.25,3.75,4,6.5)*STnobsYr, fix = c(2.25,3.75)*STnobsYr) #seq(0.5,6.5,by=0.5)
+  sttngs$'nDr' <- list(type = 'range',  vals = c(0), fix = 0)
+  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'), fix = 'piecewise')#piecewise
+  sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random', fix = 'random')
+  sttngs$'trAv' <- list(type = 'range', vals = TrVImean, fix = TrVImean)
+  sttngs$'general' <- list(
+    eval = c('distT','distRec', 'missVal','distMag', 'seasAmp', 'remSd'),#parameters to be evaluated, can be  'distT','distRec', 'missVal' 'distMag', 'seasAmp', 'remSd'
+    nTS = 100,
+    nobsYr = STnobsYr,
+    seasAv = seasVImean,
+    remcoef = Rem_VIcoef,
+    parSetUp = 'int') # Parameter set-up: can be avg dist, comb, or int
+  
+  # remove redundant variables
+  rm(list=setdiff(ls(), c("sttngs",'ifolder', 'ofolder', 'basename', 'ncores', 'pars')))
+  
+  # Save if desired
+  save_results = (ofolder != '')
+  if(save_results) {
+      save(sttngs, file = file.path(ofolder, paste0(basename,  '_simTS_settings.rda')))
+  }
+  
+  return(sttngs)
+}
+
+```
+
+```{r extract-settings}
+sttngs <- extract_settings(basename, ifolder, nyr, nobsYr, ofolder)
+pars <- setParamValues(sttngs)
+save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
+```
+
+
+```{r plot, echo=FALSE, eval=TRUE}
+
+# ============== Hard-coded dependencies ==============
+# This used to be part of what now is inside the extract_settings function
+ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
+dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
+
 # First decompose time series into seasonality, trend and remainder:
 tmp <- decompTSbfast(dfVi, nyr, nobsYr)
 dataVISeasbf <-  tmp[[1]] # Sesonality (fitted harmonic function)
 dataVIRembf <- tmp[[2]] # Remainder
 dataVITrbf <- tmp[[3]] # Trend (linear trend without break)
 dataVISeasCoef <- tmp[[4]] # Coefficients of fitted harmonic functions 
-```
 
-```{r derive-characteristics}
+# Derive characteristics
 tsVIMissVal <- rowSums(is.na(dfVi))/(dim(dfVi)[2]-2) # Fraction missing values
-
+  
 seasVImax <- apply(dataVISeasbf[,-c(1,2)], 1, max) # Seasonal amplitude for each pixel
 seasS <- dataVISeasbf[dataVISeasbf[,1]<0,] # Average seasonal pattern, only southern hemisphere to avoid interference of seasonal cycles
 seasVImean <- colMeans(as.matrix(seasS[,-c(1,2)]))
-
+  
 TrVImean <- mean(rowMeans(as.matrix(dataVITrbf[,-c(1,2)])), na.rm=T) # Offset 
-
+  
 Rem_VIsd <- apply(dataVIRembf[,-c(1,2)], 1, sd, na.rm=T) # SD of remainder per pixel
 Rem_VIcoef <- list() # ARMA model - characterization of the remainder dynamics per pixel
 for(i in 1:dim(dataVIRembf)[1]){
   Rem_VIcoef[[i]] <- getARMAcoef(ts(as.numeric(dataVIRembf[i,-c(1,2)]), frequency=nobsYr))
 }
-```
+# ==============End of hard-coded dependencies ==============
 
-```{r plot, echo=FALSE}
 # Plot the time series
+
 # Decomposition
 
 # Example time series
@@ -156,42 +231,6 @@ Next to the type of the parameter, a set of parameter values (*vals*) need to be
 
 While evaluating the sensitivity to one specific parameter, the values of all other parameters also need to be set. Four approaches can be used to achieve this. First, the *avg* and *int* approaches set the parameters to their average value. This equals the mean value of the distribution of observed values of *dist* parameters, the mean value of the range of values (given by *vals*) for *range* parameters and a randomly selected value (selected from the values give by *vals*) for *cat* parameters. Second, the *dist* approach selects values for the parameters given by the likelihood of their occurrence. The likelihood is defined by the histogram of observed values for *dist* parameters and a random selection of values is made for *range* and *cat* parameters. Third, the *comb* approach defines all combinations of evaluated values for each parameter (as defined in *vals*). 
 
-
-```{r set-settings}
-#-------------------------------------------------
-#  settings  simulation
-STnobsYr <- 365
-Vqntl <- c( .05, .25, .4, .6, .75, .95)#c( .05, .25, .5, .75, .95)#c( .5)# c( .05, .25, .5, .75)# set of quantiles used to derive realistic values (for number of 
-
-sttngs <- list()
-sttngs$'seasAmp' <- list(type = 'dist', vals = c(0,0,quantile(seasVImax, Vqntl)), obs = seasVImax, fix = quantile(seasVImax, c(.4, .6)))
-sttngs$'missVal' <- list(type = 'dist',  vals = c(1-1/16,1-1/16,quantile(tsVIMissVal, Vqntl)), obs = tsVIMissVal, fix = quantile(tsVIMissVal, c(.4, .6)))
-sttngs$'remSd' <- list(type = 'dist',  vals = c(0,0,quantile(Rem_VIsd, Vqntl)), obs = Rem_VIsd, fix = quantile(Rem_VIsd, c(.4, .6)))
-sttngs$'nyr' <- list(type = 'range', vals = c(25), fix = 25)#seq(6,36, by = 6)
-sttngs$'distMag' <- list(type = 'range', vals = -c(0.1,0.2,0.25,0.35,0.4,0.5), fix = -c(0.25,0.35))
-sttngs$'distT' <- list(type = 'range', vals = c(3,6,9,12,15,18), fix = c(9,12))#seq(3,33, by = 6)
-sttngs$'distRec' <- list(type = 'range', vals = c(0.5,2,2.25,3.75,4,6.5)*STnobsYr, fix = c(2.25,3.75)*STnobsYr) #seq(0.5,6.5,by=0.5)
-sttngs$'nDr' <- list(type = 'range',  vals = c(0), fix = 0)
-sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'), fix = 'piecewise')#piecewise
-sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random', fix = 'random')
-sttngs$'trAv' <- list(type = 'range', vals = TrVImean, fix = TrVImean)
-sttngs$'general' <- list(
-  eval = c('distT','distRec', 'missVal','distMag', 'seasAmp', 'remSd'),#parameters to be evaluated, can be  'distT','distRec', 'missVal' 'distMag', 'seasAmp', 'remSd'
-  nTS = 100,
-  nobsYr = STnobsYr,
-  seasAv = seasVImean,
-  remcoef = Rem_VIcoef,
-  parSetUp = 'int') # Parameter set-up: can be avg dist, comb, or int
-
-pars <- setParamValues(sttngs) #TODO: pars and sttngs seem to be redundant. Use only sttngs as argument to evalParam?
-
-# remove redundant variables
-rm(list=setdiff(ls(), c("sttngs",'ifolder', 'ofolder', 'basename', 'ncores', 'pars')))
-save(sttngs, file = file.path(ofolder, paste0(basename,  '_simTS_settings.rda')))
-save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
-
-```
-
 The following inputs are needed to calculate the recovery indicators:
 
 __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters.
@@ -224,7 +263,7 @@ save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
-```{r simulate-and-extract, eval=TRUE}
+```{r simulate-and-extract, eval=FALSE}
 
 # Calculate the number of cores
 no_cores <- detectCores()
