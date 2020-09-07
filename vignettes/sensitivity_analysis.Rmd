@@ -201,14 +201,14 @@ The following inputs are needed to calculate the recovery indicators:
 
 __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each parameter is required). The recovery indicators are then derived for each set of values of the setting parameters.
 
-+ *freq*:  'dense' or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual', the time series are converted to annual frequency.
-+ *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (Savitsky Golay filter) is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
-+ *shortDenseTS*: TRUE or FALSE. If FALSE, the recovery metrics defined by Frazier et al. (2018) are computed, otherwise an adjusted version for short, dense time series is used.
-+ *nPre*: in case *shortDenseTS* is TRUE: the number of years before the disturbance used to derive the pre-disturbance values
-+ *nDist*: in case *shortDenseTS* is TRUE: the number of years after the disturbance used to derive the value during the disturbance 
-+ *nPostMin* and *nPostMax*: in case *shortDenseTS* is TRUE: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
++ *freq*:  'dense', 'annual', or 'quarterly'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual' and 'quarterly', the time series are converted to annual or quarterly frequency, respectively.
++ *input*: 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm (rolling mean) is used before recovery calculation, for 'segmented' the trend component of the piecewise regression (BFAST0n) is used.
++ *shortDenseTS*: TRUE or FALSE. If TRUE an adjusted version of the recovery indicators for short, dense time series is used.
++ *nPre*: the number of years before the disturbance used to derive the pre-disturbance values
++ *nDist*: the number of years after the disturbance used to derive the value during the disturbance 
++ *nPostMin* and *nPostMax*: the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
 + *h*: in case *input* equals 'segmented', the *h* value is used in the segmentation algorithm to define the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment
-+ *breaks*: in case *input* equals 'segmented', the criterium given by *breaks* is used in the segmentation algorithm to define the optimal number of segments. Can be set to 'BIC' or 'LWZ'
++ *breaks*: in case *input* equals 'segmented', the criterium given by *breaks* is used in the segmentation algorithm to define the optimal number of segments. Can be set to 'BIC' or 'LWZ' (but has been deactivated)
 + *seas*: in case *input* equals 'segmented', *seas* denotes whether a seasonal term needs to be used in the segmentation algorithm 
 
 
