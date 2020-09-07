@@ -15,13 +15,13 @@ calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
 
 \item{shortDenseTS}{TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series}
 
-\item{nPre}{If shortDenseTS is TRUE, number of years prior to the disturbance used to calculate the pre-disturbance value}
+\item{nPre}{number of years prior to the disturbance used to calculate the pre-disturbance value}
 
-\item{nDist}{If shortDenseTS is TRUE, number of years used to quantify the time series value during the disturbance}
+\item{nDist}{number of years used to quantify the time series value during the disturbance}
 
-\item{nPostMin}{If shortDenseTS is TRUE,  the post-disturbance condition is quantified starting from nPostMin years after the disturbance}
+\item{nPostMin}{the post-disturbance condition is quantified starting from nPostMin years after the disturbance}
 
-\item{nPostMax}{If shortDenseTS is TRUE, max number of years after the disturbance used to quantify the post-disturbance condition}
+\item{nPostMax}{max number of years after the disturbance used to quantify the post-disturbance condition}
 }
 \value{
 a list containing the RRI recovery indicator, R80p recovery indicator and YrYr recovery indicator
