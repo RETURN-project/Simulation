@@ -222,22 +222,23 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
     # s_SLi <-  empty2
 
     # iterate over the parameter settings and simulate each time a time series
-    for (pari in 1: length(parvr[[1]][[1]])){ # TODO: what is this length? --> number of simulated time series per evaluated parameter value 
+    for (pari in 1: length(parvr[[1]][[1]])){ # TODO: what is this length? --> number of simulated time series per evaluated parameter value
       # simulate the pari'th time series of evaluated parameter i using the parameter settings given by the parameters in parvr
       sc <- simulCase(parvr[[i]]$nrep[pari], parvr[[i]]$nyr[pari], parvr[[i]]$nobsYr[pari], parvr[[i]]$nDr[pari], parvr[[i]]$seasAv[[1]], parvr[[i]]$seasAmp[pari],parvr[[i]]$trAv[pari], parvr[[i]]$remSd[pari], c(parvr[[i]]$distMag[pari],parvr[[i]]$distMag[pari]), parvr[[i]]$distT[pari], c(parvr[[i]]$distRec[pari],parvr[[i]]$distRec[pari]), parvr[[i]]$missVal[pari], parvr[[i]]$DistMissVal[pari], parvr[[i]]$distType[pari])
 
-      # Extract simulation's key parameters
-      tsi <- sc[[1]][1,] # simulated time series = seasonality + trend + noise component (contains missing values)
-      tsseas <-sc[[2]][1,] # simulated seasonality component of time series  (contains no missing values)
-      obspyr <- sc[[5]][1,]$obs_per_year # number of observations per year
-      tdist <- sc[[5]][1,]$dist_time# timing of the disturbance (observation number)
-      tsref <- sc[[3]][1,]# the simulated trend componend = reference time series to measure the recovery indicators for validation (contains no missing values)
-      nobs <- (sc[[5]][1,]$number_yrs)* obspyr# total number of observations = number of years * number of observations per year
-      tm <- 1:nobs# the time is represented by the observation number 
-
       # iterate over the recovery indicator settings
       for (rset in 1:length(funSet[[1]])){ # TODO: what is this length?
-        # TODO comment this block
+
+        # Extract simulation's key parameters
+        # TODO: this block fails if moved one loop up... and I don't really understand why
+        tsi <- sc[[1]][1,] # simulated time series = seasonality + trend + noise component (contains missing values)
+        tsseas <-sc[[2]][1,] # simulated seasonality component of time series  (contains no missing values)
+        obspyr <- sc[[5]][1,]$obs_per_year # number of observations per year
+        tdist <- sc[[5]][1,]$dist_time# timing of the disturbance (observation number)
+        tsref <- sc[[3]][1,]# the simulated trend componend = reference time series to measure the recovery indicators for validation (contains no missing values)
+        nobs <- (sc[[5]][1,]$number_yrs)* obspyr# total number of observations = number of years * number of observations per year
+        tm <- 1:nobs# the time is represented by the observation number
+
         # Most of the descriptions of this variables are in vignettes/sensitivity_analysis.Rmd
         # ============================================
         inp <- funSet$input[rset]# 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
