@@ -29,6 +29,9 @@ library(pbapply)
 library(bfast)
 library(strucchange)
 library(colorspace)
+
+# Calculate the number of cores
+no_cores <- detectCores()
 ```
 
 # Extract time series characteristics from sampled time series
@@ -45,13 +48,15 @@ The following characteristics are derived from the decomposed time series:
 # inputs
 ifolder <- '../data/'
 ofolder <- '../data/' # Folder where outputs will be written
-basename <- 'toyset'# Name of the input dataset (contains sampled satellite time series)
+basenames <- c('toyset', 'otherset') # Name of the input dataset (contains sampled satellite time series)
 nyr <- 18 # Number of years in observation period
 nobsYr <- 365 # Number of observations per year
 
 ```
 
 ```{r aux-function, echo=FALSE}
+# TODO: document
+# TODO: to ./R
 extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
   ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
   dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
@@ -117,9 +122,15 @@ extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
 ```
 
 ```{r extract-settings}
-sttngs <- extract_settings(basename, ifolder, nyr, nobsYr, ofolder)
-# pars <- setParamValues(sttngs)
-# save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
+# Start clock
+start_time <- Sys.time()
+
+# Extract settings from data
+sttngs_list <- mclapply(basenames, FUN = extract_settings, ifolder = ifolder, nyr = nyr, nobsYr = nobsYr, ofolder = ofolder, mc.cores = no_cores - 1)
+
+# Stop clock
+end_time <- Sys.time()
+print(end_time - start_time)
 ```
 
 
@@ -127,6 +138,7 @@ sttngs <- extract_settings(basename, ifolder, nyr, nobsYr, ofolder)
 
 # ============== Hard-coded dependencies ==============
 # This used to be part of what now is inside the extract_settings function
+basename <- basenames[1] # TODO: for now, use only the first element in this chunk. Perhaps remove in future editions?
 ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
 dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
 
@@ -258,23 +270,40 @@ funSet <- list('freq' = c(rep('annual', 6),  rep('dense',6), rep('quarterly',6))
                'h' = rep(0.15,18),
                'seas' = c(rep(F,6),rep(T,12)))
 
-save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
+# Save all configurations (one per basename)
+# although all of them are now identical
+# TODO: decide if we need this
+mclapply(basenames, FUN = function(basename) { save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))  })
+
 
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
+```{r set-input-table}
+# Create all the tests to be performed and store them on a table
+# This is the 'homework' list for the HPC
+caseList <- c("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd") # Found in sttngs$general$eval
+testsTable <- expand.grid(basename = basenames, case = caseList, stringsAsFactors = FALSE) # All combinations of cases and filenames
+
+# Assign a column with the settings
+# TODO: in the future, use only basename (as sttngs is redundant)
+testsTable$settings <- rep(NA, nrow(testsTable)) # Initialize settings column
+testsTable$settings <- sttngs_list
+testsTable <- tibble::tibble(testsTable) # Tibblify for increased readability
+
+# Print for inspection
+print(testsTable)
+```
+
 ```{r simulate-and-extract, eval=TRUE}
-
-# Calculate the number of cores
-no_cores <- detectCores()
-
 # Start clock
 start_time <- Sys.time()
 set_fast_options()
 
 # Run the sensitivity analysis
-caseList <- sttngs$general$eval # ("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd")
-results_list <- mclapply(caseList, FUN = evalParam, sttngs = sttngs, funSet = funSet, basename = basename, ofolder = ofolder, mc.cores = no_cores - 1)
+results_list <- mcmapply(FUN = evalParam, evr = testsTable$case, basename = testsTable$basename, sttngs = testsTable$settings, # Iterate along these parameters
+                         MoreArgs = list(funSet = funSet, ofolder = ofolder), # These parameters remain constant
+                         mc.cores = no_cores - 1)
 
 # stop clock
 end_time <- Sys.time()
