@@ -1,9 +1,9 @@
-#' Calculate recovery metrics from a time series with known disturbance date. The calcFrazier function derives the RRI, R80P and YrYr recovery indicators, 
-#' defined by Frazier et al. (2018). The indicators are originally developped for annual long-term time series of optical vegetation indices. 
-#' Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested. 
-#' Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators. 
-#' To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years. 
-#' (Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018). Analyzing spatial and temporal variability in short-term rates 
+#' Calculate recovery metrics from a time series with known disturbance date. The calcFrazier function derives the RRI, R80P and YrYr recovery indicators,
+#' defined by Frazier et al. (2018). The indicators are originally developped for annual long-term time series of optical vegetation indices.
+#' Yet, in order to be able to derive the indicators as well for dense and/or short time series, a modified version is suggested.
+#' Here, the user can define the time period before, during and after the disturbance that is used to derive the indicators.
+#' To reduce the interference of the seasonal pattern of dense time series, the chosen time period should cover blocks of n years.
+#' (Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018). Analyzing spatial and temporal variability in short-term rates
 #' of post-fire vegetation return from Landsat time series. Remote Sensing of Environment, 205, 32-45.)
 #'
 #' @param tsio vector of observations (time series with a fixed observation frequency)
@@ -61,7 +61,7 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @param tsio vector of observations (time series)
 #' @param obspyr number of observations in one year
 #' @param h This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.
-#' @param shortDenseTS TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series. 
+#' @param shortDenseTS TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series.
 #' @param nPre  number of years prior to the disturbance used to calculate the pre-disturbance value
 #' @param nDist  number of months used to quantify the time series value during the disturbance
 #' @param nPostMin  min number of years after the disturbance used to quantify the recovery
@@ -85,7 +85,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
   } else {
     stop('No seasonal term allowed for time series with one observation per year or less.')
   }
-  
+
   # Test if enough observations are available to fit piecewise model
   nreg <- switch(seas+1, 2, 5)
   if(floor(length(tsio[is.na(tsio)==F]) * h) > nreg) {
@@ -109,12 +109,12 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
       #tr <- rep(NA,length(tsi))
       # correct observation number of breaks for missing values
       indna <- which(is.na(tsi)==F)
-      tbp <- indna[tbp]   
+      tbp <- indna[tbp]
       #tr[is.na(tsi)==F] <- fitted(bptst, length(tbptst))
-      #Derive trend component 
+      #Derive trend component
       bpf <- c(0, tbp, length(tsi))# boundaries (in terms of observation number) of each trend component
       trf <- rep(NA,length(tsi))# initialise the vector with the trend component
-      for(ti in 1:(length(bpf)-1)){# iterate over the segments and derive its trend component 
+      for(ti in 1:(length(bpf)-1)){# iterate over the segments and derive its trend component
         trf[(bpf[ti]+1):bpf[ti+1]] <- cf[ti,1] + ((cf[ti,2]*((bpf[ti]+1):bpf[ti+1])))
       }
       # Find the major break (is assumed to represent the simulated disturbance date)
@@ -162,7 +162,6 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 #'
 #' @param evr char: name of parameter that will be evaluated in the simulation (for instance: "distT")
 #' @param sttngs list of settings
-#' @param pars list of simulation parameters
 #' @param funSet list of recovery indicator settings
 #' @param basename basename for the output files
 #' @param ofolder (optional) folder where the output files should be stored. If nothing is provided, no file is saved
@@ -170,7 +169,7 @@ toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
 #' @return performance indicators (R2, RMSE, MAPE) and indicators of the relation between the measured and simulated recovery indicators (slope, intercept, p value of normality test of residuals). For each performace indicator a matrix is saved where the rows refer to the evaluated values of the paramter of interest and the columns to the various recovery indicator settings.
 #' @export
 #'
-evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
+evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
 
   # TODO:
   # The main to do is to pass `R80p`, `YrYr` and so on as parameters.
@@ -181,6 +180,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
   names(winsize) <- c('dense', 'quarterly', 'annual')
 
   # Extract case parameters
+  pars <- setParamValues(sttngs)
   parvr <- pars[[evr]]
 
   # Initialize data containers
@@ -272,7 +272,7 @@ evalParam <- function(evr, sttngs, pars, funSet, basename, ofolder = '') {
         # If the input is smoothed data, do this
         # TODO: what does 'this' mean exactly? --> can also be part of the else if
         if (inp == 'smoothed'){
-            # smooth the time series using rolling mean with window size given by winsize 
+            # smooth the time series using rolling mean with window size given by winsize
           temp.zoo<-zoo(tsi,(1:length(tsi)))# generate a zoo time series object
           m.av<-rollapply(temp.zoo, as.numeric(winsize[frq]), mean, na.rm = T, fill = NA)# smooth time series using rolling mean
           tsi <- as.numeric(m.av)

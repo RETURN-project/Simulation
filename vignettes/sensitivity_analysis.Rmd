@@ -118,8 +118,8 @@ extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
 
 ```{r extract-settings}
 sttngs <- extract_settings(basename, ifolder, nyr, nobsYr, ofolder)
-pars <- setParamValues(sttngs)
-save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
+# pars <- setParamValues(sttngs)
+# save(pars, file = file.path(ofolder, paste0(basename,  '_simTS_pars.rda')))
 ```
 
 
@@ -263,7 +263,7 @@ save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))
 ```
 
 The specified settings are then used to simulate time series, calculate recovery indicators and evaluate their performance:
-```{r simulate-and-extract, eval=FALSE}
+```{r simulate-and-extract, eval=TRUE}
 
 # Calculate the number of cores
 no_cores <- detectCores()
@@ -274,7 +274,7 @@ set_fast_options()
 
 # Run the sensitivity analysis
 caseList <- sttngs$general$eval # ("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd")
-results_list <- mclapply(caseList, FUN = evalParam, sttngs = sttngs, pars = pars, funSet = funSet, basename = basename, ofolder = ofolder, mc.cores = no_cores - 1)
+results_list <- mclapply(caseList, FUN = evalParam, sttngs = sttngs, funSet = funSet, basename = basename, ofolder = ofolder, mc.cores = no_cores - 1)
 
 # stop clock
 end_time <- Sys.time()
