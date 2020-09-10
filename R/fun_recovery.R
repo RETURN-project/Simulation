@@ -141,20 +141,25 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
 #' @param mat matrix of recovery indicators (rows represent the values of the tested time series characteristic, colums represent the different recovery indicators)
 #' @param setvr time series characteristic being evaluated
 #' @param metric recovery metric being evaluated
-#' @param freq vector of temporal frequencies per recovery indicator
+#' @param funSet settings list for the recovery analysis
 #' @param input vector of preprocessing techniques per recovery indicator
 #' @param nDist vector of the time span during the disturbance used to measure recovery
 #'
 #' @return dataframe
 #' @export
-toDF <- function(mat, setvr, metric, freq, input, nPostMin, seas){
+toDF <- function(mat, setvr, metric, funSet){#freq, input, nPostMin, seas
   tst <- as.data.frame(t(mat))
   names(tst) <- setvr
   tst$Metric <- factor(metric)
-  tst$Dense <- factor(freq)
-  tst$Smooth <- factor(input)
-  tst$Period <- revalue(factor(nPostMin), c("1"="Short", "4"="Long"))#factor(recSttngs$nDist)#
-  tst$Seas <- factor(seas)
+  tst$Dense <- factor(funSet$freq)
+  tst$Smooth <- factor(funSet$input)
+  tst$h <- factor(funSet$h)
+  tst$nDist <- factor(funSet$nDist)
+  tst$nPre <- factor(funSet$nPre)
+  tst$shortDenseTS <- factor(funSet$shortDenseTS)
+  tst$nPostMin <- factor(funSet$nPostMin)#revalue(factor(nPostMin), c("1"="Short", "4"="Long"))#factor(recSttngs$nDist)#
+  tst$nPostMax <- factor(funSet$nPostMax)#revalue(factor(nPostMin), c("1"="Short", "4"="Long"))#factor(recSttngs$nDist)#
+  tst$Seas <- factor(funSet$seas)
   tst
 }
 
@@ -335,24 +340,24 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
 
   }
 
-  RRI_rsqDF <- toDF(RRI_rsq, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  R80p_rsqDF <- toDF(R80p_rsq, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  YrYr_rsqDF <- toDF(YrYr_rsq, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
+  RRI_rsqDF <- toDF(RRI_rsq, names(parvr), 'RRI', funSet)
+  R80p_rsqDF <- toDF(R80p_rsq, names(parvr), 'R80p', funSet)
+  YrYr_rsqDF <- toDF(YrYr_rsq, names(parvr), 'YrYr', funSet)
   # SL_rsqDF <- toDF(SL_rsq, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
 
-  RRI_mapeDF <- toDF(RRI_mape, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  R80p_mapeDF <- toDF(R80p_mape, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  YrYr_mapeDF <- toDF(YrYr_mape, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
+  RRI_mapeDF <- toDF(RRI_mape, names(parvr), 'RRI', funSet)
+  R80p_mapeDF <- toDF(R80p_mape, names(parvr), 'R80p', funSet)
+  YrYr_mapeDF <- toDF(YrYr_mape, names(parvr), 'YrYr', funSet)
   # SL_mapeDF <- toDF(SL_mape, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
 
-  RRI_rmseDF <- toDF(RRI_rmse, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  R80p_rmseDF <- toDF(R80p_rmse, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  YrYr_rmseDF <- toDF(YrYr_rmse, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
+  RRI_rmseDF <- toDF(RRI_rmse, names(parvr), 'RRI', funSet)
+  R80p_rmseDF <- toDF(R80p_rmse, names(parvr), 'R80p', funSet)
+  YrYr_rmseDF <- toDF(YrYr_rmse, names(parvr), 'YrYr', funSet)
   # SL_rmseDF <- toDF(SL_rmse, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
 
-  RRI_nTSDF <- toDF(RRI_nTS, names(parvr), 'RRI', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  R80p_nTSDF <- toDF(R80p_nTS, names(parvr), 'R80p', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
-  YrYr_nTSDF <- toDF(YrYr_nTS, names(parvr), 'YrYr', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
+  RRI_nTSDF <- toDF(RRI_nTS, names(parvr), 'RRI', funSet)
+  R80p_nTSDF <- toDF(R80p_nTS, names(parvr), 'R80p', funSet)
+  YrYr_nTSDF <- toDF(YrYr_nTS, names(parvr), 'YrYr', funSet)
   # SL_nTSDF <- toDF(SL_nTS, names(parvr), 'SL', funSet$freq, funSet$input, funSet$nPostMin, funSet$seas)
 
   # Save the performance indicators (if desired)
@@ -381,10 +386,10 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
 
   # Output the performance indicators
   return(
-    list(RRI_rsqDF, R80p_rsqDF, YrYr_rsqDF,
-         RRI_rmseDF, R80p_rmseDF, YrYr_rmseDF,
-         RRI_mapeDF, R80p_mapeDF, YrYr_mapeDF,
-         RRI_nTSDF, R80p_nTSDF, YrYr_nTSDF)
+    list(RRI_rsq = RRI_rsqDF, R80p_rsq = R80p_rsqDF, YrYr_rsq = YrYr_rsqDF,
+         RRI_rmse = RRI_rmseDF, R80p_rmse = R80p_rmseDF, YrYr_rmse = YrYr_rmseDF,
+         RRI_mape = RRI_mapeDF, R80p_mape = R80p_mapeDF, YrYr_mape = YrYr_mapeDF,
+         RRI_nTS = RRI_nTSDF, R80p_nTS = R80p_nTSDF, YrYr_nTS = YrYr_nTSDF)
   )
 }
 
