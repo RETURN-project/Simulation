@@ -73,44 +73,7 @@ mape <- function(val, meas){
 #' @export
 #' @import reshape2
 #' @import plyr
-calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){
-  lst <- list()
-  simcases <- names(meas)
-
-  for(sci in 1:length(meas)){# evaluated parameters
-    vls <- list()
-    for(rpi in 1:length(meas[[1]])){# recovery settings
-      if((metr == 'SL') & ((recSttngs$input[rpi] == 'raw') | (recSttngs$input[rpi] == 'smooth'))){
-      }else{
-        val[[sci]][[rpi]][is.infinite(val[[sci]][[rpi]])] <- NA
-        meas[[sci]][[rpi]][is.infinite(meas[[sci]][[rpi]])]<-NA
-        if(perf == 'R2'){
-          vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) rsq(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))
-        }
-        if(perf == 'RMSE'){
-          vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) rmse(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))
-        }
-        if(perf == 'MAPE'){
-          vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) mape(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))
-        }
-        tmp <- data.frame(t(vl))
-        names(tmp) <- sttngs[[simcases[sci]]]
-        tmp2 <- melt(tmp)
-        tmp2$Metric <- factor(metr)
-        tmp2$Dense <- factor(recSttngs$freq[rpi])
-        tmp2$Smooth <- factor(recSttngs$input[rpi])#revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))
-        tmp2$Period <- factor(recSttngs$nDist[rpi])#revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))
-        vls <- rbind(vls,tmp2)
-      }
-    }
-    vls$Period <- revalue(vls$Period, c("1"="Short", "12"="Long"))
-
-    levels(vls$Period) <- c('Short', 'Long')
-    vls$Period[vls$Dense == 'annual'] <- "Long"
-    lst[[names(meas)[sci]]] <- vls
-  }
-  lst
-}
+#' # calcPerf <- function(val, meas, sttngs, recSttngs, metr, perf){#   lst <- list()#   simcases <- names(meas)##   for(sci in 1:length(meas)){# evaluated parameters#     vls <- list()#     for(rpi in 1:length(meas[[1]])){# recovery settings#       if((metr == 'SL') & ((recSttngs$input[rpi] == 'raw') | (recSttngs$input[rpi] == 'smooth'))){#       }else{#         val[[sci]][[rpi]][is.infinite(val[[sci]][[rpi]])] <- NA#         meas[[sci]][[rpi]][is.infinite(meas[[sci]][[rpi]])]<-NA#         if(perf == 'R2'){#           vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) rsq(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))#         }#         if(perf == 'RMSE'){#           vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) rmse(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))#         }#         if(perf == 'MAPE'){#           vl <- sapply(1:dim(meas[[sci]][[rpi]])[2], function(ii) mape(val[[sci]][[rpi]][,ii], meas[[sci]][[rpi]][,ii]))#         }#         tmp <- data.frame(t(vl))#         names(tmp) <- sttngs[[simcases[sci]]]#         tmp2 <- melt(tmp)#         tmp2$Metric <- factor(metr)#         tmp2$Dense <- factor(recSttngs$freq[rpi])#         tmp2$Smooth <- factor(recSttngs$input[rpi])#revalue(factor(recSttngs$input[rpi]), c("BFAST"="segmented", 'smooth'='smoothed'))#         tmp2$Period <- factor(recSttngs$nDist[rpi])#revalue(factor(recSttngs$nDist[rpi]), c("1"="Short", "12"="Long"))#         vls <- rbind(vls,tmp2)#       }#     }#     vls$Period <- revalue(vls$Period, c("1"="Short", "12"="Long"))##     levels(vls$Period) <- c('Short', 'Long')#     vls$Period[vls$Dense == 'annual'] <- "Long"#     lst[[names(meas)[sci]]] <- vls#   }#   lst#
 
 #' Plot results sensitivity analysis
 #'
