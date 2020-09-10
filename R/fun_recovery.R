@@ -235,7 +235,7 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
       for (rset in 1:length(funSet[[1]])){ # TODO: what is this length?
 
         # Extract simulation's key parameters
-        # TODO: this block fails if moved one loop up... and I don't really understand why
+        # Note: Yes, this is the correct place for this block. See issue #46 (https://github.com/RETURN-project/BenchmarkRecovery/issues/46)
         tsi <- sc[[1]][1,] # simulated time series = seasonality + trend + noise component (contains missing values)
         tsseas <-sc[[2]][1,] # simulated seasonality component of time series  (contains no missing values)
         obspyr <- sc[[5]][1,]$obs_per_year # number of observations per year
