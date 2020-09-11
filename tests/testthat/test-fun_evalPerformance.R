@@ -38,6 +38,26 @@ test_that("random error",{
   expect_equal(R2, 0, tolerance = 1e-3)
 })
 
+test_that("R2 - infinite value",{
+  set.seed(197)
+  meas <- runif(10000, min=0, max=100)
+  meas <- c(meas,Inf)
+  set.seed(198)
+  val <- runif(10000, min=0, max=100)
+  val <- c(val,Inf)
+
+  R2 <- rsq(val, meas)
+  expect_equal(R2, 0, tolerance = 1e-3)
+})
+
+test_that("R2 - too few observations",{
+  meas <- runif(2, min=0, max=100)
+  val <- runif(2, min=0, max=100)
+
+  R2 <- rsq(val, meas)
+  expect_equal(is.na(R2), T, tolerance = 1e-3)
+})
+
 test_that("plot sensitivity - basic test",{
   # generate plot data
   dat<- as.data.frame(list(
