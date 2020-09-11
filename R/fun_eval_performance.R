@@ -17,27 +17,28 @@ rsq <- function(x, y) {
   rs
 }
 
-#' Intercept, slope of the linear model fit and Shapiro-Wilk normality test of the residuals
-#'
-#' @param x vector of x values
-#' @param y vector of y values
-#'
-#' @return the intercept and slope of the linear fit and p value of Shapiro-Wilk normality test
-#' @export
-linFit <- function(x, y) {
-  ind <- which(is.infinite(x) | is.infinite(y))
-  if (length(ind)>0){
-    x <- x[-ind]
-    y <- y[-ind]
-  }
-  if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
-    mod <- lm(y~x)
-    coef <- summary(mod)$coefficients
-    tst <- shapiro.test(mod$residuals)#p-value > 0.05 implies that the distribution of the data is not significantly different from normal distribution
-    out <- c(coef[1,1], coef[2,1], tst$p.value)# intercept and slope
-  }else(out <- c(NA,NA,NA))
-  out
-}
+#' #' Intercept, slope of the linear model fit and Shapiro-Wilk normality test of the residuals
+#' #'
+#' #' @param x vector of x values
+#' #' @param y vector of y values
+#' #'
+#' #' @return the intercept and slope of the linear fit and p value of Shapiro-Wilk normality test
+#' #' @export
+#' linFit <- function(x, y) {
+#'   ind <- which(is.infinite(x) | is.infinite(y))
+#'   if (length(ind)>0){
+#'     x <- x[-ind]
+#'     y <- y[-ind]
+#'   }
+#'   if((sum(is.na(x)==F) > 3) &&(sum(is.na(y)==F)>3) && (length(unique(x[is.na(x) ==F]))>1)){
+#'     mod <- lm(y~x)
+#'     coef <- summary(mod)$coefficients
+#'     tst <- shapiro.test(mod$residuals)#p-value > 0.05 implies that the distribution of the data is not significantly different from normal distribution
+#'     out <- c(coef[1,1], coef[2,1], tst$p.value)# intercept and slope
+#'   }else(out <- c(NA,NA,NA))
+#'   out
+#' }
+
 #' RMSE
 #'
 #' @param val vector of x values
