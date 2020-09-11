@@ -6,7 +6,7 @@
 
 The BenchmarkRecovery R project simulates Landsat data and evaluates the performance recovery indicators with respect to data and disturbance characteristics.
 
-You can install it via:
+You can install the master version via:
 
 ```
 library(devtools)
