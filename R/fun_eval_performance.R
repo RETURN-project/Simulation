@@ -38,7 +38,10 @@ rsq <- function(x, y) {
 #'   }else(out <- c(NA,NA,NA))
 #'   out
 #' }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3c1129325c895511be0782ad9b29da3754de4562
 #' RMSE
 #'
 #' @param val vector of x values
