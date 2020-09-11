@@ -39,9 +39,7 @@ test_that("random error",{
 })
 
 test_that("plot sensitivity - basic test",{
-  # fls <- list.files(path = "/home/wanda/Documents/Rscripts/BenchmarkRecovery/data/testdata/", pattern = "toyset_", full.names = TRUE)
-  # for (i in 1:length(fls)){
-  #   load(fls[i])}
+  # generate plot data
   dat<- as.data.frame(list(
     Metric = as.factor(c('RRI', 'RRI',  'R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p', 'R80p','YrYr','YrYr')),
     Dense = as.factor(rep('anual',24)),
@@ -53,11 +51,13 @@ test_that("plot sensitivity - basic test",{
               0.1445397388, 0.0341160032, 0.0447431895, 0.0063563672, 0.2544452752, 0.1292675690, 0.1124770530, 0.0019788734, 0.1212960214, 0.0437967248,
               0.1994489563, 0.2174260878, 0.0622801004, 0.0041313903)
   ))
+  # plot
   lbls <- c("raw, BAP")
   xlbl <- "Disturbance magnitude"
   ylbl <- "R²"
   scales <- 'free_y'
   pl <- plotSens(dat, lbls, xlbl, ylbl, scales)
+  # test if plot settings are ok
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
   expect_identical(pl$labels$colour, "interaction(Smooth, Dense, Seas)")
@@ -65,7 +65,7 @@ test_that("plot sensitivity - basic test",{
 })
 
 test_that("plot parameter comparison - basic test",{
-
+# generate data to plot
   dat<- as.data.frame(list(
     Metric = as.factor(rep(c('RRI', 'R80p',  'YrYr'),13)),
     Dense = as.factor(rep('dense',39)),
@@ -80,10 +80,12 @@ test_that("plot parameter comparison - basic test",{
     param = c(rep('Seasonal amplitude',12),rep(c('Recovery period', 'Disturbance timing','Disturbance magnitude'), each =9)),
     paramType = c(rep('Environmental parameter',12),rep('Disturbance parameter',27))
   ))
+  # plot
   xlbl <- 'Parameter value'
   ylbl <- 'R²'
   scales <- 'free_y'
   pl <- plotEnv(dat,  xlbl, ylbl, scales)
+  # test if plot settings are ok
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
   expect_identical(pl$labels$colour, "Parameter")

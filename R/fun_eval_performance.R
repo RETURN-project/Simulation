@@ -84,6 +84,7 @@ mape <- function(val, meas){
 #' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
 #'
 #' @return ggplot object
+#' @import ggplot2
 #' @export
 #'
 plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
@@ -115,6 +116,7 @@ plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
 #' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
 #'
 #' @return ggplot object
+#' @import ggplot2
 #' @export
 #'
 plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
@@ -144,6 +146,7 @@ plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
 #'
 #' @return ggplot object
 #' @export
+#' @import ggplot2
 #'
 plotMet <- function(data, xlbl, ylbl){
   ggplot(data, aes(Metric, value,color=Metric))+
