@@ -472,7 +472,7 @@ test_that("Evaluate recovery indicators - temporal aggregation to annual time se
 
   expect_equal(perf$RRI_rsq$`-0.5`, 0.624, tolerance = 1e-2)
   expect_equal(perf$R80p_rsq$`-0.5`, 0.654, tolerance = 1e-2)
-  expect_equal(perf$YrYr_rsq$`-0.5`, 0.794, tolerance = 1e-2)
+  expect_equal(perf$YrYr_rsq$`-0.5`, 0.794, tolerance = 5e-2)
   expect_equal(perf$RRI_rmse$`-0.5`, 0.0458, tolerance = 1e-2)
   expect_equal(perf$R80p_rmse$`-0.5`, 0.028, tolerance = 1e-2)
   expect_equal(perf$YrYr_rmse$`-0.5`, 0.0034, tolerance = 1e-2)
