@@ -331,7 +331,7 @@ test_that("Evaluate recovery indicators - temporal aggregation to quarterly time
                  'h' = 0.15,#rep(0.15,3),
                  'seas' = T)#rep(T,3))
   # evaluate recovery indicators
-  perf <- evalParam('distMag', sttngs, funSet, basename, ofolder = '')
+  perf <- evalParam('distMag', sttngs, funSet, basename, ofolder = '../../data')
 
   # pars <- setParamValues(sttngs)
   # m_RRIi <- rep(NA,1000)
