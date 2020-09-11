@@ -21,7 +21,8 @@ Imports: bfast,
          plyr,
          sde, 
          devtools, 
-         zoo
+         zoo,
+         colorspace
 Suggests: imputeTS,
           signal,
           GGally,

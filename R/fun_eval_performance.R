@@ -85,6 +85,7 @@ mape <- function(val, meas){
 #'
 #' @return ggplot object
 #' @import ggplot2
+#' @import colorspace
 #' @export
 #'
 plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
@@ -117,6 +118,7 @@ plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
 #'
 #' @return ggplot object
 #' @import ggplot2
+#' @import colorspace
 #' @export
 #'
 plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
@@ -147,6 +149,7 @@ plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
 #' @return ggplot object
 #' @export
 #' @import ggplot2
+#' @import colorspace
 #'
 plotMet <- function(data, xlbl, ylbl){
   ggplot(data, aes(Metric, value,color=Metric))+
