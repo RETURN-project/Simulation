@@ -4,7 +4,7 @@
 
 # Benchmarking recovery indicators derived from remote sensing time series
 
-The BenchmarkRecovery R project simulates Landsat data and evaluates the performance recovery indicators with respect to data and disturbance characteristics.
+The BenchmarkRecovery R project simulates Landsat data and evaluates the performance of recovery indicators with respect to data and disturbance characteristics.
 
 You can install the master version via:
 
