@@ -96,26 +96,18 @@ test_that("plot metric comparison - basic test",{
   # generate data to plot
   dat<- as.data.frame(list(
     Metric = as.factor(rep(c('RRI', 'R80p',  'YrYr'),13)),
-    Dense = as.factor(rep('dense',39)),
-    Smooth = as.factor(rep('raw',39)),
-    Period = as.factor(rep(c('Long'),39)),
-    Seas = as.factor(rep(T,39)),
-    variable = as.factor(c(rep('no',3), rep(c(rep('low',3), rep('medium',3), rep('high',3)),4))),
     value = c(0.2266946, 0.2046240, 0.4389999, 0.3989832, 0.3940083, 0.5494937, 0.3751496, 0.4020705, 0.5705492, 0.2348569,
               0.2354719, 0.5004227,        NA,        NA, 0.4861462, 0.2752960, 0.3127486, 0.6335284, 0.1444104, 0.2464581,
               0.2390760, 0.2127164, 0.2657129, 0.6347170, 0.3993802, 0.4135900, 0.6013086, 0.3351734, 0.3687597, 0.6041666,
               0.1185523, 0.2066233, 0.5891457, 0.2608077, 0.3164531, 0.5620634, 0.4014608, 0.4023814, 0.5804983),
-    param = c(rep('Seasonal amplitude',12),rep(c('Recovery period', 'Disturbance timing','Disturbance magnitude'), each =9)),
-    paramType = c(rep('Environmental parameter',12),rep('Disturbance parameter',27))
-  ))
+   ))
   # plot
-  xlbl <- 'Parameter value'
+  xlbl <- 'Metric'
   ylbl <- 'R²'
   scales <- 'free_y'
-  pl <- plotEnv(dat,  xlbl, ylbl, scales)
+  pl <- plotMet(dat,  xlbl, ylbl)
   # test if plot settings are ok
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
-  expect_identical(pl$labels$colour, "Parameter")
-  expect_identical(pl$labels$group, "param")
+  expect_identical(pl$labels$colour, "Metric")
 })
