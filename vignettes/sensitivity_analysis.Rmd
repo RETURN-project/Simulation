@@ -359,6 +359,11 @@ for(vr in 1:length(caseList)){
   tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
   tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
   
+  
+  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
+  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
+  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
+  
    if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
     tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
     tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
@@ -455,6 +460,10 @@ for(vr in 1:length(caseList)){
   tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
   tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
   
+  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
+  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
+  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
+  
    if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
     tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
     tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
@@ -545,6 +554,11 @@ for(vr in 1:length(caseList)){
   tot_rmse <- melt(rbind(RRI_rmse, R80p_rmse, YrYr_rmse))
   tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
   tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
+  
+  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
+  tot_rmse$Period <- revalue(factor(tot_rmse$nPostMin), c("1"="Short", "4"="Long"))
+  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
+  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
   
    if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
     tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
