@@ -55,8 +55,11 @@ nobsYr <- 365 # Number of observations per year
 ```
 
 ```{r aux-function, echo=FALSE}
-# TODO: document
-# TODO: to ./R
+# NOTE: consider refactoring this chunk
+# For instance, moving extract_settings to ./R and/or creating a settings generator
+# and working through load/save sttngs into/from a file
+
+# TODO: document this function
 extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
   ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
   dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
@@ -138,7 +141,7 @@ print(end_time - start_time)
 
 # ============== Hard-coded dependencies ==============
 # This used to be part of what now is inside the extract_settings function
-basename <- basenames[1] # TODO: for now, use only the first element in this chunk. Perhaps remove in future editions?
+basename <- basenames[1] # NOTE: for now, use only the first element in this chunk. Perhaps remove in future editions?
 ifileVI <- paste0(basename, '.rda') # For instance, toyset.rda
 dfVi <- loadRData(file = file.path(ifolder, ifileVI)) # For instance /data/toyset.rda 
 
@@ -272,7 +275,7 @@ funSet <- list('freq' = c(rep('annual', 6),  rep('dense',6), rep('quarterly',6))
 
 # Save all configurations (one per basename)
 # although all of them are now identical
-# TODO: decide if we need this
+# NOTE: decide if we need this
 mclapply(basenames, FUN = function(basename) { save(funSet, file = file.path(ofolder, paste0(basename, '_recSettings.rda')))  })
 
 
@@ -286,7 +289,7 @@ caseList <- c("distT", "distRec", "missVal", "distMag", "seasAmp", "remSd") # Fo
 testsTable <- expand.grid(basename = basenames, case = caseList, stringsAsFactors = FALSE) # All combinations of cases and filenames
 
 # Assign a column with the settings
-# TODO: in the future, use only basename (as sttngs is redundant)
+# NOTE: in the future, perhaps use only basename (as sttngs is redundant)
 testsTable$settings <- rep(NA, nrow(testsTable)) # Initialize settings column
 testsTable$settings <- sttngs_list
 testsTable <- tibble::tibble(testsTable) # Tibblify for increased readability
@@ -342,7 +345,7 @@ for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
   # setvr <- sttngs[[evr]]# settings of simulation
   
-  # TODO: retrieve data from results_list instead of from saved files
+  # NOTE: retrieve data from results_list instead of from saved files
   RRI_rsq <- loadRData(file.path(ofolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
   R80p_rsq <- loadRData(file.path(ofolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
   YrYr_rsq <- loadRData(file.path(ofolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
