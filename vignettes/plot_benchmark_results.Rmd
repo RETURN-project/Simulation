@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
-                      eval = F,
+                      eval = FALSE,
                       fig.width=18,
                       fig.height=10)
 library(BenchmarkRecovery)
@@ -357,7 +357,8 @@ for(vr in 1:length(caseList)){
   print(pltnTS)
 }
 ```
-```{r compare-performance, echo = F, include=F}
+
+```{r compare-performance2, echo = F, include=F}
 # compare effect of each parameter on the 
 for(vr in 1:length(caseList)){
   evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
