@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
-                      eval = T,
+                      eval = F,
                       fig.width=18,
                       fig.height=10)
 library(BenchmarkRecovery)
