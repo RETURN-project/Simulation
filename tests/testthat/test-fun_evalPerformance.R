@@ -80,7 +80,7 @@ test_that("plot sensitivity - basic test",{
   # test if plot settings are ok
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
-  expect_identical(pl$labels$colour, "interaction(Smooth, Dense, Seas)")
+  expect_identical(pl$labels$colour, "interaction(Dense, Seas)")
   expect_identical(pl$labels$group, "interaction(Smooth, Dense, Seas)")
 })
 

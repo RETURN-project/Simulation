@@ -91,9 +91,11 @@ mape <- function(val, meas){
 #' @export
 #'
 plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
-  ggplot(data, aes(variable,value,color=interaction(Smooth,Dense, Seas), group = interaction(Smooth,Dense, Seas))) +
-    geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+  ggplot(data, aes(variable,value,color=interaction(Dense, Seas), group = interaction(Smooth,Dense, Seas))) +
+    geom_line(aes(linetype=Smooth),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+    # geom_point(aes(shape=Smooth),size=1.2)+
     scale_color_discrete_qualitative(palette = 'Dark 3',labels=lbls,  name = 'Preprocessing')+#
+    # ,labels=lbls
     # scale_color_manual('Preprocessing',labels=lbls, values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+
     facet_grid(vars(Metric),vars(Period), scales = scales)+
     scale_y_continuous(trans='log2')+
