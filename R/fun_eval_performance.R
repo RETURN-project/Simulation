@@ -128,6 +128,7 @@ plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
 plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
   ggplot(data, aes(variable,value,color=param, group = param)) +
     geom_line(aes(),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+    geom_ribbon(aes(ymin=data$min_conf, ymax=data$max_conf), linetype=2, alpha=0.1)+
     scale_color_discrete_qualitative(palette = 'Dark 3')+
     facet_grid(vars(Metric), vars(paramType), scales = scales)+
     labs(color = "Parameter")+
@@ -144,7 +145,7 @@ plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
           strip.text.y = element_text(size = 20,color = "grey20"))
 }
 
-#' Title
+#' Compare the reliability of the recovery metrics
 #'
 #' @param data data to be plotted, should be a dataframe with the following headers: Metric, value
 #' @param xlbl title x axis
@@ -157,18 +158,84 @@ plotEnv  <- function(data, xlbl, ylbl, scales = 'fixed'){
 #'
 plotMet <- function(data, xlbl, ylbl){
   ggplot(data, aes(Metric, value,color=Metric))+
-    geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=T)+
+    geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=T, lwd=2.5)+
     scale_color_discrete_qualitative(palette = 'Dark 3', name = 'Metric', guide=FALSE)+
-    scale_y_continuous(trans='log2')+
+    scale_y_continuous(trans='log2',labels=scaleFUN)+
     xlab(xlbl) +
     ylab(ylbl)+
-    theme(axis.text.x = element_text(color = "grey50", size = 20),
-          axis.text.y = element_text(color = "grey50", size = 20),
-          axis.title.x = element_text(color = "grey20", size = 25),
-          axis.title.y = element_text(color = "grey20", size = 25),
-          plot.title = element_text(size=25),
-          legend.title = element_text(size=25),
-          legend.text = element_text(color = "grey50",size=25),
-          strip.text.x = element_text(size = 20),
-          strip.text.y = element_text(size = 20,color = "grey20"))
+    theme_light(base_size = 50)
 }
+
+#' Round number to 3 digits
+#'
+#' @return rounded number
+#' @export
+#'
+scaleFUN <- function(x){
+  sprintf(paste0("%.3f"), x)
+}
+
+
+#' plot the effect of each parameter on the performance using box plots
+#'
+#' @param data data to be plotted, should be a dataframe with the following headers: variable, value, param
+#' @param xlbl x label
+#' @param ylbl y label
+#' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
+#'
+#' @return ggplot plot object
+#' @import colorspace
+#' @export
+#'
+plotSensBar <- function(data, xlbl, ylbl, scales = 'free_y'){
+  ggplot(data, aes(variable,value,color=param, group = interaction(variable,param)))+
+    geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=T, alpha = 0.8)+
+    stat_summary(aes(group = param),fun = median, geom = "point", size = 3, position = position_dodge(width = .75)) +
+    stat_summary(aes(group = param),fun = median, geom = "line", size = 5, position = position_dodge(width = .75))+
+    scale_color_discrete_qualitative(palette = 'Dark 3', name = 'Parameter')+#, guide=FALSE
+    facet_grid(vars(Metric), vars(paramType), scales = scales)+
+    scale_y_continuous(trans='log2',labels=scaleFUN)+
+    xlab(xlbl) +
+    ylab(ylbl)+
+    # theme(axis.text.x = element_text(color = "grey50", size = 20),
+    #       axis.text.y = element_text(color = "grey50", size = 20),
+    #       axis.title.x = element_text(color = "grey20", size = 25),
+    #       axis.title.y = element_text(color = "grey20", size = 25),
+    #       plot.title = element_text(size=25),
+    #       legend.title = element_text(size=25),
+    #       legend.text = element_text(color = "grey50",size=25),
+    #       strip.text.x = element_text(size = 20),
+    #       strip.text.y = element_text(size = 20,color = "grey20"))
+  theme_light(base_size = 50)
+}
+
+#' Plot the effect of the preprocessing techniques on the performance of the recovery indicators
+#'
+#' @param data data to be plotted, should be a dataframe with the following headers: Dense, Smooth, Metric, Period
+#' @param xlbl x label
+#' @param ylbl y label
+#' @param scales should the x and y axis of the subplots have fixed ranges? Can be set to 'fixed', 'free_x' and 'free_y'
+#'
+#' @return ggplot object
+#' @export
+#' @import ggplot2
+#' @import colorspace
+#'
+pltPrepBox <- function(data, xlbl, ylbl, scales = 'free_y'){
+  ggplot(data, aes(interaction(Dense),value,color=interaction(Smooth))) +
+    geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=F, lwd=2.5)+#linetype=interaction(Dense,Smooth)+
+    facet_grid(vars(Metric), vars(Period), scales = scales)+
+    scale_y_continuous(trans='log2',labels=scaleFUN)+
+    xlab(xlbl) +
+    ylab(ylbl)+
+    # theme(axis.text.x = element_text(color = "grey50", size = 20),
+    #       axis.text.y = element_text(color = "grey50", size = 20),
+    #       axis.title.x = element_text(color = "grey20", size = 25),
+    #       axis.title.y = element_text(color = "grey20", size = 25),
+    #       plot.title = element_text(size=25),
+    #       legend.title = element_text(size=25),
+    #       legend.text = element_text(color = "grey50",size=25),
+    #       strip.text.x = element_text(size = 20),
+    #       strip.text.y = element_text(size = 20,color = "grey20"))+
+    theme_light(base_size = 50)+
+    guides(colour=guide_legend(title="Noise removal"))}
