@@ -11,7 +11,7 @@ test_that("Frazier - annual - too short time series", {
   nPostMin <- 4
   nPostMax <- 5
 
-  metrics <- calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
 
   expect_equal(metrics$RRI, NA)
   expect_equal(metrics$R80P, NA)
@@ -104,7 +104,6 @@ test_that("Frazier - segmented annual - long", {
   tsio <- c(rep(1,8), seq(-5, 0, by = 0.5), rep(0,8))
   tdist <- 9
   obspyr <- 1
-  shortDenseTS <- FALSE
   nPre <- 2
   nDist <- 0
   nPostMin <- 4
@@ -131,7 +130,6 @@ test_that("Frazier - segmented annual - short", {
   tsio <- c(rep(1,8), seq(-5, 0, by = 0.5), rep(0,8))
   tdist <- 9
   obspyr <- 1
-  shortDenseTS <- FALSE
   nPre <- 2
   nDist <- 0
   nPostMin <- 1

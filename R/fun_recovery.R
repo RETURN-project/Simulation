@@ -76,7 +76,7 @@ calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax){
 #' @export
 #' @import strucchange
 #' @import stats
-calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas = F) {
+calcBFASTrec <- function(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas = F) {
   # Create time series object, needed as input for the piecewise regression
   tsi <- ts(tsio, frequency = obspyr)
   # Convert the time series object into a dataframe (with response, trend, harmonic), needed for the breakpoints function (dependent and independent variables in regression)
