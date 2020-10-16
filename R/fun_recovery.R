@@ -9,7 +9,6 @@
 #' @param tsio vector of observations (time series with a fixed observation frequency)
 #' @param tdist observation number of disturbance, indicating the timing of the disturbance
 #' @param obspyr number of observations per year
-#' @param shortDenseTS TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series
 #' @param nPre number of years prior to the disturbance used to calculate the pre-disturbance value
 #' @param nDist number of years used to quantify the time series value during the disturbance
 #' @param nPostMin the post-disturbance condition is quantified starting from nPostMin years after the disturbance
@@ -18,7 +17,7 @@
 #' @return a list containing the RRI recovery indicator, R80p recovery indicator and YrYr recovery indicator
 #' @export
 #'
-calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax){
+calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax){
     # check if there are enough observations before and after the disturbance to calculate the metrics
     if ( (tdist > (nPre*obspyr) ) & ( tdist < (length(tsio) - (nPostMax*obspyr) + 1) ) & ( sum(!is.na(tsio)) > 2) ) {
       # translate parameters to those needed for the recovery functions
@@ -39,8 +38,13 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
       } else {
         ts_post <-  seq(tdist + (nPostMin*obspyr), tdist + (nPostMax*obspyr) - 1)
       }
-        # the time span between the disturbance and the post-disturbance state
-      deltat <- switch(shortDenseTS + 1, nPostMax*obspyr, ts_post-tdist)
+        # the observations that define the post-disturbance state for YrYr metric (relative to start disturbance)
+      # the post-disturbance period for the YrYr metric is defined as the last year of the regular post-disturbance period
+      if(obspyr==1){
+        deltat <- nPostMax
+      }else{
+        deltat <- ts_post[(length(ts_post) - obspyr+1):length(ts_post)]-tdist
+      }
         # Derive recovery indicators
       RRI <- rri(ts, ys, tpert, ts_pre, ts_post)
       R80P <- r80p(ts, ys, r = 0.8, ts_pre, ts_post)
@@ -61,7 +65,6 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @param tsio vector of observations (time series)
 #' @param obspyr number of observations in one year
 #' @param h This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.
-#' @param shortDenseTS TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series.
 #' @param nPre  number of years prior to the disturbance used to calculate the pre-disturbance value
 #' @param nDist  number of months used to quantify the time series value during the disturbance
 #' @param nPostMin  min number of years after the disturbance used to quantify the recovery
@@ -73,7 +76,7 @@ calcFrazier <- function(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin
 #' @export
 #' @import strucchange
 #' @import stats
-calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas = F) {
+calcBFASTrec <- function(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas = F) {
   # Create time series object, needed as input for the piecewise regression
   tsi <- ts(tsio, frequency = obspyr)
   # Convert the time series object into a dataframe (with response, trend, harmonic), needed for the breakpoints function (dependent and independent variables in regression)
@@ -121,7 +124,7 @@ calcBFASTrec <- function(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, n
       dbr <- trf[tbp+1]-trf[tbp]
       tbp <- tbp[which(abs(dbr) == max(abs(dbr)))]
       # Calculate Frazier recovery metrics on trend component
-      frz <- calcFrazier(as.numeric(trf), (tbp+1), floor(obspyr), shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+      frz <- calcFrazier(as.numeric(trf), (tbp+1), floor(obspyr), nPre, nDist, nPostMin, nPostMax)
       # Calculate the post-disturbance slope of the trend component (first segment after break)
       sl <- (trf[tbp+3] - trf[tbp+2])
       frz <- c(frz, sl)
@@ -156,7 +159,6 @@ toDF <- function(mat, setvr, metric, funSet){#freq, input, nPostMin, seas
   tst$h <- factor(funSet$h)
   tst$nDist <- factor(funSet$nDist)
   tst$nPre <- factor(funSet$nPre)
-  tst$shortDenseTS <- factor(funSet$shortDenseTS)
   tst$nPostMin <- factor(funSet$nPostMin)#revalue(factor(nPostMin), c("1"="Short", "4"="Long"))#factor(recSttngs$nDist)#
   tst$nPostMax <- factor(funSet$nPostMax)#revalue(factor(nPostMin), c("1"="Short", "4"="Long"))#factor(recSttngs$nDist)#
   tst$Seas <- factor(funSet$seas)
@@ -248,7 +250,6 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
         # ============================================
         inp <- funSet$input[rset]# 'smoothed', 'raw', 'segmented'. Defines the type of time series that is used for the recovery indicators. For 'raw', the simulated time series are directly used to calculate recovery, for 'smooth' a time series smoothing algorithm is used before recovery calculation, for 'BFAST' trend segmentation (BFAST0n) is used.
         frq <- funSet[['freq']][rset]# 'dense', 'quarterly', or 'annual'. Defines the observation frequency. For 'dense' the original frequency is used. For 'annual' or 'quarterly', the time series are converted to annual or quarterly frequency, respectively.
-        shortDenseTS <- funSet[['shortDenseTS']][rset]# if shortDenseTS is TRUE, the recovery indicators are slightly adjusted for short,dense time series
         nPre <- funSet[['nPre']][rset]# the number of years before the disturbance used to derive the pre-disturbance values
         nDist <- funSet[['nDist']][rset]# the number of years after the disturbance used to derive the value during the disturbance
         nPostMin <- funSet[['nPostMin']][rset]# the post-disturbance values are derived between nPostMin and nPostMax years after the disturbance
@@ -284,14 +285,14 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
         }
         # calculate recovery indicators from simulated time series
         if((inp == 'smoothed') | (inp == 'raw')){
-          outp <- calcFrazier(tsi, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+          outp <- calcFrazier(tsi, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
           m_RRIi[rset,pari] <- outp$RRI# measured RRI
           m_R80pi[rset,pari] <- outp$R80P# measured R80p
           m_YrYri[rset,pari] <- outp$YrYr# measured YrYR
           rm(outp)
         }
         if(funSet$input[rset] == 'segmented'){
-          outp <- calcBFASTrec(tsi, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax, seas)
+          outp <- calcBFASTrec(tsi, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas)
           m_RRIi[rset,pari] <- outp$RRI# measured RRI
           m_R80pi[rset,pari] <- outp$R80P# measured R80p
           m_YrYri[rset,pari] <- outp$YrYr# measured YrYR
@@ -301,7 +302,7 @@ evalParam <- function(evr, sttngs, funSet, basename, ofolder = '') {
         }
 
         # calculate reference indicators (assumed truth for validation) based on simulated trend component
-        outp <- calcFrazier(tsref, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+        outp <- calcFrazier(tsref, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
         s_RRIi[rset,pari] <- outp$RRI#simulated (true) RRI
         s_R80pi[rset,pari] <- outp$R80P#simulated (true) R80p
         s_YrYri[rset,pari] <- outp$YrYr

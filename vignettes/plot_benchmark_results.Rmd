@@ -22,125 +22,23 @@ library(plyr)
 ```{r load-data}
 # inputs
 # input folder
-ifolder <- '../data/'#ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20200930/'
+ifolder <- '../data/'#'/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'#'../data/'#ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'
 # Folder where outputs will be written
-ofolder <- '../data/' #ofolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20200930/Figures'
+ofolder <- '../data/'#'/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'#'../data/' #ofolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'
 # Name of the input dataset
 basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI' 
+caseList <- c('seasAmp','remSd','distT','distRec','missVal','distMag')# 'distMag',evaluated time series characteristics for 
 
 ```
 
-Compare the performance of each recovery indicator
-```{r compare-indicators,  echo = F, include=F}
-caseList <- c('seasAmp','remSd','distT','distRec','missVal')# 'distMag',evaluated time series characteristics for 
-simFullName  <- list('Disturbance magnitude',
-                     'Number of droughts',
-                     'Time series length',
-                     'Seasonal amplitude',
-                     'SD remainder',
-                     'Disturbance timing',
-                     'Recovery period [years]',
-                     'Missing values')
-names(simFullName) <- c('distMag',
-                        'nDr', 
-                        'len',
-                        'seasAmp',
-                        'remSd',
-                        'distT',
-                        'distRec',
-                        'missVal')
-for(vr in 1:length(caseList)){
-  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
-  # setvr <- sttngs[[evr]]# settings of simulation
-  
-  # NOTE: retrieve data from results_list instead of from saved files
-  RRI_rsq <- loadRData(file.path(ifolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
-  R80p_rsq <- loadRData(file.path(ifolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
-  YrYr_rsq <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
-  
-  RRI_mape <- loadRData(file.path(ifolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
-  R80p_mape <- loadRData(file.path(ifolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
-  YrYr_mape <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
-  
-  RRI_nTS <- loadRData(file.path(ifolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
-  R80p_nTS <- loadRData(file.path(ifolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
-  YrYr_nTS <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
-  
-  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq))
-  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
-  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
-  
-  
-  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
-  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
-  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
-  
-   if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
-    tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c("no", "low", 'medium', 'high'))
-  }  else{
-    tot_rsq$variable <-mapvalues(tot_rsq$variable, levels(tot_rsq$variable), to = c("low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, levels(tot_mape$variable), to = c("low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, levels(tot_nTS$variable), to = c("low", 'medium', 'high'))
-  }
-  # tot_rsq <- tot_rsq[(tot_rsq$Dense == 'dense' & tot_rsq$Smooth == 'raw' & tot_rsq$Period == 'Long'),]
-  tot_rsq$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_rsq <- tot_rsq}else{totp_rsq <- rbind(totp_rsq,tot_rsq)}
-  
-  # tot_mape <- tot_mape[(tot_mape$Dense == 'dense' & tot_mape$Smooth == 'raw' & tot_mape$Period == 'Long'),]
-  tot_mape$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_mape <- tot_mape}else{totp_mape <- rbind(totp_mape,tot_mape)}
-  
-  # tot_nTS <- tot_nTS[(tot_nTS$Dense == 'dense' & tot_nTS$Smooth == 'raw' & tot_nTS$Period == 'Long'),]
-  tot_nTS$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_nTS <- tot_nTS}else{totp_nTS <- rbind(totp_nTS,tot_nTS)}
-}
-
-xlbl <- 'Metric'
-  
-  # plot R2
-  data <- totp_rsq
-  ylbl <- 'R²'
-  pltR2 <- plotMet(data, xlbl, ylbl)
-  png(file.path(ofolder, paste0(basename, '_RsqMet.png')),width = 1311,height =628 )
-  print(pltR2)
-  dev.off()
-  
-  # plot MAPE
-  data <- totp_mape
-  ylbl <- 'MAPE'
-  pltMAPE <- plotMet(data,  xlbl, ylbl)
-  png(file.path(ofolder, paste0(basename, '_MAPEMet.png')),width = 1311,height =628 )
-  print(pltMAPE)
-  dev.off()
-   # plot fraction of time series processed
-  data <- totp_nTS
-  ylbl <- 'Fraction'
-  pltnTS <- plotMet(data,  xlbl, ylbl)
-  png(file.path(ofolder, paste0(basename, '_nTSMet.png')),width = 1311,height =628 )
-  print(pltnTS)
-  dev.off()
-  
-  print(pltR2)
-  print(pltMAPE)
-  print(pltnTS)
-
-```
-
-Which characteristics influence the performance the most?
-
-```{r compare-performance, echo = F, include=F}
-# compare effect of each parameter on the 
-caseList <- c( 'seasAmp', 'remSd', 'missVal','distRec','distT')#,'distMag' evaluated time series characteristics for which a plot needs to be made
-
+```{r general-settings,  echo = F, include=F}
 simFullName  <- list('Disturbance magnitude',
                      'Disturbance timing',
                      'Recovery period',
                      'Number of droughts',
                      'Time series length',
                      'Seasonal amplitude',
-                     'SD remainder',
+                     'Noise level',
                      'Missing values')
 names(simFullName) <- c('distMag',
                         'distT',
@@ -150,322 +48,101 @@ names(simFullName) <- c('distMag',
                         'seasAmp',
                         'remSd',
                         'missVal')
+metric_list <- c('MAPE', 'R2', 'nTS', 'RMSE')
+metric_names <- c('MAPE', 'R²', 'nTS', 'RMSE'); names(metric_names) <- c('MAPE', 'R2', 'nTS', 'RMSE')
+tempRes_list <- c('quarterly', 'annual', 'dense', 'all')
 
-tempRes <- 'quarterly'
+```
 
-for(vr in 1:length(caseList)){
-  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
-  # setvr <- sttngs[[evr]]# settings of simulation
+```{r prepare-data,  echo = F, include=F}
+dat_list <- list()
+for(mm in 1:length(metric_list)){
+  metric <- metric_list[mm]
+  for(vr in 1:length(caseList)){
+  evr <- caseList[vr]# name of parameter 
   
-  RRI_rsq <- loadRData(file.path(ifolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
-  R80p_rsq <- loadRData(file.path(ifolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
-  YrYr_rsq <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
+  RRI_dat <- loadRData(file.path(ifolder, paste0(basename, '_RRI_', metric, '_' , evr, '.rda')))
+  R80p_dat <- loadRData(file.path(ifolder, paste0(basename, '_R80p_', metric, '_' , evr, '.rda')))
+  YrYr_dat <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_', metric, '_' , evr, '.rda')))
   
-  RRI_mape <- loadRData(file.path(ifolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
-  R80p_mape <- loadRData(file.path(ifolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
-  YrYr_mape <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
+  tot_dat <- melt(rbind(RRI_dat, R80p_dat, YrYr_dat))
   
-  RRI_nTS <- loadRData(file.path(ifolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
-  R80p_nTS <- loadRData(file.path(ifolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
-  YrYr_nTS <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
-  
-  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq))
-  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
-  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
-  
-  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
-  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
-  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
+  tot_dat$Period <- revalue(factor(tot_dat$nPostMin), c("1"="Short", "4"="Long"))
   
    if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
-    tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c("no", "low", 'medium', 'high'))
-  }  else{
-    tot_rsq$variable <-mapvalues(tot_rsq$variable, levels(tot_rsq$variable), to = c("low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, levels(tot_mape$variable), to = c("low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, levels(tot_nTS$variable), to = c("low", 'medium', 'high'))
+    tot_dat$variable <-mapvalues(tot_dat$variable, from = levels(tot_dat$variable), to = c("very low", "low", 'medium', 'high'))
+    }  else{
+    tot_dat$variable <-mapvalues(tot_dat$variable, levels(tot_dat$variable), to = c("very low", "low", 'medium', 'high'))
+    }
+  
+  tot_dat$param = simFullName[[caseList[[vr]]]]
+  if(vr == 1){totp_dat <- tot_dat}else{totp_dat <- rbind(totp_dat,tot_dat)}
   }
-  tot_rsq <- tot_rsq[(tot_rsq$Dense == tempRes),]
-  tot_rsq_sd <- aggregate(value ~ Metric + variable, tot_rsq, sd)
-  tot_rsq <- aggregate(value ~ Metric + variable, tot_rsq, mean)
-  # tot_rsq <- tot_rsq[(tot_rsq$Dense == 'dense' & tot_rsq$Smooth == 'raw' & tot_rsq$Period == 'Long'),]
-  tot_rsq$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_rsq <- tot_rsq}else{totp_rsq <- rbind(totp_rsq,tot_rsq)}
+  totp_dat$param[totp_dat$param == 'SD remainder'] <- 'Noise level'
+  totp_dat$paramType <- 'Environmental parameter'
+  totp_dat[(totp_dat$param == 'Disturbance magnitude' | totp_dat$param == 'Recovery period' | totp_dat$param == 'Disturbance timing'), ]$paramType <- 'Disturbance parameter'
+  totp_dat$param <- factor(totp_dat$param, levels = simFullName)
   
-  tot_mape <- tot_mape[(tot_mape$Dense == tempRes ),]
-  tot_mape_sd <- aggregate(value ~ Metric + variable, tot_mape, sd)
-  tot_mape <- aggregate(value ~ Metric + variable, tot_mape, mean)
-  # tot_mape <- tot_mape[(tot_mape$Dense == 'dense' & tot_mape$Smooth == 'raw' & tot_mape$Period == 'Long'),]
-  tot_mape$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_mape <- tot_mape}else{totp_mape <- rbind(totp_mape,tot_mape)}
-  
-  tot_nTS <- tot_nTS[(tot_nTS$Dense == tempRes),]
-  tot_nTS_sd <- aggregate(value ~ Metric + variable, tot_nTS, sd)
-  tot_nTS <- aggregate(value ~ Metric + variable, tot_nTS, mean)
-  # tot_nTS <- tot_nTS[(tot_nTS$Dense == 'dense' & tot_nTS$Smooth == 'raw' & tot_nTS$Period == 'Long'),]
-  tot_nTS$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_nTS <- tot_nTS}else{totp_nTS <- rbind(totp_nTS,tot_nTS)}
+  dat_list[[metric]] <- totp_dat
+}
+```
+
+Compare the performance of each recovery indicator
+```{r compare-indicators,  echo = F, include=F}
+for(mm in 1:length(metric_list)){
+  metric <- metric_list[mm]
+  # plot 
+  plt <- plotMet(dat_list[[metric]],  'Metric', metric_names[[metric]])
+  png(file.path(ofolder, paste0(basename, '_', metric, 'Met.png')),width = 1311,height =628 )
+  print(plt)
+  dev.off()
+  print(plt)
 }
 
 
-  totp_rsq$paramType <- 'Environmental parameter'
-  totp_rsq[(totp_rsq$param == 'Disturbance magnitude' | totp_rsq$param == 'Recovery period' | totp_rsq$param == 'Disturbance timing'), ]$paramType <- 'Disturbance parameter'
-  totp_mape$paramType <- 'Environmental parameter'
-  totp_mape[(totp_mape$param == 'Disturbance magnitude' | totp_mape$param == 'Recovery period' | totp_mape$param == 'Disturbance timing' ),]$paramType  <- 'Disturbance parameter'
-  totp_nTS$paramType <- 'Environmental parameter'
-  totp_nTS[(totp_rsq$param == 'Disturbance magnitude' | totp_nTS$param == 'Recovery period' | totp_nTS$param == 'Disturbance timing' ),]$paramType  <- 'Disturbance parameter'
+```
 
-data <- totp_rsq
-  data$param <- factor(data$param, levels = rev(unlist(simFullName[caseList])))
-  xlbl <- 'Parameter value'
-  ylbl <- 'R²'
-  pltR2 <- plotEnv(data, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_', tempRes, '_Rsq_Env.png')),width = 1311,height =628 )
-  print(pltR2)
-  dev.off()
+Which characteristics influence the performance the most?
+
+```{r compare-performance, echo = F, include=F}
+for(tr in 1:length(tempRes_list)){
+  tempRes <- tempRes_list[tr]
+  for(mm in 1:length(metric_list)){
+    metric <- metric_list[mm]
+    data <- dat_list[[metric]]
+    if(tempRes != 'all'){data <- data[data$Dense == tempRes, ]}
+    xlbl <- 'Parameter value'
+    ylbl <- metric_names[[metric]]
+    scales = 'free_y'
+    # plot 
+    plt <- plotSensBar(data, xlbl, ylbl, scales)
+    png(file.path(ofolder, paste0(basename, '_', tempRes, '_',metric,'_Env.png')),width = 1911,height =1828 )
+    print(plt)
+    dev.off()
+  }
   
-  data <- totp_mape
-  data$param <- factor(data$param, levels = rev(unlist(simFullName[caseList])))
-  data$value[is.infinite(data$value)] <- NA
-  xlbl <- 'Parameter value'
-  ylbl <- 'MAPE'
-  pltMAPE <- plotEnv(data, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_', tempRes, '_MAPE_Env.png')),width = 1311,height =628 )
-  print(pltMAPE)
-  dev.off()
-  
-  data <- totp_nTS
-  data$param <- factor(data$param, levels = rev(unlist(simFullName[caseList])))
-  xlbl <- 'Parameter value'
-  ylbl <- 'Fraction'
-  pltnTS <- plotEnv(data, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename,  '_', tempRes, '_nTS_Env.png')),width = 1311,height =628 )
-  print(pltnTS)
-  dev.off()
-  
-  print(pltR2)
-  print(pltMAPE)
-  print(pltnTS)
+}
+
 ```
 
 How can we improve the performance?
-
-```{r improve-performance, echo = F, include=F}
-for(vr in 1:length(caseList)){
-  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
-  # setvr <- sttngs[[evr]]# settings of simulation
-  
-  RRI_rsq <- loadRData(file.path(ifolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
-  R80p_rsq <- loadRData(file.path(ifolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
-  YrYr_rsq <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
-  
-  RRI_rmse <- loadRData(file.path(ifolder, paste0(basename, '_RRI_RMSE_' , evr, '.rda')))
-  R80p_rmse <- loadRData(file.path(ifolder, paste0(basename, '_R80p_RMSE_' , evr, '.rda')))
-  YrYr_rmse <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_RMSE_' , evr, '.rda')))
-  
-  RRI_mape <- loadRData(file.path(ifolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
-  R80p_mape <- loadRData(file.path(ifolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
-  YrYr_mape <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
-  
-  RRI_nTS <- loadRData(file.path(ifolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
-  R80p_nTS <- loadRData(file.path(ifolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
-  YrYr_nTS <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
-  
-  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq))
-  tot_rmse <- melt(rbind(RRI_rmse, R80p_rmse, YrYr_rmse))
-  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
-  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
-  
-  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
-  tot_rmse$Period <- revalue(factor(tot_rmse$nPostMin), c("1"="Short", "4"="Long"))
-  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
-  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
-  
-   if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
-    tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
-    tot_rmse$variable <-mapvalues(tot_rmse$variable, from = levels(tot_rmse$variable), to = c("no", "low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c("no", "low", 'medium', 'high'))
-  } else{ 
-    tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c( "low", 'medium', 'high'))
-    tot_rmse$variable <-mapvalues(tot_rmse$variable, from = levels(tot_rmse$variable), to = c( "low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c( "low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c( "low", 'medium', 'high'))
-    }
-  
-  # lbls <- c("raw, BAP", 'piecewise, BAP', 'smoothed, BAP', "raw, dense", 'piecewise, dense', 'smoothed, dense', "raw, quarterly", 'piecewise, quarterly', 'smoothed, quarterly')
-   lbls <- c("BAP", "raw", 'quarterly')
-  sname <- caseList[[vr]]
-  xlbl <- simFullName[[sname]]
-  
-  # plot R2
-  data <- tot_rsq
-  ylbl <- 'R²'
-  
-  ggplot(data, aes(variable,value,color=interaction(Dense, Seas), group = interaction(Smooth,Dense, Seas))) +
-    geom_line(aes(linetype=Smooth),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
-    # geom_point(aes(shape=Smooth),size=1.2)+
-    scale_color_discrete_qualitative(palette = 'Dark 3',labels=lbls,  name = 'Preprocessing')+#
-    # ,labels=lbls
-    # scale_color_manual('Preprocessing',labels=lbls, values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+
-    facet_grid(vars(Metric),vars(Period), scales = scales)+
-    scale_y_continuous(trans='log2')+
-    # labs(color = "Preprocessing")+
-    xlab(xlbl) +
-    ylab(ylbl)+
-    theme(axis.text.x = element_text(color = "grey50", size = 20),
-          axis.text.y = element_text(color = "grey50", size = 20),
-          axis.title.x = element_text(color = "grey20", size = 25),
-          axis.title.y = element_text(color = "grey20", size = 25),
-          plot.title = element_text(size=25),
-          legend.title = element_text(size=25),
-          legend.text = element_text(color = "grey50",size=25),
-          strip.text.x = element_text(size = 20),
-          strip.text.y = element_text(size = 20,color = "grey20"))
-  
-  pltR2 <- plotSens(data, lbls, xlbl, ylbl, scales = 'fixed')
-  png(file.path(ofolder, paste0(basename, '_Rsq_',evr,'.png')),width = 1311,height =628 )
-  print(pltR2)
-  dev.off()
-  
-  # plot RMSE
-  data <- tot_rmse
-  ylbl <- 'RMSE'
-  pltRMSE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_RMSE_',evr,'.png')),width = 1311,height =628 )
-  print(pltRMSE)
-  dev.off()
-   # plot MAPE
-  data <- tot_mape
-  ylbl <- 'MAPE'
-  pltMAPE <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_MAPE_',evr,'.png')),width = 1311,height =628 )
-  print(pltMAPE)
-  dev.off()
-   # plot fraction of time series processed
-  data <- tot_nTS
-  ylbl <- 'Fraction'
-  pltnTS <- plotSens(data, lbls, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_nTS_',evr,'.png')),width = 1311,height =628 )
-  print(pltnTS)
-  dev.off()
-  
-  print(pltR2)
-  print(pltRMSE)
-  print(pltMAPE)
-  print(pltnTS)
-}
-```
-
 ```{r compare-performance2, echo = F, include=F}
-# compare effect of each parameter on the 
-for(vr in 1:length(caseList)){
-  evr <- caseList[vr]# name of parameter that will be evaluated in the simulation
-  # setvr <- sttngs[[evr]]# settings of simulation
-  
-  RRI_rsq <- loadRData(file.path(ifolder, paste0(basename, '_RRI_R2_' , evr, '.rda')))
-  R80p_rsq <- loadRData(file.path(ifolder, paste0(basename, '_R80p_R2_' , evr, '.rda')))
-  YrYr_rsq <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_R2_' , evr, '.rda')))
-  
-  RRI_mape <- loadRData(file.path(ifolder, paste0(basename, '_RRI_MAPE_' , evr, '.rda')))
-  R80p_mape <- loadRData(file.path(ifolder, paste0(basename, '_R80p_MAPE_' , evr, '.rda')))
-  YrYr_mape <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_MAPE_' , evr, '.rda')))
-  
-  RRI_nTS <- loadRData(file.path(ifolder, paste0(basename, '_RRI_nTS_' , evr, '.rda')))
-  R80p_nTS <- loadRData(file.path(ifolder, paste0(basename, '_R80p_nTS_' , evr, '.rda')))
-  YrYr_nTS <- loadRData(file.path(ifolder, paste0(basename, '_YrYr_nTS_' , evr, '.rda')))
-  
-  tot_rsq <- melt(rbind(RRI_rsq, R80p_rsq, YrYr_rsq))
-  tot_mape <- melt(rbind(RRI_mape, R80p_mape, YrYr_mape))
-  tot_nTS <- melt(rbind(RRI_nTS, R80p_nTS, YrYr_nTS))
-  
-  tot_rsq$Period <- revalue(factor(tot_rsq$nPostMin), c("1"="Short", "4"="Long"))
-  tot_mape$Period <- revalue(factor(tot_mape$nPostMin), c("1"="Short", "4"="Long"))
-  tot_nTS$Period <- revalue(factor(tot_nTS$nPostMin), c("1"="Short", "4"="Long"))
-  
-   if((evr == 'remSd') || (evr == 'seasAmp') || (evr == 'missVal')) {
-    tot_rsq$variable <- mapvalues(tot_rsq$variable, from = levels(tot_rsq$variable), to = c("no", "low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, from = levels(tot_mape$variable), to = c("no", "low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, from = levels(tot_nTS$variable), to = c("no", "low", 'medium', 'high'))
-  }  else{
-    tot_rsq$variable <-mapvalues(tot_rsq$variable, levels(tot_rsq$variable), to = c("low", 'medium', 'high'))
-    tot_mape$variable <-mapvalues(tot_mape$variable, levels(tot_mape$variable), to = c("low", 'medium', 'high'))
-    tot_nTS$variable <-mapvalues(tot_nTS$variable, levels(tot_nTS$variable), to = c("low", 'medium', 'high'))
-  }
-  # tot_rsq_sd <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_rsq, sd)
-  # tot_rsq <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_rsq, mean)
-  # # tot_rsq <- tot_rsq[(tot_rsq$Dense == 'dense' & tot_rsq$Smooth == 'raw' & tot_rsq$Period == 'Long'),]
-  # tot_rsq$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_rsq <- tot_rsq}else{totp_rsq <- rbind(totp_rsq,tot_rsq)}
-  
-  # tot_mape_sd <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_mape, sd)
-  # tot_mape <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_mape, mean)
-  # # tot_mape <- tot_mape[(tot_mape$Dense == 'dense' & tot_mape$Smooth == 'raw' & tot_mape$Period == 'Long'),]
-  # tot_mape$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_mape <- tot_mape}else{totp_mape <- rbind(totp_mape,tot_mape)}
-  
-  # tot_nTS_sd <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_nTS, sd)
-  # tot_nTS <- aggregate(value ~ Metric + Period + Smooth + Dense, tot_nTS, mean)
-  # # tot_nTS <- tot_nTS[(tot_nTS$Dense == 'dense' & tot_nTS$Smooth == 'raw' & tot_nTS$Period == 'Long'),]
-  # tot_nTS$param = simFullName[[caseList[[vr]]]]
-  if(vr == 1){totp_nTS <- tot_nTS}else{totp_nTS <- rbind(totp_nTS,tot_nTS)}
+
+for(mm in 1:length(metric_list)){
+  metric <- metric_list[mm]
+  data <- dat_list[[metric]]
+  data$Dense <- revalue(factor(data$Dense, levels = c('dense', 'quarterly', 'annual')), c("dense" = "no", "annual"="annual", "quarterly" = "quarterly"))
+  data$Smooth <- revalue(factor(data$Smooth, levels = c('raw', 'smoothed', 'segmented')), c("raw"="no", "smoothed"="rolling mean", "segmented" = "piecewise regression"))
+
+  xlbl <- 'Temporal aggregation'
+  ylbl <- metric_names[[metric]]
+  scales = 'free_y'
+  # plot 
+  plt <-pltPrepBox(data, xlbl, ylbl, scales) 
+  png(file.path(ofolder, paste0(basename, '_', metric,'_Prep.png')),width = 1911,height =1828 )
+  print(plt)
+  dev.off()
 }
 
-  data <- totp_rsq
-  xlbl <- 'Evaluation time'
-  ylbl <- 'R²'
-  
-  totp_mape$Dense <- revalue(factor(tot_mape$Dense), c("dense" = "no", "annual"="annual", "quarterly" = "quarterly"))
-totp_mape$Smooth <- revalue(factor(tot_mape$Smooth), c("raw"="no", "smoothed"="smoothed", "segmented" = "piecewise"))
-  data <- totp_mape
-  xlbl <- 'Temporal aggregation'
-  ylbl <- 'MAPE'
-  pltMAPE <- ggplot(data, aes(interaction(Dense),value,color=interaction(Smooth))) +
-    geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=F)+#linetype=interaction(Dense,Smooth)+
-    # scale_color_discrete_qualitative(palette = 'Dark 3',labels=lbls,  name = 'Preprocessing')+#
-    facet_grid(vars(Metric), vars(Period), scales = 'free_y')+
-    scale_y_continuous(trans='log2')+
-    # labs(color = "Preprocessing")+
-    xlab(xlbl) +
-    ylab(ylbl)+
-    theme(axis.text.x = element_text(color = "grey50", size = 20),
-          axis.text.y = element_text(color = "grey50", size = 20),
-          axis.title.x = element_text(color = "grey20", size = 25),
-          axis.title.y = element_text(color = "grey20", size = 25),
-          plot.title = element_text(size=25),
-          legend.title = element_text(size=25),
-          legend.text = element_text(color = "grey50",size=25),
-          strip.text.x = element_text(size = 20),
-          strip.text.y = element_text(size = 20,color = "grey20"))
-  png(file.path(ofolder, paste0(basename, '_MAPE_Prep.png')),width = 1311,height =628 )
-  print(pltMAPE)
-  dev.off()
-  
-  data <- totp_mape
-  data$param <- factor(data$param, levels = rev(unlist(simFullName[caseList])))
-  data$value[is.infinite(data$value)] <- NA
-  xlbl <- 'Parameter value'
-  ylbl <- 'MAPE'
-  pltMAPE <- plotEnv(data, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_MAPE_Env.png')),width = 1311,height =628 )
-  print(pltMAPE)
-  dev.off()
-  
-  data <- totp_nTS
-  data$param <- factor(data$param, levels = rev(unlist(simFullName[caseList])))
-  xlbl <- 'Parameter value'
-  ylbl <- 'Fraction'
-  pltnTS <- plotEnv(data, xlbl, ylbl, scales = 'free_y')
-  png(file.path(ofolder, paste0(basename, '_nTS_Env.png')),width = 1311,height =628 )
-  print(pltnTS)
-  dev.off()
-  
-  print(pltR2)
-  print(pltMAPE)
-  print(pltnTS)
 ```
-
-
-
 

@@ -226,7 +226,6 @@ test_that('Combination parameter generation',{
     nTS = 2,
     nobsYr = 6,
     seasAv = c(1,2,3,4,5,6),
-    remcoef = list(10,20,30),
     parSetUp = 'comb')#avg dist, comb
 
   # derive parameters using the settings file
@@ -274,7 +273,6 @@ test_that('Interval parameter generation',{
     nTS = 2,
     nobsYr = 6,
     seasAv = c(1,2,3,4,5,6),
-    remcoef = list(10,20,30),
     parSetUp = 'int')
 
   # derive parameters using the settings file
