@@ -49,8 +49,6 @@ simulCase(
 \item{mvaldist}{the distribution of the missing values. Should equal 'random'or 'interval'.}
 
 \item{distType}{the type of disturbance. piecewise refers to a linear decay function, while exponential refers to an exponential decay}
-
-\item{remcoef}{list of ARMA models of remainder component. For each simulated time series, a remainder model is randomly chosen from the list.}
 }
 \value{
 a list with the simulated time series, offest, seasonality, remainder, disturbance component and parameters used for the simulation. The time series (components) are stored as matrix where each row is a time series and the columns are associated with the observation numbers.

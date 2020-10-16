@@ -23,8 +23,6 @@ calcBFASTrec(
 
 \item{h}{This parameter defines the minimal segment size either given as fraction relative to the sample size or as an integer giving the minimal number of observations in each segment.}
 
-\item{shortDenseTS}{TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series.}
-
 \item{nPre}{number of years prior to the disturbance used to calculate the pre-disturbance value}
 
 \item{nDist}{number of months used to quantify the time series value during the disturbance}

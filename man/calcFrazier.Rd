@@ -10,7 +10,7 @@ To reduce the interference of the seasonal pattern of dense time series, the cho
 (Frazier, R. J., Coops, N. C., Wulder, M. A., Hermosilla, T., & White, J. C. (2018). Analyzing spatial and temporal variability in short-term rates
 of post-fire vegetation return from Landsat time series. Remote Sensing of Environment, 205, 32-45.)}
 \usage{
-calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
 }
 \arguments{
 \item{tsio}{vector of observations (time series with a fixed observation frequency)}
@@ -18,8 +18,6 @@ calcFrazier(tsio, tdist, obspyr, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
 \item{tdist}{observation number of disturbance, indicating the timing of the disturbance}
 
 \item{obspyr}{number of observations per year}
-
-\item{shortDenseTS}{TRUE or FALSE. In case TRUE, the metrics are adjusted to be compatible with short, dense time series}
 
 \item{nPre}{number of years prior to the disturbance used to calculate the pre-disturbance value}
 
