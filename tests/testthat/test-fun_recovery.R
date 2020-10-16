@@ -75,14 +75,13 @@ test_that("Frazier - segmented", {
   tsio <- c(rep(1,24), seq(-5, -1, length.out=60), rep(-2,12))
   tdist <- 25
   obspyr <- 12
-  shortDenseTS <- TRUE
   nPre <- 2
   nDist <- 1
   nPostMin <- 4
   nPostMax <- 5
   h <- 0.1
 
-  metrics <- calcBFASTrec(tsio, obspyr, h, shortDenseTS, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax)
   pre <- 1
   dist <- mean(tsio[25:36])
   post <- max(tsio[73:84])
