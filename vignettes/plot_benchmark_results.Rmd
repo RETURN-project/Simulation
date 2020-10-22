@@ -84,7 +84,7 @@ for(mm in 1:length(metric_list)){
 ```
 
 Compare the performance of each recovery indicator
-```{r compare-indicators,  echo = F, include=F}
+```{r plot-compare-indicators,  echo = F, include=F}
 for(mm in 1:length(metric_list)){
   metric <- metric_list[mm]
   # plot 
@@ -100,7 +100,7 @@ for(mm in 1:length(metric_list)){
 
 Which characteristics influence the performance the most?
 
-```{r compare-performance, echo = F, include=F}
+```{r plot-sensitivity-overall, echo = F, include=F}
 for(tr in 1:length(tempRes_list)){
   tempRes <- tempRes_list[tr]
   for(mm in 1:length(metric_list)){
@@ -121,7 +121,7 @@ for(tr in 1:length(tempRes_list)){
 
 ```
 
-```{r compare-performance, echo = F, include=F}
+```{r plot-sensitivity-separate, echo = F, include=F}
 
 for(mm in 1: length(metric_list)){
   metric <- metric_list[mm]
@@ -142,7 +142,7 @@ for(mm in 1: length(metric_list)){
 ```
 
 How can we improve the performance?
-```{r compare-performance2, echo = F, include=F}
+```{r plot-preprocessing, echo = F, include=F}
 
 for(mm in 1:length(metric_list)){
   metric <- metric_list[mm]
