@@ -110,8 +110,8 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
     sol <- lag(sol, -i + 1) # Displace the time series, so it begins at tpert
 
     # Create the time series before tpert (only dynamic noise around equilibrium)
-    tfill <- seq(t[1], t[i-1], by = 1 / frequency(sol))
-    fill <- ts(realistic(tfill, noise = noise), start = t[1], end = t[i-1], frequency = frequency(sol))
+    tfill <- seq(ts[1], ts[i-1], by = 1 / frequency(sol))
+    fill <- ts(realistic(tfill, noise = noise), start = ts[1], end = ts[i-1], frequency = frequency(sol))
 
     # Paste both time series together
     sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill))
