@@ -25,7 +25,7 @@ library(BenchmarkRecovery)
 ```{r simulate}
 # Set the problem
 ## Set the times
-ts <- seq(0, 100, by = 0.025)
+ts <- seq(10, 100, by = 1)
 
 ## Set the parameters (the same for all)
 offset <- 0

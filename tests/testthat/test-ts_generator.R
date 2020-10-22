@@ -56,6 +56,27 @@ test_that("Realistic decay (stochastic)", {
 
 })
 
+test_that("Realistic decaty (errors)", {
+  # Some generic settings
+  pert <- 5
+  tpert <- 15
+  noise <- 0.1
+
+  # Generating this time series must throw an error
+  # Because the perturbation timing is prior to the minimum time in the simulation
+  ts_too_late <- seq(20, 100, by = 1)
+  expect_error(realistic(ts_too_late, pert = pert, tpert = tpert, noise = noise))
+
+  # Generating this time series must throw an error
+  # Because the perturbation happens only one step after initialization
+  ts_too_close <- seq(14, 100, by = 1)
+  expect_error(realistic(ts_too_close, pert = pert, tpert = tpert, noise = noise))
+
+  # Generating the time series starting at the perturbation is fine
+  ts_exactly <- seq(15, 100, by = 1)
+  expect_error(realistic(ts_exactly, pert = pert, tpert = tpert, noise = noise), NA) # Equivalent to expect no error
+})
+
 test_that("Disturbance simulation",{
   # source('../R/fun_simulate.R')
 

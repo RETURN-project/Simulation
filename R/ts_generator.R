@@ -49,7 +49,6 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #'
 #' 1. The deterministic dynamics are given by an exponential decay with the given half life
 #' 2. The stochastic dynamics have the given infinitesimal standard deviation
-#' 3. Gaussian noise is added to the final time series to simulate measurement errors
 #'
 #' @param t Times to simulate
 #' @param offset Offset
@@ -61,6 +60,18 @@ exponential <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0
 #' @return The time series
 #' @export
 realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) {
+
+  # Abort if input error
+  if (tpert < min(t)) {
+    stop('Perturbation timing (tpert) cannot be lower to the earlier times in the vector t')
+    # Why? If the tpert is below t0, the simulation starts after the perturbation,
+    # and thus, misses it.
+    #
+    # TL;DR: just start your simulation
+    # - exactly at the perturbation
+    # or
+    # - way before the perturbation happens
+  }
 
   # Translate parameters to the language of differential equations
   y0 <- pert # The perturbation represents the initial condition
@@ -94,6 +105,7 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
 
   # Solve
   sol <- sde::sde.sim(X0 = y0,
+                      t0 = min(t),
                       T = max(t),
                       N = length(t)-1,
                       drift = f,
@@ -102,16 +114,17 @@ realistic <- function(t, offset = 0, pert = 0, tpert = 0, thalf = 1, noise = 0) 
                       method = 'euler')
 
 
-  # Shift the time series (only if tpert is not zero)
-  if(tpert != 0) {
+  # Shift the time series (only if tpert is not the initial time)
+  if(tpert != min(t)) {
     # Shift the original time series
     ts <- time(sol) # Store the original times
     i <- min(which(ts >= tpert)) # Find the index corresponding to tpert
     sol <- lag(sol, -i + 1) # Displace the time series, so it begins at tpert
 
     # Create the time series before tpert (only dynamic noise around equilibrium)
+    if(i <= 2) { stop("tpert is too close to initial time") } # Abort if the index is too low (it leads to a too short fill)
     tfill <- seq(ts[1], ts[i-1], by = 1 / frequency(sol))
-    fill <- ts(realistic(tfill, noise = noise), start = ts[1], end = ts[i-1], frequency = frequency(sol))
+    fill <- ts(realistic(tfill, tpert = min(tfill), noise = noise), start = min(tfill), end = max(tfill), frequency = frequency(sol))
 
     # Paste both time series together
     sol <- ts(c(fill, sol), start = start(fill), frequency = frequency(fill))
