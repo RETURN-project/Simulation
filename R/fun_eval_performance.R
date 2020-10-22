@@ -90,27 +90,22 @@ mape <- function(val, meas){
 #' @import colorspace
 #' @export
 #'
-plotSens  <- function(data, lbls, xlbl, ylbl, scales = 'fixed'){
-  ggplot(data, aes(variable,value,color=interaction(Dense, Seas), group = interaction(Smooth,Dense, Seas))) +
-    geom_line(aes(linetype=Smooth),size=1.2, alpha = 1)+#linetype=interaction(Dense,Smooth)+
+plotSens  <- function(data,  xlbl, ylbl, scales = 'fixed'){
+  ggplot(data, aes(variable,value,color=interaction(Dense), group = interaction(Smooth,Dense))) +
+    geom_line(aes(linetype=Smooth),size=3, alpha = 1)+#linetype=interaction(Dense,Smooth)+
     # geom_point(aes(shape=Smooth),size=1.2)+
-    scale_color_discrete_qualitative(palette = 'Dark 3',labels=lbls,  name = 'Preprocessing')+#
+    scale_color_discrete_qualitative(palette = 'Dark 3',  name = 'Noise removal')+#
     # ,labels=lbls
-    # scale_color_manual('Preprocessing',labels=lbls, values=c("#BC92C2", "#D62B2A", "#B8D464", "#5ACFE4", "#865C7C", "#7FAC5A", "#508EA8"))+
     facet_grid(vars(Metric),vars(Period), scales = scales)+
-    scale_y_continuous(trans='log2')+
+    # scale_y_continuous(trans='log2')+
     # labs(color = "Preprocessing")+
+    scale_y_continuous(trans='log2',labels=scaleFUN)+
     xlab(xlbl) +
     ylab(ylbl)+
-    theme(axis.text.x = element_text(color = "grey50", size = 20),
-          axis.text.y = element_text(color = "grey50", size = 20),
-          axis.title.x = element_text(color = "grey20", size = 25),
-          axis.title.y = element_text(color = "grey20", size = 25),
-          plot.title = element_text(size=25),
-          legend.title = element_text(size=25),
-          legend.text = element_text(color = "grey50",size=25),
-          strip.text.x = element_text(size = 20),
-          strip.text.y = element_text(size = 20,color = "grey20"))
+    theme_light(base_size = 50)+
+    guides(linetype = guide_legend(title = 'Noise removal'),
+           colour=guide_legend(title="Temporal aggregation"))+
+             theme(legend.key.width = unit(3, 'cm'))
 }
 
 #' Plot results sensitivity analysis for the environmental parameters

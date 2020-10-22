@@ -231,7 +231,7 @@ print(end_time - start_time)
 
 ```{r plot2, include = F}
 # general settings
-characteristics for which a plot needs to be made
+# characteristics for which a plot needs to be made
 
 
 simFullName  <- list('Disturbance magnitude',
