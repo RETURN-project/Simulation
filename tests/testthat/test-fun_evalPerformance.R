@@ -72,16 +72,15 @@ test_that("plot sensitivity - basic test",{
               0.1994489563, 0.2174260878, 0.0622801004, 0.0041313903)
   ))
   # plot
-  lbls <- c("raw, BAP")
   xlbl <- "Disturbance magnitude"
   ylbl <- "R²"
   scales <- 'free_y'
-  pl <- plotSens(dat, lbls, xlbl, ylbl, scales)
+  pl <- plotSens(dat, xlbl, ylbl, scales)
   # test if plot settings are ok
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
-  expect_identical(pl$labels$colour, "interaction(Dense, Seas)")
-  expect_identical(pl$labels$group, "interaction(Smooth, Dense, Seas)")
+  expect_identical(pl$labels$colour, "interaction(Dense)")
+  expect_identical(pl$labels$group, "interaction(Smooth, Dense)")
 })
 
 test_that("plot parameter comparison - basic test",{
@@ -130,4 +129,57 @@ test_that("plot metric comparison - basic test",{
   expect_identical(pl$labels$x, xlbl)
   expect_identical(pl$labels$y, ylbl)
   expect_identical(pl$labels$colour, "Metric")
+})
+
+test_that("plot sensitivity bar - basic test",{
+  # generate plot data
+  dat<- as.data.frame(list(
+    Metric = as.factor(c('RRI', 'RRI',  'R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p', 'R80p','YrYr','YrYr')),
+    Dense = as.factor(rep('annual',24)),
+    Smooth = as.factor(rep('raw',24)),
+    Period = as.factor(rep(c('Short','Long'),12)),
+    Seas = as.factor(rep(F,24)),
+    variable = as.factor(rep(c(0,0.08,0.02,0.03), each = 6)),
+    param = as.factor(rep('Disturbance magnitude',  24)),
+    paramType = as.factor(rep('Disturbance',  24)),
+    value = c(0.0652595473, 0.0228917011, 0.1122423965, 0.1037905358, 0.0438699878, 0.0071708630, 0.0004348493, 0.0011731170, 0.1652815743, 0.1187443186,
+              0.1445397388, 0.0341160032, 0.0447431895, 0.0063563672, 0.2544452752, 0.1292675690, 0.1124770530, 0.0019788734, 0.1212960214, 0.0437967248,
+              0.1994489563, 0.2174260878, 0.0622801004, 0.0041313903)
+  ))
+  # plot
+  xlbl <- "Disturbance magnitude"
+  ylbl <- "R²"
+  scales <- 'free_y'
+  pl <- plotSensBar(dat, xlbl, ylbl, scales)
+  # test if plot settings are ok
+  expect_identical(pl$labels$x, xlbl)
+  expect_identical(pl$labels$y, ylbl)
+  expect_identical(pl$labels$colour, "param")
+  expect_identical(pl$labels$group, "interaction(variable, param)")
+})
+
+test_that("plot preprocessing bar - basic test",{
+  # generate plot data
+  dat<- as.data.frame(list(
+    Metric = as.factor(c('RRI', 'RRI',  'R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p','R80p','YrYr','YrYr','RRI','RRI','R80p', 'R80p','YrYr','YrYr')),
+    Dense = as.factor(rep('annual',24)),
+    Smooth = as.factor(rep('raw',24)),
+    Period = as.factor(rep(c('Short','Long'),12)),
+    Seas = as.factor(rep(F,24)),
+    variable = as.factor(rep(c(0,0.08,0.02,0.03), each = 6)),
+    param = as.factor(rep('Disturbance magnitude',  24)),
+    paramType = as.factor(rep('Disturbance',  24)),
+    value = c(0.0652595473, 0.0228917011, 0.1122423965, 0.1037905358, 0.0438699878, 0.0071708630, 0.0004348493, 0.0011731170, 0.1652815743, 0.1187443186,
+              0.1445397388, 0.0341160032, 0.0447431895, 0.0063563672, 0.2544452752, 0.1292675690, 0.1124770530, 0.0019788734, 0.1212960214, 0.0437967248,
+              0.1994489563, 0.2174260878, 0.0622801004, 0.0041313903)
+  ))
+  # plot
+  xlbl <- "Disturbance magnitude"
+  ylbl <- "R²"
+  scales <- 'free_y'
+  pl <- pltPrepBox(dat, xlbl, ylbl, scales)
+  # test if plot settings are ok
+  expect_identical(pl$labels$x, xlbl)
+  expect_identical(pl$labels$y, ylbl)
+  expect_identical(pl$labels$colour, "interaction(Smooth)")
 })
