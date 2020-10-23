@@ -22,9 +22,9 @@ library(plyr)
 ```{r load-data}
 # inputs
 # input folder
-ifolder <- '../data/'#'/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'#'../data/'#ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'
+ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201016_linRecPeriod/'#'../data/'#ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'#'../data/'#ifolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/'
 # Folder where outputs will be written
-ofolder <- '../data/'#'/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'#'../data/' #ofolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'
+ofolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201016_linRecPeriod/Figures/'#'../data/'#ofolder <-'/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'#'../data/' #ofolder <- '/home/wanda/Documents/data/benchmarkRecovery/Run_20201005_4steps/Figures'
 # Name of the input dataset
 basename <- 'LSTS_RndmSample_NoFire_5_Tree_80_scl_30_npnt_20000_VI' 
 caseList <- c('seasAmp','remSd','distT','distRec','missVal','distMag')# 'distMag',evaluated time series characteristics for 
@@ -35,16 +35,12 @@ caseList <- c('seasAmp','remSd','distT','distRec','missVal','distMag')# 'distMag
 simFullName  <- list('Disturbance magnitude',
                      'Disturbance timing',
                      'Recovery period',
-                     'Number of droughts',
-                     'Time series length',
                      'Seasonal amplitude',
                      'Noise level',
                      'Missing values')
 names(simFullName) <- c('distMag',
                         'distT',
                         'distRec',
-                        'nDr', 
-                        'len',
                         'seasAmp',
                         'remSd',
                         'missVal')
@@ -88,7 +84,7 @@ for(mm in 1:length(metric_list)){
 ```
 
 Compare the performance of each recovery indicator
-```{r compare-indicators,  echo = F, include=F}
+```{r plot-compare-indicators,  echo = F, include=F}
 for(mm in 1:length(metric_list)){
   metric <- metric_list[mm]
   # plot 
@@ -104,7 +100,7 @@ for(mm in 1:length(metric_list)){
 
 Which characteristics influence the performance the most?
 
-```{r compare-performance, echo = F, include=F}
+```{r plot-sensitivity-overall, echo = F, include=F}
 for(tr in 1:length(tempRes_list)){
   tempRes <- tempRes_list[tr]
   for(mm in 1:length(metric_list)){
@@ -125,8 +121,28 @@ for(tr in 1:length(tempRes_list)){
 
 ```
 
+```{r plot-sensitivity-separate, echo = F, include=F}
+
+for(mm in 1: length(metric_list)){
+  metric <- metric_list[mm]
+  for(pp in 1:length(simFullName)){
+    data <- dat_list[[metric]]
+    data <- data[data$param == simFullName[pp],]
+    data$Dense <- revalue(factor(data$Dense, levels = c('dense', 'quarterly', 'annual')), c("dense" = "no", "annual"="annual", "quarterly" = "quarterly"))
+  data$Smooth <- revalue(factor(data$Smooth, levels = c('raw', 'smoothed', 'segmented')), c("raw"="no", "smoothed"="rolling mean", "segmented" = "piecewise regression"))
+  xlbl <- simFullName[pp]
+  ylbl <- metric_names[[metric]]
+  scales = 'free_y'
+  plt <- plotSens(data, xlbl, ylbl, scales)
+  png(file.path(ofolder, paste0(basename, '_',metric,'_', names(simFullName[pp]),'_Sens.png')),width = 1911,height =1828 )
+    print(plt)
+    dev.off()
+  }
+}
+```
+
 How can we improve the performance?
-```{r compare-performance2, echo = F, include=F}
+```{r plot-preprocessing, echo = F, include=F}
 
 for(mm in 1:length(metric_list)){
   metric <- metric_list[mm]
