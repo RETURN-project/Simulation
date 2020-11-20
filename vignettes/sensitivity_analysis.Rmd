@@ -95,7 +95,7 @@ extract_settings <- function(basename, ifolder, nyr, nobsYr, ofolder = '') {
   sttngs$'distT' <- list(type = 'range', vals = c(3,6,9,12,15,18), fix = c(9,12))#seq(3,33, by = 6)
   sttngs$'distRec' <- list(type = 'range', vals = c(0.5,2,2.25,3.75,4,6.5)*STnobsYr, fix = c(2.25,3.75)*STnobsYr) #seq(0.5,6.5,by=0.5)
   sttngs$'nDr' <- list(type = 'range',  vals = c(0), fix = 0)
-  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'), fix = 'piecewise')#piecewise
+  sttngs$'distType' <- list(type = 'cat',  vals = c('piecewise'), fix = 'piecewise')#piecewise exponential diffEq
   sttngs$'DistMissVal' <- list(type = 'cat', vals = 'random', fix = 'random')
   sttngs$'trAv' <- list(type = 'range', vals = TrVImean, fix = TrVImean)
   sttngs$'general' <- list(
