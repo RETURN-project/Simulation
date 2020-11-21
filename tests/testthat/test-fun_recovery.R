@@ -7,11 +7,13 @@ test_that("Frazier - annual - too short time series", {
   obspyr <- 1
   shortDenseTS <- FALSE
   nPre <- 2
-  nDist <- 0
-  nPostMin <- 4
-  nPostMax <- 5
+  nDist <- 1
+  nPostStart <- 4
+  nPost <- 2
+  nDeltaStart <- 5
+  nDelta <- 1
 
-  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart)
 
   expect_equal(metrics$RRI, NA)
   expect_equal(metrics$R80P, NA)
@@ -25,11 +27,13 @@ test_that("Frazier - annual", {
   obspyr <- 1
   shortDenseTS <- FALSE
   nPre <- 2
-  nDist <- 0
-  nPostMin <- 4
-  nPostMax <- 5
+  nDist <- 1
+  nPostStart <- 4
+  nPost <- 2
+  nDeltaStart <- 5
+  nDelta <- 1
 
-  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart)
   pre <- 1
   dnbr <- 6
   ari <- 4
@@ -51,10 +55,12 @@ test_that("Frazier - dense", {
   shortDenseTS <- TRUE
   nPre <- 2
   nDist <- 1
-  nPostMin <- 4
-  nPostMax <- 6
+  nPostStart <- 4
+  nPost <- 2
+  nDeltaStart <- 5
+  nDelta <- 1
 
-  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcFrazier(tsio, tdist, obspyr, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart)
   pre <- 1
   dist <- mean(tsio[25:36])
   post <- max(tsio[73:96])
@@ -77,11 +83,15 @@ test_that("Frazier - segmented", {
   obspyr <- 12
   nPre <- 2
   nDist <- 1
-  nPostMin <- 4
-  nPostMax <- 5
+  nPost <- 1
+  nPostStart <- 4
+  nDelta <- 1
+  nDeltaStart <- 4
+  # nPostMin <- 4
+  # nPostMax <- 5
   h <- 0.1
 
-  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax)
+  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart)
   pre <- 1
   dist <- mean(tsio[25:36])
   post <- max(tsio[73:84])
@@ -104,13 +114,15 @@ test_that("Frazier - segmented annual - long", {
   tdist <- 9
   obspyr <- 1
   nPre <- 2
-  nDist <- 0
-  nPostMin <- 4
-  nPostMax <- 5
+  nDist <- 1
+  nPost <- 2
+  nPostStart <- 4
+  nDelta <- 1
+  nDeltaStart <- 5
   h <- 0.2
   seas <- F
 
-  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas = F)
+  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart, seas = F)
   pre <- 1
   dnbr <- 6
   ari <- 2.5
@@ -130,13 +142,17 @@ test_that("Frazier - segmented annual - short", {
   tdist <- 9
   obspyr <- 1
   nPre <- 2
-  nDist <- 0
-  nPostMin <- 1
-  nPostMax <- 1
+  nDist <- 1
+  nPost <- 1
+  nPostStart <- 1
+  nDelta <- 1
+  nDeltaStart <- 1
+  # nPostMin <- 1
+  # nPostMax <- 1
   h <- 0.2
   seas <- F
 
-  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas = F)
+  metrics <- calcBFASTrec(tsio, obspyr, h, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart, seas = F)
   pre <- 1
   dnbr <- 6
   ari <- 0.5
@@ -190,8 +206,10 @@ test_that("Evaluate recovery indicators - perfect fit", {
                  'input' = 'raw',#c('raw', 'smoothed','segmented'),# settings for the recovery indicators
                  'nPre' = 2,# rep(2,3),
                  'nDist' = 1,#rep(1,3),
-                 'nPostMin' = 4,#c(4,4,4),
-                 'nPostMax' = 6,#rep(6,3),
+                 'nPost' = 2,
+                 'nPostStart' = 4,
+                 'nDelta' = 1,
+                 'nDeltaStart' = 5,
                  'h' = 0.15,#rep(0.15,3),
                  'seas' = T)#rep(T,3))
   # evaluate recovery indicators
@@ -253,6 +271,10 @@ test_that("Evaluate recovery indicators - perfect fit", {
                  'shortDenseTS' = T,# rep(TRUE,3),
                  'nPre' = 2,# rep(2,3),
                  'nDist' = 1,#rep(1,3),
+                 'nPost' = 2,
+                 'nPostStart' = 4,
+                 'nDelta' = 1,
+                 'nDeltaStart' = 5,
                  'nPostMin' = 4,#c(4,4,4),
                  'nPostMax' = 6,#rep(6,3),
                  'h' = 0.15,#rep(0.15,3),
@@ -316,8 +338,10 @@ test_that("Evaluate recovery indicators - temporal aggregation to quarterly time
                  'shortDenseTS' = T,# rep(TRUE,3),
                  'nPre' = 2,# rep(2,3),
                  'nDist' = 1,#rep(1,3),
-                 'nPostMin' = 4,#c(4,4,4),
-                 'nPostMax' = 6,#rep(6,3),
+                 'nPost' = 2,
+                 'nPostStart' = 4,
+                 'nDelta' = 1,
+                 'nDeltaStart' = 5,
                  'h' = 0.15,#rep(0.15,3),
                  'seas' = T)#rep(T,3))
   # evaluate recovery indicators
@@ -413,8 +437,12 @@ test_that("Evaluate recovery indicators - temporal aggregation to annual time se
                  'shortDenseTS' = T,# rep(TRUE,3),
                  'nPre' = 2,# rep(2,3),
                  'nDist' = 1,#rep(1,3),
-                 'nPostMin' = 4,#c(4,4,4),
-                 'nPostMax' = 6,#rep(6,3),
+                 'nPost' = 3,
+                 'nPostStart' =4,
+                 'nDelta' = 1,
+                 'nDeltaStart'=6,
+                 # 'nPostMin' = 4,#c(4,4,4),
+                 # 'nPostMax' = 6,#rep(6,3),
                  'h' = 0.15,#rep(0.15,3),
                  'seas' = T)#rep(T,3))
   # evaluate recovery indicators
@@ -509,8 +537,12 @@ test_that("Evaluate recovery indicators - smoothed time series", {
                  'input' = 'smoothed',#c('raw', 'smoothed','segmented'),# settings for the recovery indicators
                  'nPre' = 2,# rep(2,3),
                  'nDist' = 1,#rep(1,3),
-                 'nPostMin' = 4,#c(4,4,4),
-                 'nPostMax' = 6,#rep(6,3),
+                 'nPost' = 2,
+                 'nPostStart' = 4,
+                 'nDelta' = 1,
+                 'nDeltaStart' = 5,
+                 # 'nPostMin' = 4,#c(4,4,4),
+                 # 'nPostMax' = 6,#rep(6,3),
                  'h' = 0.15,#rep(0.15,3),
                  'seas' = T)#rep(T,3))
   # evaluate recovery indicators
