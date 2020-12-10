@@ -9,22 +9,22 @@ This project simulates Landsat data and evaluates the performance of recovery in
 
 ## Background
 
-The context of this project is the study of the recovery of tropical forests after a disturbance (typically a forest fire) using satellite images as a data source.
+The context of this project is the study of the recovery of tropical forests after an abrupt disturbance (typically a forest fire) using satellite images as a data source.
 
 The speed of recovery after a disturbance is known to be correlated with the concept of resilience. This is true not only for forests, but for many dynamical systems. To put it simply: forests that recover fast are more resilient. Forests that recover slowly may be in danger of permanent disappearance.
 
-The specialized literature proposes different indicators for measuring the recovery speed. The performance of these indicators depends on many factors. Some of them are natural, such as the intensity of the perturbation or the seasonality. Others are technical, such as the sampling frequency or the spatial resolution.
+The specialized literature proposes different metrics for measuring the recovery speed. The performance of these metrics depends on many factors. Some of them are natural, such as the intensity of the perturbation or the seasonality. Others are technical, such as the sampling frequency or the spatial resolution.
 
 ## Purpose
 
 
-The purpose of this project is to **efficiently** **compare** the  **reliability** of different post-disturbance recovery **indicators**.
+The purpose of this project is to **efficiently** **compare** the  **reliability** of different post-disturbance recovery **metrics**.
 
 ## Mechanics
 
 1. **Infers** time series' **parameters** and characteristics from optical satellite image data​
 2. Uses those parameters to **create** a large collection of synthetic (but realistic) **time series**
-3. **Calculates** several state-of-the-art recovery **indicators**
+3. **Calculates** several state-of-the-art recovery **metrics**
 
 ## Simplified workflow
 
