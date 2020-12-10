@@ -33,7 +33,10 @@ library(colorspace)
 # Calculate the number of cores
 no_cores <- detectCores()
 ```
-These general inputs need to be provided:
+
+
+These __general inputs__ need to be provided:
+
 + *ifolder*: Folder where input data are stored (i.e. file with sampled time series)
 + *ofolder*: Folder where outputs will be written
 + *basenames*: Name of the input dataset (contains sampled satellite time series)
@@ -41,7 +44,7 @@ These general inputs need to be provided:
 + *nobsYr*: Number of observations per year of input data
 + *caseList*: Time series parameters that are evaluated. SeasAmp stands for seasonal amplitude; remSD for noise magnitude; distT for timing of the disturbance; distRec for recovery half time; missVal for missing values; distMag for disturbance magnitude
 
-The following inputs are needed to calculate the recovery indicators:
+The following __inputs are needed to calculate the recovery indicators__:
 
 __funSet__: list of settings for the computation of the recovery indicators. More than one value for each setting is allowed (yet an equal number of values for each setting is required). The recovery indicators are then derived for each set of values of the setting parameters.
 
@@ -213,7 +216,7 @@ testsTable <- tibble::tibble(testsTable) # Tibblify for increased readability
 print(testsTable)
 ```
 
-```{r simulate-and-extract, eval=TRUE}
+```{r simulate-and-extract}
 # Start clock
 start_time <- Sys.time()
 set_fast_options()
