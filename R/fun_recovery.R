@@ -17,6 +17,44 @@
 #' @return a list containing the RRI recovery indicator, R80p recovery indicator and YrYr recovery indicator
 #' @export
 #'
+calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart){
+  # check if there are enough observations before and after the disturbance to calculate the metrics
+  if ( (tdist > (nPre*obspyr) ) & ( (tdist + ((nPost+nPostStart)*obspyr) - 2) < length(tsio)  ) & ( sum(!is.na(tsio)) > 2) ) {
+    # translate parameters to those needed for the recovery functions
+    ys <- tsio# response values of time series
+    ts <- seq(1, length(tsio))# observation numbers of time series
+    # the observations during the perturbation
+    if (nDist == 0 ){# if annual observatons or if duration of perturbation equals one time step
+      tpert <- tdist
+    }else if (obspyr == 1){
+      tpert <- seq(tdist, tdist + nDist-1 )
+    }else{
+      tpert <- seq(tdist, tdist + nDist*obspyr - 1)
+    }
+    # the observations that represent the pre-disturbed state
+    ts_pre <- seq(tdist - nPre*obspyr, tdist - 1)
+
+    # the observations that represent the post-disturbed state
+    ts_post <-  seq(tdist + (nPostStart*obspyr), tdist + ((nPostStart + nPost)*obspyr) - 1)
+
+    # the observations that define the post-disturbance state for YrYr metric (relative to start disturbance)
+    # the post-disturbance period for the YrYr metric is defined as the last year of the regular post-disturbance period
+    deltat <- seq(nDeltaStart*obspyr,(nDelta+nDeltaStart)*obspyr-1)#ts_post[(length(ts_post) - obspyr+1):length(ts_post)]-tdist
+
+    # Derive recovery indicators
+    RRI <- rri(ts, ys, tpert, ts_pre, ts_post)
+    R80P <- r80p(ts, ys, r = 0.8, ts_pre, ts_post)
+    YrYr <- yryr(ts, ys, tpert, deltat)
+    # make list of recovery indicators as output of the function
+    lst <- list(RRI, R80P, YrYr)
+    names(lst) <- c('RRI', 'R80P', 'YrYr')
+    # give NA as output if not able to calculate the recovery indicators
+  } else {
+    lst <- list(NA, NA, NA)
+    names(lst) <- c('RRI', 'R80P', 'YrYr')
+  }
+  lst
+}
 # calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax){
 #     # check if there are enough observations before and after the disturbance to calculate the metrics
 #     if ( (tdist > (nPre*obspyr) ) & ( tdist < (length(tsio) - ((nPost+nPostStart)*obspyr) + 1) )  & ( sum(!is.na(tsio)) > 2) ) {
@@ -59,45 +97,6 @@
 #     }
 #   lst
 # }
-
-calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPost, nPostStart, nDelta, nDeltaStart){
-  # check if there are enough observations before and after the disturbance to calculate the metrics
-  if ( (tdist > (nPre*obspyr) ) & ( (tdist + ((nPost+nPostStart)*obspyr) - 2) < length(tsio)  ) & ( sum(!is.na(tsio)) > 2) ) {
-    # translate parameters to those needed for the recovery functions
-    ys <- tsio# response values of time series
-    ts <- seq(1, length(tsio))# observation numbers of time series
-    # the observations during the perturbation
-    if (nDist == 0 ){# if annual observatons or if duration of perturbation equals one time step
-      tpert <- tdist
-    }else if (obspyr == 1){
-      tpert <- seq(tdist, tdist + nDist-1 )
-    }else{
-      tpert <- seq(tdist, tdist + nDist*obspyr - 1)
-    }
-    # the observations that represent the pre-disturbed state
-    ts_pre <- seq(tdist - nPre*obspyr, tdist - 1)
-
-    # the observations that represent the post-disturbed state
-    ts_post <-  seq(tdist + (nPostStart*obspyr), tdist + ((nPostStart + nPost)*obspyr) - 1)
-
-    # the observations that define the post-disturbance state for YrYr metric (relative to start disturbance)
-    # the post-disturbance period for the YrYr metric is defined as the last year of the regular post-disturbance period
-    deltat <- seq(nDeltaStart*obspyr,(nDelta+nDeltaStart)*obspyr-1)#ts_post[(length(ts_post) - obspyr+1):length(ts_post)]-tdist
-
-    # Derive recovery indicators
-    RRI <- rri(ts, ys, tpert, ts_pre, ts_post)
-    R80P <- r80p(ts, ys, r = 0.8, ts_pre, ts_post)
-    YrYr <- yryr(ts, ys, tpert, deltat)
-    # make list of recovery indicators as output of the function
-    lst <- list(RRI, R80P, YrYr)
-    names(lst) <- c('RRI', 'R80P', 'YrYr')
-    # give NA as output if not able to calculate the recovery indicators
-  } else {
-    lst <- list(NA, NA, NA)
-    names(lst) <- c('RRI', 'R80P', 'YrYr')
-  }
-  lst
-}
 
 #' Post-disturbance slope and recovery metrics derived from BFAST0n trend segments. The calcBFASTrec function derives a set of recovery indicators after fitting a segmented trend in the time series. Using the breakpoints function of the strucchange package, a segmented trend is fitted (hereafter called BFAST0n trend segments). The detected break showing the largest change (in absolute values) is assumed to represent the disturbance. Using the segmented trend and detected disturbance date, the RRI, R80p, YrYr and the slope of the post-disturbance trend segment are derived as recovery indicators.
 #'
