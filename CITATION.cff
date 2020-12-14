@@ -1,0 +1,17 @@
+# YAML 1.2
+---
+authors: 
+  -
+    affiliation: "Wageningen University"
+    family-names: "De Keersmaecker"
+    given-names: Wanda
+  -
+    family-names: "Rodríguez-Sánchez"
+    given-names: Pablo
+    orcid: "https://orcid.org/0000-0002-2855-940X"
+cff-version: "1.0"
+doi: "10.5281/zenodo.4320503"
+message: "If you use this software, please cite it using these metadata."
+title: "RETURN-project/BenchmarkRecovery"
+version: "1.0"
+...
