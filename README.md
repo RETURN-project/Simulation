@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.org/RETURN-project/BenchmarkRecovery.svg?branch=master)](https://travis-ci.org/RETURN-project/BenchmarkRecovery)
 [![codecov](https://codecov.io/gh/RETURN-project/BenchmarkRecovery/graph/badge.svg)](https://codecov.io/gh/RETURN-project/BenchmarkRecovery)
 [![codecov](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4320503.svg)](https://doi.org/10.5281/zenodo.4320503)
 
 # Benchmarking recovery indicators derived from remote sensing time series
 
