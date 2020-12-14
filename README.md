@@ -3,6 +3,7 @@
 [![codecov](https://codecov.io/gh/RETURN-project/BenchmarkRecovery/graph/badge.svg)](https://codecov.io/gh/RETURN-project/BenchmarkRecovery)
 [![codecov](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4320503.svg)](https://doi.org/10.5281/zenodo.4320503)
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8B%20%20%E2%97%8B-orange)](https://fair-software.eu)
 
 # Benchmarking recovery indicators derived from remote sensing time series
 
