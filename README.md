@@ -1,5 +1,5 @@
 [![License](https://img.shields.io/github/license/RETURN-project/BenchmarkRecovery)](https://choosealicense.com/licenses/apache-2.0/)
-[![Build Status](https://travis-ci.org/RETURN-project/BenchmarkRecovery.svg?branch=master)](https://travis-ci.org/RETURN-project/BenchmarkRecovery)
+[![Build Status](https://github.com/RETURN-project/BenchmarkRecovery/workflows/R-CMD-check/badge.svg?branch=master)](https://github.com/RETURN-project/BenchmarkRecovery/actions)
 [![codecov](https://codecov.io/gh/RETURN-project/BenchmarkRecovery/graph/badge.svg)](https://codecov.io/gh/RETURN-project/BenchmarkRecovery)
 [![codecov](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4320503.svg)](https://doi.org/10.5281/zenodo.4320503)
