@@ -1,0 +1,21 @@
+{
+    "creators": [
+        {
+            "affiliation": "Wageningen University",
+            "name": "De Keersmaecker, Wanda"
+        },
+        {
+            "affiliation": "Netherlands eScience Center",
+            "name": "Rodríguez-Sánchez, Pablo",
+            "orcid": "0000-0002-2855-940X"
+        }
+    ],
+    "keywords": [
+        "time series analysis",
+        "time series simulation"
+    ],
+    "license": {
+        "id": "Apache-2.0"
+    },
+    "title": "BenchmarkRecovery"
+}
