@@ -74,7 +74,7 @@ calcFrazier <- function(tsio, tdist, obspyr, nPre, nDist, nPostMin, nPostMax){
 #'
 #' @return a list containing  the RRI, R80p, YrYr recovery indicator derived from the BFAST0n trend segments and slope of the trend segment after the disturbance (sl).
 #' @export
-#' @import strucchangeRcpp
+#' @import strucchange
 #' @import stats
 calcBFASTrec <- function(tsio, obspyr, h, nPre, nDist, nPostMin, nPostMax, seas = F) {
   # Create time series object, needed as input for the piecewise regression
