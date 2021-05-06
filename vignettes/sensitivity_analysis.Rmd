@@ -27,7 +27,7 @@ library(profvis)
 library(parallel)
 library(pbapply)
 library(bfast)
-library(strucchange)
+library(strucchangeRcpp)
 library(colorspace)
 
 # Calculate the number of cores
