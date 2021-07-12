@@ -11,8 +11,7 @@ Description: This package compares the performance of recovery indicators derive
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Remotes: bfast2/bfast@master,
-         bfast2/strucchange@devel
+Remotes: bfast2/bfast@master
 Imports: bfast,
          forecast,
          strucchange,
@@ -28,6 +27,7 @@ Suggests: imputeTS,
           GGally,
           testthat,
           knitr,
+          markdown,
           rmarkdown,
           profvis,
           pbapply,
