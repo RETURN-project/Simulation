@@ -14,13 +14,26 @@ name: R-CMD-check
 
 jobs:
   R-CMD-check:
-    runs-on: macOS-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1
-      - name: Install dependencies
+      - name: Install gdal
+        run: |
+          apt-get -y update
+          apt -y upgrade
+          apt -y install apt-transport-https software-properties-common
+          apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+          add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/'
+          add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+          apt-cache policy libgdal-dev
+          apt -y update
+          apt-get -y install proj-bin libproj-dev libgeos-dev gdal-bin libgdal-dev
+          apt-get -y install python-dev python-numpy
+          apt-get -y install python3-dev python3-numpy
+      - name: Install R dependencies
         run: |
           install.packages(c("remotes", "rcmdcheck"))
           remotes::install_deps(dependencies = TRUE)
