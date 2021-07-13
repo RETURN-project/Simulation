@@ -26,6 +26,7 @@ Suggests: imputeTS,
           knitr,
           markdown,
           rmarkdown,
+          plyr,
           profvis,
           pbapply,
           parallel
