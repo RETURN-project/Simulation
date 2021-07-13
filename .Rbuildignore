@@ -4,3 +4,6 @@
 ^img$
 ^vignettes/sensitivity_analysis\.Rmd$
 ^vignettes/using_apply\.Rmd$
+^\.zenodo\.json$
+^\.github$
+^CITATION\.cff$
