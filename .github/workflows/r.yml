@@ -23,6 +23,9 @@ jobs:
       - uses: r-lib/actions/setup-r@v1
       - name: Install gdal
         run: |
+          mkdir -p /var/cache/apt/archives/partial
+          touch /var/cache/apt/archives/lock
+          chmod 640 /var/cache/apt/archives/lock
           apt-get -y update
           apt -y upgrade
           apt -y install apt-transport-https software-properties-common
